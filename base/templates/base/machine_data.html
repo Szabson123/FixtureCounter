@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'base/style.css' %}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Podsumowanie Maszyn</title>
+</head>
+<body>
+<div class="container">
+    <h1 class="big-title">Podsumowanie Maszyn</h1>
+    <div class="fixture-summary">
+        <div class="fixture-item header">
+            <span class="titles">Nazwa</span>
+            <span class="titles">Wszystkich</span>
+            <span class="titles">Od przeglądu</span>
+            <span class="titles">Przegląd</span>
+        </div>
+        <!-- Kontener na fixture items -->
+        <div class="fixture-items">
+            {% for fixture in fixture_data %}
+                <div class="fixture-item">
+                    <span class="fixture-name">{{ fixture.name }}</span>
+                    <span class="counter-count">{{ fixture.all_counter }}</span>
+                    <span class="counter-count">{{ fixture.last_maint_counter }}</span>
+                    <span class="action">
+                        <button type="button" class="button-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#clearCounterModal"
+                                data-clear-url="{{ fixture.clear_counter_url }}">
+                            Wyczyść licznik
+                        </button>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="clearCounterModal" tabindex="-1" aria-labelledby="clearCounterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="clearCounterForm" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clearCounterModalLabel">Wyczyść licznik</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+                </div>
+                <div class="modal-body">
+                    {% if form and form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Hasło</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-danger">Wyczyść licznik</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var clearCounterModal = document.getElementById('clearCounterModal');
+        var clearCounterForm = document.getElementById('clearCounterForm');
+        var fetchUrl = "{% url 'fetch' %}";
+
+        clearCounterModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var clearUrl = button.getAttribute('data-clear-url');
+
+            clearCounterForm.action = clearUrl;
+
+            var passwordInput = clearCounterModal.querySelector('#password');
+            passwordInput.value = '';
+        });
+
+        function fetchFixtureData() {
+            fetch(fetchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.fixture_data && Array.isArray(data.fixture_data)) {
+                        try {
+                            const fixtureItemsContainer = document.querySelector('.fixture-items');
+                            if (!fixtureItemsContainer) {
+                                console.error('Fixture items container not found!');
+                                return;
+                            }
+
+                            fixtureItemsContainer.innerHTML = '';
+
+                            data.fixture_data.forEach(fixture => {
+                                const fixtureItem = document.createElement('div');
+                                fixtureItem.classList.add('fixture-item');
+
+                                fixtureItem.innerHTML = `
+                                    <span class="fixture-name">${fixture.name}</span>
+                                    <span class="counter-count">${fixture.all_counter}</span>
+                                    <span class="counter-count">${fixture.last_maint_counter}</span>
+                                    <span class="action">
+                                        <button type="button" class="button-1" 
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#clearCounterModal"
+                                                data-clear-url="${fixture.clear_counter_url}">
+                                            Wyczyść licznik
+                                        </button>
+                                    </span>
+                                `;
+                                fixtureItemsContainer.appendChild(fixtureItem);
+                            });
+                        } catch (err) {
+                            console.error('Error while processing fixture data:', err);
+                        }
+                    }
+                })
+                .catch(error => console.error('Błąd podczas pobierania danych:', error));
+        }
+
+        // Odświeżaj co 5 sekund
+        setInterval(fetchFixtureData, 5000);
+        // Wywołaj na start
+        fetchFixtureData();
+    });
+</script>
+</body>
+</html>
