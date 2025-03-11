@@ -25,4 +25,7 @@ class CounterHistory(models.Model):
     fixture = models.ForeignKey(Fixture, on_delete=models.CASCADE, null=True, blank=True, related_name='backup')
     date = models.DateTimeField(auto_now_add=True)
     counter = models.IntegerField()
+
+    def __str__(self):
+        return f'{self.fixture.name}' if self.fixture else 'No Fixture'
     

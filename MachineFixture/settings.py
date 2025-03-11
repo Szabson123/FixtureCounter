@@ -16,6 +16,13 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'base' / 'static',
+]
+
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 CLEAR_COUNTER_PASSWORD = os.getenv('CLEAR_COUNTER_PASSWORD')
@@ -142,12 +149,5 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
 }
-
-STATIC_URL = '/static/'
-
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'base/static'),
-]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
