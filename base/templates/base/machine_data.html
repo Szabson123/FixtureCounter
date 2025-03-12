@@ -10,35 +10,52 @@
     <title>Podsumowanie Maszyn</title>
 </head>
 <body>
-<div class="container">
-    <h1 class="big-title">Podsumowanie Maszyn</h1>
-    <div class="fixture-summary">
-        <div class="fixture-item header">
-            <span class="titles">Nazwa</span>
-            <span class="titles">Wszystkich</span>
-            <span class="titles">Od przeglądu</span>
-            <span class="titles">Przegląd</span>
-        </div>
-        <!-- Kontener na fixture items -->
-        <div class="fixture-items">
-            {% for fixture in fixture_data %}
-                <div class="fixture-item">
-                    <span class="fixture-name">{{ fixture.name }}</span>
-                    <span class="counter-count">{{ fixture.all_counter }}</span>
-                    <span class="counter-count">{{ fixture.last_maint_counter }}</span>
-                    <span class="action">
-                        <button type="button" class="button-1"
-                                data-bs-toggle="modal"
-                                data-bs-target="#clearCounterModal"
-                                data-clear-url="{{ fixture.clear_counter_url }}">
-                            Wyczyść licznik
-                        </button>
-                    </span>
-                </div>
-            {% endfor %}
+    <div class="container">
+        <h1 class="big-title">Podsumowanie Maszyn</h1>
+        <div class="fixture-summary">
+            <div class="fixture-item header">
+
+                <span class="titles">
+                    <a href="{% if sort_param == 'name' %}?sort=-name{% else %}?sort=name{% endif %}">
+                        Nazwa
+                    </a>
+                </span>
+                
+                <span class="titles">
+                    <a href="{% if sort_param == 'all_counter' %}?sort=-all_counter{% else %}?sort=all_counter{% endif %}">
+                        Wszystkich
+                    </a>
+                </span>
+                
+                <span class="titles">
+                    <a href="{% if sort_param == 'last_maint' %}?sort=-last_maint{% else %}?sort=last_maint{% endif %}">
+                        Od przeglądu
+                    </a>
+                </span>
+                
+                <span class="titles">Przegląd</span>
+            </div>
+    
+            <!-- Kontener na fixture items -->
+            <div class="fixture-items">
+                {% for fixture in fixture_data %}
+                    <div class="fixture-item">
+                        <span class="fixture-name">{{ fixture.name }}</span>
+                        <span class="counter-count">{{ fixture.all_counter }}</span>
+                        <span class="counter-count">{{ fixture.last_maint_counter }}</span>
+                        <span class="action">
+                            <button type="button" class="button-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#clearCounterModal"
+                                    data-clear-url="{{ fixture.clear_counter_url }}">
+                                Wyczyść licznik
+                            </button>
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 
 <!-- Modal -->
 <div class="modal fade" id="clearCounterModal" tabindex="-1" aria-labelledby="clearCounterModalLabel" aria-hidden="true">
@@ -76,70 +93,87 @@
         </div>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentSort = "{{ sort_param|default_if_none:'' }}";
+    
+        const fetchUrl = "{% url 'fixture_data_json' %}";
+    
         var clearCounterModal = document.getElementById('clearCounterModal');
         var clearCounterForm = document.getElementById('clearCounterForm');
-        var fetchUrl = "{% url 'fetch' %}";
-
+    
         clearCounterModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget;
             var clearUrl = button.getAttribute('data-clear-url');
-
+            
             clearCounterForm.action = clearUrl;
-
+    
             var passwordInput = clearCounterModal.querySelector('#password');
             passwordInput.value = '';
         });
-
+    
+    
         function fetchFixtureData() {
-            fetch(fetchUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.fixture_data && Array.isArray(data.fixture_data)) {
-                        try {
-                            const fixtureItemsContainer = document.querySelector('.fixture-items');
-                            if (!fixtureItemsContainer) {
-                                console.error('Fixture items container not found!');
-                                return;
-                            }
-
-                            fixtureItemsContainer.innerHTML = '';
-
-                            data.fixture_data.forEach(fixture => {
-                                const fixtureItem = document.createElement('div');
-                                fixtureItem.classList.add('fixture-item');
-
-                                fixtureItem.innerHTML = `
-                                    <span class="fixture-name">${fixture.name}</span>
-                                    <span class="counter-count">${fixture.all_counter}</span>
-                                    <span class="counter-count">${fixture.last_maint_counter}</span>
-                                    <span class="action">
-                                        <button type="button" class="button-1" 
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#clearCounterModal"
-                                                data-clear-url="${fixture.clear_counter_url}">
-                                            Wyczyść licznik
-                                        </button>
-                                    </span>
-                                `;
-                                fixtureItemsContainer.appendChild(fixtureItem);
-                            });
-                        } catch (err) {
-                            console.error('Error while processing fixture data:', err);
-                        }
-                    }
-                })
-                .catch(error => console.error('Błąd podczas pobierania danych:', error));
+            const sortParam = currentSort || "-last_maint";
+    
+            const url = fetchUrl + "?sort=" + sortParam;
+    
+            fetch(url)
+              .then(response => response.json())
+              .then(data => {
+                  updateFixtureItems(data.fixture_data);
+              })
+              .catch(error => {
+                  console.error("Błąd podczas pobierania danych:", error);
+              });
         }
+    
+        function updateFixtureItems(fixtureList) {
+            const container = document.querySelector('.fixture-items');
+            if (!container) return;
 
-        // Odświeżaj co 5 sekund
+            container.innerHTML = '';
+    
+            fixtureList.forEach(fixture => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('fixture-item');
+
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('fixture-name');
+                nameSpan.textContent = fixture.name;
+                itemDiv.appendChild(nameSpan);
+
+                const allCounterSpan = document.createElement('span');
+                allCounterSpan.classList.add('counter-count');
+                allCounterSpan.textContent = fixture.all_counter === null ? '' : fixture.all_counter;
+                itemDiv.appendChild(allCounterSpan);
+    
+                const lastMaintSpan = document.createElement('span');
+                lastMaintSpan.classList.add('counter-count');
+                lastMaintSpan.textContent = fixture.last_maint_counter === null ? '' : fixture.last_maint_counter;
+                itemDiv.appendChild(lastMaintSpan);
+
+                const actionSpan = document.createElement('span');
+                actionSpan.classList.add('action');
+    
+                const button = document.createElement('button');
+                button.type = "button";
+                button.classList.add('button-1');
+                button.setAttribute('data-bs-toggle', 'modal');
+                button.setAttribute('data-bs-target', '#clearCounterModal');
+                button.setAttribute('data-clear-url', fixture.clear_counter_url);
+                button.textContent = "Wyczyść licznik";
+                actionSpan.appendChild(button);
+    
+                itemDiv.appendChild(actionSpan);
+    
+                container.appendChild(itemDiv);
+            });
+        }
+    
         setInterval(fetchFixtureData, 5000);
-        // Wywołaj na start
-        fetchFixtureData();
     });
-</script>
+    </script>
 </body>
 </html>

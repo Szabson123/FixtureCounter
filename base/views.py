@@ -38,11 +38,29 @@ class CreateUpdateCounter(generics.CreateAPIView):
 
 
 def display_machine_data(request):
+    # Start with your base queryset
     fixtures = (
         Fixture.objects.all()
-        .annotate(counter_sum_value=F('counter_last_maint__counter'))
-        .order_by('-counter_sum_value')
+        .select_related('counter_last_maint', 'counter_all')
     )
+
+    sort_param = request.GET.get('sort')
+
+    valid_sorts = {
+        'name': 'name',
+        '-name': '-name',
+
+        'all_counter': 'counter_all__counter',
+        '-all_counter': '-counter_all__counter',
+
+        'last_maint': 'counter_last_maint__counter',
+        '-last_maint': '-counter_last_maint__counter',
+    }
+
+    if sort_param in valid_sorts:
+        fixtures = fixtures.order_by(valid_sorts[sort_param])
+    else:
+        fixtures = fixtures.order_by('-counter_last_maint')
 
     fixture_data = []
     for fixture in fixtures:
@@ -59,7 +77,8 @@ def display_machine_data(request):
     form = PasswordForm()
     return render(request, 'base/machine_data.html', {
         'fixture_data': fixture_data,
-        'form': form
+        'form': form,
+        'sort_param': sort_param,
     })
 
 
@@ -72,7 +91,7 @@ def clear_main_counter(request, fixture_id):
         if form.is_valid():
             input_password = form.cleaned_data['password']
             if input_password == settings.CLEAR_COUNTER_PASSWORD:
-                if fixture.counter_last_maint:
+                if fixture.counter_last_maint and fixture.counter_last_maint.counter != 0:
                     CounterHistory.objects.create(
                         fixture=fixture,
                         counter=fixture.counter_last_maint.counter
@@ -94,24 +113,37 @@ def clear_main_counter(request, fixture_id):
         'form': form
     })
 
+# AJAX
+def fixture_data_json(request):
+    sort_param = request.GET.get('sort')
+    
+    fixtures = Fixture.objects.all().select_related('counter_last_maint', 'counter_all')
 
-def fetch_fixture_data(request):
-    fixtures = (
-        Fixture.objects.all()
-        .annotate(counter_sum_value=F('counter_last_maint__counter'))
-        .order_by('-counter_sum_value')
-    )
-
+    valid_sorts = {
+        'name': 'name',
+        '-name': '-name',
+        'all_counter': 'counter_all__counter',
+        '-all_counter': '-counter_all__counter',
+        'last_maint': 'counter_last_maint__counter',
+        '-last_maint': '-counter_last_maint__counter',
+    }
+    
+    if sort_param in valid_sorts:
+        fixtures = fixtures.order_by(valid_sorts[sort_param])
+    else:
+        fixtures = fixtures.order_by('name')
+    
     fixture_data = []
     for fixture in fixtures:
         last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else None
         all_value = fixture.counter_all.counter if fixture.counter_all else None
 
         fixture_data.append({
+            'id': fixture.id,
             'name': fixture.name,
             'last_maint_counter': last_maint_value,
             'all_counter': all_value,
             'clear_counter_url': reverse('clear_main_counter', args=[fixture.id]),
         })
-    
+
     return JsonResponse({'fixture_data': fixture_data})
