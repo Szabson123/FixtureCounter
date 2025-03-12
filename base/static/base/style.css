@@ -5,25 +5,27 @@ body {
     padding: 0;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
 }
 .big-title {
     text-align: center;
     font-size: 2.5em;
     color: #333;
-    margin-bottom: 80px;
+    margin-bottom: 40px;
     font-weight: 600;
 }
 .container {
+    margin-top: 50px;
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 24px 22px 69px -5px rgba(108, 109, 128, 1);
     padding: 30px;
     width: 90%;
     max-width: 1000px;
 }
 
+.fixture-item.header:hover {
+    background-color: transparent !important;
+}
 /* FIXTURE HEADER (pierwszy wiersz tytułowy) */
 .fixture-header {
     display: flex;
@@ -52,8 +54,6 @@ body {
     border-bottom: 1px solid #ddd;
     font-size: 1.1em;
     align-items: center;
-    /* Hover wskazuje, że można kliknąć */
-    cursor: pointer;
 }
 .fixture-item:last-child {
     border-bottom: none;
@@ -83,13 +83,11 @@ body {
 }
 .button-1 {
     background-color: #ff0000;
-    border-radius: 8px;
+    border-radius: 25px;
     border: none;
     color: #FFFFFF;
     cursor: pointer;
-    font-size: 14px;
     font-weight: 600;
-    height: 40px;
     padding: 10px 16px;
     text-align: center;
     text-decoration: none;
@@ -153,3 +151,26 @@ body {
     }
 }
 
+.titles {
+    color: rgb(22, 24, 54);
+    text-decoration: none;
+    font-size: 24px;
+    font-family: "Lato", sans-serif;
+    font-weight: 800;
+    margin-bottom: 25px;
+    margin-top: 25px;
+}
+
+.titles a {
+    color: rgb(22, 24, 54);
+    text-decoration: none;
+    font-size: 22px;
+    font-family: "Lato", sans-serif;
+    display: inline-block; /* Zapewnia, że tylko tekst linka będzie klikalny */
+    padding: 2px 5px; 
+}
+.titles a:hover {
+    color: darkblue;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 100px -33px rgba(66, 68, 90, 1);
+}
