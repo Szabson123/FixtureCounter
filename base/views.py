@@ -60,7 +60,7 @@ def display_machine_data(request):
     if sort_param in valid_sorts:
         fixtures = fixtures.order_by(valid_sorts[sort_param])
     else:
-        fixtures = fixtures.order_by('-counter_last_maint')
+        fixtures = fixtures.order_by('-counter_last_maint__counter')
 
     fixture_data = []
     for fixture in fixtures:

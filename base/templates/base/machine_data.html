@@ -14,7 +14,6 @@
         <h1 class="big-title">Podsumowanie Maszyn</h1>
         <div class="fixture-summary">
             <div class="fixture-item header">
-
                 <span class="titles">
                     <a href="{% if sort_param == 'name' %}?sort=-name{% else %}?sort=name{% endif %}">
                         Nazwa
@@ -35,7 +34,6 @@
                 
                 <span class="titles">Przegląd</span>
             </div>
-    
             <!-- Kontener na fixture items -->
             <div class="fixture-items">
                 {% for fixture in fixture_data %}
