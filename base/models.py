@@ -14,6 +14,7 @@ class Fixture(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     counter_all= models.ForeignKey(FullCounter, on_delete=models.CASCADE, null=True, blank=True)
     counter_last_maint = models.ForeignKey(CounterSumFromLastMaint, on_delete=models.CASCADE, null=True, blank=True)
+    cycles_limit = models.IntegerField(default=50_000)
     
 
 class Counter(models.Model):

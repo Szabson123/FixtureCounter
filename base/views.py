@@ -45,7 +45,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
         else:
             return Response(
                 {"returnCodeDescription": "You didn't pass the name",
-                "returnCode": 2115},
+                "returnCode": 1488},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

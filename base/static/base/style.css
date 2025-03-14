@@ -19,8 +19,8 @@ body {
     border-radius: 8px;
     box-shadow: 24px 22px 69px -5px rgba(108, 109, 128, 1);
     padding: 30px;
-    width: 90%;
-    max-width: 1000px;
+    width: 95vw; /* Prawie cała szerokość ekranu */
+    max-width: 1400px; /* Możesz zwiększyć, np. 1600px */
 }
 
 .fixture-item.header:hover {
@@ -47,6 +47,7 @@ body {
 .fixture-summary {
     display: flex;
     flex-direction: column;
+    width: 100%; 
 }
 .fixture-item {
     display: flex;
@@ -62,6 +63,17 @@ body {
     flex: 1;
     text-align: center;
     padding: 0 10px;
+}
+
+.fixture-item, .fixture-header {
+    display: flex;
+    width: 100%;
+}
+.fixture-item > span, .fixture-header > span {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    min-width: 150px;
 }
 .fixture-item:hover {
     background-color: #f1f1f1;
