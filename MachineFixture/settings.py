@@ -23,6 +23,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'base' / 'static',
 ]
 
+
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 CLEAR_COUNTER_PASSWORD = os.getenv('CLEAR_COUNTER_PASSWORD')
@@ -120,10 +121,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
 
+TIME_ZONE = 'Europe/Warsaw'
 USE_TZ = True
 
 
