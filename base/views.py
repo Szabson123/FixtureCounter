@@ -82,15 +82,15 @@ def display_machine_data(request):
 
     fixture_data = []
     for fixture in fixtures:
-        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else None
+        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else 0
         all_value = fixture.counter_all.counter if fixture.counter_all else None
 
         last_date_obj = fixture.last_counterhistory_date
 
-        if last_date_obj is not None:
-            last_date_formatted = last_date_obj.strftime("%Y-%m-%d")
-        else:
-            last_date_formatted = "Nigdy nie wykonano przeglądu" 
+        last_date_formatted = last_date_obj.strftime("%Y-%m-%d") if last_date_obj else "Nigdy nie wykonano przeglądu" 
+
+        progress_percent = (last_maint_value / fixture.cycles_limit * 100) if fixture.cycles_limit else 0
+        progress_percent = min(progress_percent, 100)
 
         fixture_data.append({
             'name': fixture.name,
@@ -98,6 +98,9 @@ def display_machine_data(request):
             'all_counter': all_value,
             'last_counterhistory_date': last_date_formatted,
             'clear_counter_url': reverse('clear_main_counter', args=[fixture.id]),
+            'cycles_limit': fixture.cycles_limit,
+            'progress_percent': round(progress_percent, 2),
+            'tooltip_text': f"Limit: {last_maint_value}/{fixture.cycles_limit}",
         })
 
     form = PasswordForm()
@@ -171,15 +174,15 @@ def fixture_data_json(request):
     
     fixture_data = []
     for fixture in fixtures:
-        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else None
+        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else 0
         all_value = fixture.counter_all.counter if fixture.counter_all else None
-        
+
         last_history_value = fixture.last_history_date
-        
-        if last_history_value is not None:
-            last_history_formatted = last_history_value.strftime("%Y-%m-%d")
-        else:
-            last_history_formatted = None
+
+        last_history_formatted = last_history_value.strftime("%Y-%m-%d") if last_history_value else None
+
+        progress_percent = (last_maint_value / fixture.cycles_limit * 100) if fixture.cycles_limit else 0
+        progress_percent = min(progress_percent, 100)
 
         fixture_data.append({
             'id': fixture.id,
@@ -188,6 +191,9 @@ def fixture_data_json(request):
             'all_counter': all_value,
             'last_counterhistory_date': last_history_formatted,
             'clear_counter_url': reverse('clear_main_counter', args=[fixture.id]),
+            'cycles_limit': fixture.cycles_limit,
+            'progress_percent': round(progress_percent, 2),
+            'tooltip_text': f"Limit: {last_maint_value}/{fixture.cycles_limit}",
         })
 
     return JsonResponse({'fixture_data': fixture_data})

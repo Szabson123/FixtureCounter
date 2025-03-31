@@ -34,7 +34,7 @@
                         Wszystkich
                     </a>
                 </span>
-
+    
                 <span class="titles">
                     <a href="{% if sort_param == 'last_history' %}?sort=-last_history{% else %}?sort=last_history{% endif %}">
                         Ostatni Przegląd
@@ -47,7 +47,9 @@
                         Od przeglądu
                     </a>
                 </span>
-                
+                <span class="titles">
+                    Pasek Postępu
+                </span>
                 <span class="titles">
                     Przegląd
                 </span>
@@ -65,6 +67,21 @@
                         <span class="counter-count">
                             {{ fixture.last_maint_counter }}
                         </span>
+                        <span>
+                            <div class="progress-container" data-tooltip="{{ fixture.tooltip_text }}">
+                                <div class="progress">
+                                    <div class="progress-bar 
+                                        {% if fixture.progress_percent < 70 %}bg-success{% elif fixture.progress_percent < 90 %}bg-warning{% else %}bg-danger{% endif %}"
+                                        role="progressbar"
+                                        style="width: {{ fixture.progress_percent }}%;"
+                                        aria-valuenow="{{ fixture.progress_percent }}"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span class="progress-text">{{ fixture.progress_percent|floatformat:1 }}%</span>
+                            </div>
+                        </span>
                         <span class="action">
                             <button type="button" class="button-1"
                                     data-bs-toggle="modal"
@@ -77,6 +94,7 @@
                 {% endfor %}
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Modal -->
@@ -154,39 +172,74 @@
             const container = document.querySelector('.fixture-items');
             if (!container) return;
             container.innerHTML = '';
-    
+        
             fixtureList.forEach(fixture => {
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('fixture-item');
-    
+        
                 // Nazwa
                 const nameSpan = document.createElement('span');
                 nameSpan.classList.add('fixture-name');
                 nameSpan.textContent = fixture.name;
                 itemDiv.appendChild(nameSpan);
-    
+        
                 // Wszystkich
                 const allCounterSpan = document.createElement('span');
                 allCounterSpan.classList.add('counter-count');
                 allCounterSpan.textContent = fixture.all_counter === null ? '' : fixture.all_counter;
                 itemDiv.appendChild(allCounterSpan);
-
+        
                 // Ostatnia historia
                 const lastHistorySpan = document.createElement('span');
                 lastHistorySpan.classList.add('counter-count');
                 lastHistorySpan.textContent = fixture.last_counterhistory_date ? fixture.last_counterhistory_date : 'Nigdy nie wykonano przeglądu';
                 itemDiv.appendChild(lastHistorySpan);
-    
+        
                 // Od przeglądu
                 const lastMaintSpan = document.createElement('span');
                 lastMaintSpan.classList.add('counter-count');
                 lastMaintSpan.textContent = fixture.last_maint_counter === null ? '' : fixture.last_maint_counter;
                 itemDiv.appendChild(lastMaintSpan);
-
+        
+                // Pasek postępu
+                const progressSpan = document.createElement('span');
+                const progressContainer = document.createElement('div');
+                progressContainer.classList.add('progress-container');
+                progressContainer.setAttribute('data-tooltip', `Limit: ${fixture.last_maint_counter}/${fixture.cycles_limit}`)
+                
+                const progressDiv = document.createElement('div');
+                progressDiv.classList.add('progress');
+                
+                const progressBar = document.createElement('div');
+                progressBar.classList.add('progress-bar');
+                
+                const percent = fixture.progress_percent;
+                
+                if (percent < 70) progressBar.classList.add('bg-success');
+                else if (percent < 90) progressBar.classList.add('bg-warning');
+                else progressBar.classList.add('bg-danger');
+                
+                progressBar.setAttribute('role', 'progressbar');
+                progressBar.style.width = percent + "%";
+                progressBar.setAttribute('aria-valuenow', percent);
+                progressBar.setAttribute('aria-valuemin', "0");
+                progressBar.setAttribute('aria-valuemax', "100");
+                
+                // Tekst procentowy
+                const progressText = document.createElement('span');
+                progressText.classList.add('progress-text');
+                progressText.textContent = percent.toFixed(1) + "%";
+                
+                progressDiv.appendChild(progressBar);
+                progressContainer.appendChild(progressDiv);
+                progressContainer.appendChild(progressText);
+                progressSpan.appendChild(progressContainer);
+                itemDiv.appendChild(progressSpan);
+        
                 // Przycisk "Wyczyść licznik"
                 const actionSpan = document.createElement('span');
                 actionSpan.classList.add('action');
-    
+        
                 const button = document.createElement('button');
                 button.type = "button";
                 button.classList.add('button-1');
@@ -195,7 +248,7 @@
                 button.setAttribute('data-clear-url', fixture.clear_counter_url);
                 button.textContent = "Wyczyść licznik";
                 actionSpan.appendChild(button);
-    
+        
                 itemDiv.appendChild(actionSpan);
                 container.appendChild(itemDiv);
             });
