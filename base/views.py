@@ -14,6 +14,10 @@ from .serializers import CounterSerializer, CounterFromLastMaintSerializer, Fixt
 from .forms import PasswordForm
 
 
+def home_view(request):
+    return redirect('/all_counters/')
+
+
 class CreateUpdateCounter(generics.CreateAPIView):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
