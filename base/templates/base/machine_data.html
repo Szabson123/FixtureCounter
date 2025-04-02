@@ -21,27 +21,21 @@
         <hr>
         <div class="fixture-summary">
             <div class="fixture-item header">
-                <!-- Kolumna nazwy -->
                 <span class="titles">
                     <a href="{% if sort_param == '-name' %}?sort=name{% else %}?sort=-name{% endif %}">
                         Nazwa
                     </a>
                 </span>
-                
-                <!-- Kolumna wszystkich cykli -->
                 <span class="titles">
                     <a href="{% if sort_param == '-all_counter' %}?sort=all_counter{% else %}?sort=-all_counter{% endif %}">
                         Wszystkich
                     </a>
                 </span>
-    
                 <span class="titles">
                     <a href="{% if sort_param == 'last_history' %}?sort=-last_history{% else %}?sort=last_history{% endif %}">
                         Ostatni Przegląd
                     </a>
                 </span>
-                
-                <!-- Kolumna cykli od przeglądu -->
                 <span class="titles">
                     <a href="{% if sort_param == '-last_maint' %}?sort=last_maint{% else %}?sort=-last_maint{% endif %}">
                         Od przeglądu
