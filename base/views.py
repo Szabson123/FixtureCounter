@@ -18,13 +18,69 @@ def home_view(request):
     return redirect('/all_counters/')
 
 
+class CreateMultiCounter(generics.CreateAPIView):
+    queryset = Fixture.objects.all()
+    serializer_class = FixtureSerializer
+    
+    def create(self, request, *args, **kwargs):
+        fixture_name = request.data.get('name')
+        how_much_counter = int(request.data.get('number', 0))
+        
+        if not fixture_name:
+            return Response(
+                {"returnCodeDescription": "Fixture name is required",
+                 "returnCode": "MISSING_NAME"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if how_much_counter <= 0:
+            return Response(
+                {"returnCodeDescription": "Number must be positive",
+                 "returnCode": "INVALID_NUMBER"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        cache_key = f"fixture_request_{fixture_name}"
+        last_request_time = cache.get(cache_key)
+        
+        if last_request_time and (timezone.now() - last_request_time).seconds < 10:
+            return Response(
+                {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
+                 "returnCode": "429"},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
+        cache.set(cache_key, timezone.now(), timeout=10)
+        
+        try:
+            fixture = Fixture.objects.get(name=fixture_name)
+        except Fixture.DoesNotExist:
+            return Response(
+                {"returnCodeDescription": "Fixture not found",
+                 "returnCode": "NOT_FOUND"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        fixture.counter_last_maint.counter += how_much_counter
+        fixture.counter_all.counter += how_much_counter
+        fixture.counter_last_maint.save()
+        fixture.counter_all.save()
+        
+        return Response(
+            {
+                "returnCodeDescription": f"Counters updated successfully. Added {how_much_counter}",
+                "returnCode": "2137",
+            },
+            status=status.HTTP_200_OK
+        )
+
+
 class CreateUpdateCounter(generics.CreateAPIView):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
     
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
-        
         
         if not fixture_name:
             return Response(
