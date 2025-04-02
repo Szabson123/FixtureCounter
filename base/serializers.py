@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Counter, CounterSumFromLastMaint, Fixture
+from .models import Counter, CounterSumFromLastMaint, Fixture, Machine
 
 
 class FixtureSerializer(serializers.ModelSerializer):
@@ -23,3 +23,9 @@ class CounterFromLastMaintSerializer(serializers.ModelSerializer):
     class Meta:
         model = CounterSumFromLastMaint
         fields = ['id', 'fixture']
+
+
+class MachineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Machine
+        fields = ['id', 'machine_id', 'machine_name']

@@ -1,8 +1,14 @@
-from django.urls import path
+from django.urls import path, include
 from .views import *
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'machine', MachineViewSet, basename='machine')
 
 urlpatterns = [
     path('', home_view),
+    path('machine/', include(router.urls)),
+    path('api/test-cors/', test_cors),
     path('add-to-counter/', CreateUpdateCounter.as_view(), name='add_to_counter'),
     path('all_counters/', display_machine_data, name='all_counters'),
     path('clear_counter/<int:fixture_id>/', clear_main_counter, name='clear_main_counter'),

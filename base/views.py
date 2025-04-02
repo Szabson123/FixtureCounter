@@ -9,13 +9,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
-from .models import Fixture, Counter, CounterSumFromLastMaint, CounterHistory, FullCounter
-from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer
+from .models import Fixture, Counter, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
+from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer, MachineSerializer
 from .forms import PasswordForm
 
 
 def home_view(request):
     return redirect('/all_counters/')
+
+from django.http import JsonResponse
+
+def test_cors(request):
+    return JsonResponse({"message": "CORS działa poprawnie"})
 
 
 class CreateUpdateCounter(generics.CreateAPIView):
@@ -24,7 +29,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
     
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
-        
+        machine_name = request.data.get('machine_id')
         
         if not fixture_name:
             return Response(
@@ -65,6 +70,11 @@ class CreateUpdateCounter(generics.CreateAPIView):
             "returnCode": 2137},
             status=status.HTTP_200_OK
         )
+        
+
+class MachineViewSet(viewsets.ModelViewSet):
+    serializer_class = MachineSerializer
+    queryset = Machine.objects.all()
 
 
 def display_machine_data(request):
