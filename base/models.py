@@ -16,6 +16,9 @@ class Fixture(models.Model):
     counter_last_maint = models.ForeignKey(CounterSumFromLastMaint, on_delete=models.CASCADE, null=True, blank=True)
     cycles_limit = models.IntegerField(default=50_000)
     
+    def __str__(self) -> str:
+        return f'{self.name}'
+    
 
 class Counter(models.Model):
     fixture = models.ForeignKey(Fixture, on_delete=models.CASCADE, related_name='counter', null=True, blank=True)
