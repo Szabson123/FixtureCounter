@@ -69,7 +69,7 @@ class CreateMultiCounter(generics.CreateAPIView):
         return Response(
             {
                 "returnCodeDescription": f"Counters updated successfully. Added {how_much_counter}",
-                "returnCode": "2137",
+                "returnCode": 200,
             },
             status=status.HTTP_200_OK
         )
@@ -118,7 +118,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
 
         return Response(
             {"returnCodeDescription": message,
-            "returnCode": 2137},
+            "returnCode": 200},
             status=status.HTTP_200_OK
         )
 
