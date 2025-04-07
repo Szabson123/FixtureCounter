@@ -12,6 +12,7 @@ from django.core.cache import cache
 from .models import Fixture, Counter, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
 from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 from .forms import PasswordForm
+from django_eventstream import send_event
 
 
 def home_view(request):
@@ -26,30 +27,30 @@ def test_cors(request):
 class CreateUpdateCounter(generics.CreateAPIView):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
-    
+
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
         machine_name = request.data.get('machine_id')
-        
+
         if not fixture_name:
             return Response(
                 {"returnCodeDescription": "You didn't pass the name",
-                "returnCode": 1488},
+                 "returnCode": 1488},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         cache_key = f"fixture_request_{fixture_name}"
         last_request_time = cache.get(cache_key)
-        
+
         if last_request_time and (timezone.now() - last_request_time).seconds < 10:
             return Response(
                 {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
-                "returnCode": 429},
+                 "returnCode": 429},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
-        
+
         cache.set(cache_key, timezone.now(), timeout=10)
-        
+
         fixture, created = Fixture.objects.get_or_create(name=fixture_name)
         if created:
             counter = CounterSumFromLastMaint.objects.create(counter=1)
@@ -65,11 +66,18 @@ class CreateUpdateCounter(generics.CreateAPIView):
             fixture.counter_all.save()
             message = "Fixture counter updated in FixtureCycleCounter"
 
+        send_event('fixture-updates', 'message', {
+            "fixture_name": fixture.name,
+            "message": message,
+            "timestamp": timezone.now().isoformat(),
+        })
+
         return Response(
             {"returnCodeDescription": message,
-            "returnCode": 2137},
+             "returnCode": 2137},
             status=status.HTTP_200_OK
         )
+
 
 
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):

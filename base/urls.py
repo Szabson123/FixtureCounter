@@ -1,6 +1,7 @@
 from django.urls import path, include
 from .views import *
 from rest_framework.routers import DefaultRouter
+from django_eventstream import urls as eventstream_urls
 
 router = DefaultRouter()
 router.register(r'machine', MachineViewSet, basename='machine')
@@ -14,4 +15,5 @@ urlpatterns = [
     path('all_counters/', display_machine_data, name='all_counters'),
     path('clear_counter/<int:fixture_id>/', clear_main_counter, name='clear_main_counter'),
     path('fixtures/json/', fixture_data_json, name='fixture_data_json'),
+    path('events/', include(eventstream_urls)),
 ]
