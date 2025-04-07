@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # My
     'base',
+    'map',
 ]
 
 MIDDLEWARE = [

@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
 from .models import Fixture, Counter, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
-from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer, MachineSerializer
+from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 from .forms import PasswordForm
 
 
@@ -70,7 +70,12 @@ class CreateUpdateCounter(generics.CreateAPIView):
             "returnCode": 2137},
             status=status.HTTP_200_OK
         )
-        
+
+
+class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = FullInfoFixtureSerializer
+    queryset = Fixture.objects.all()
+    
 
 class MachineViewSet(viewsets.ModelViewSet):
     serializer_class = MachineSerializer
