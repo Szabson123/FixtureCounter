@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from rest_framework import viewsets, status, generics
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
@@ -22,6 +23,28 @@ from django.http import JsonResponse
 
 def test_cors(request):
     return JsonResponse({"message": "CORS działa poprawnie"})
+
+
+class ClearCounterAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, fixture_id):
+        fixture = get_object_or_404(Fixture, id=fixture_id)
+        input_password = request.data.get('password', '')
+
+        if input_password != settings.CLEAR_COUNTER_PASSWORD:
+            return Response({'error': 'Nieprawidłowe hasło'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if fixture.counter_last_maint and fixture.counter_last_maint.counter != 0:
+            CounterHistory.objects.create(
+                fixture=fixture,
+                counter=fixture.counter_last_maint.counter
+            )
+            fixture.counter_last_maint.counter = 0
+            fixture.counter_last_maint.save()
+            return Response({'status': 'Licznik wyczyszczony'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Brak licznika do wyzerowania'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateUpdateCounter(generics.CreateAPIView):

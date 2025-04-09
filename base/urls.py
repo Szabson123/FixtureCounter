@@ -10,6 +10,7 @@ router.register(r'get_info', GetInfoViewSet, basename='get_info')
 urlpatterns = [
     path('', home_view),
     path('machine/', include(router.urls)),
+    path('api/clear-counter/<int:fixture_id>/', ClearCounterAPIView.as_view(), name='api_clear_counter'),
     path('api/test-cors/', test_cors),
     path('add-to-counter/', CreateUpdateCounter.as_view(), name='add_to_counter'),
     path('all_counters/', display_machine_data, name='all_counters'),

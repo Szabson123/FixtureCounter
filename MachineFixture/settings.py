@@ -41,6 +41,10 @@ INSTALLED_APPS = [
     'map',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+]
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django_grip.GripMiddleware',
@@ -75,7 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'MachineFixture.wsgi.application'
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = [
     'DELETE',
