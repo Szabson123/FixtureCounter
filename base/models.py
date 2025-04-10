@@ -33,3 +33,7 @@ class CounterHistory(models.Model):
     def __str__(self):
         return f'{self.fixture.name}' if self.fixture else 'No Fixture'
     
+
+class Machine(models.Model):
+    machine_id = models.CharField(max_length=255)
+    machine_name = models.CharField(max_length=255)

@@ -34,11 +34,21 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_spectacular',
+    'corsheaders',
+    'django_eventstream',
+    'django_filters',
     # My
     'base',
+    'map',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django_grip.GripMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -49,6 +59,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+EVENTSTREAM_ALLOW_ORIGIN = '*'
 
 ROOT_URLCONF = 'MachineFixture.urls'
 
@@ -69,6 +81,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MachineFixture.wsgi.application'
+
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 DATABASES = {
     'default': {
@@ -121,3 +143,12 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 CSRF_TRUSTED_ORIGINS = [
     'http://10.140.113.33',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+        'rest_framework.filters.SearchFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
