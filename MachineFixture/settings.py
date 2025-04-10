@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'corsheaders',
     'django_eventstream',
+    'django_filters',
     # My
     'base',
     'map',
@@ -135,3 +136,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+        'rest_framework.filters.SearchFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}

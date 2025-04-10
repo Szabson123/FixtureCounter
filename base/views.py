@@ -3,17 +3,21 @@ from django.urls import reverse
 from django.http import JsonResponse
 from django.db.models import F, OuterRef, Subquery
 from django.utils import timezone
+from django.db.models import F, ExpressionWrapper, FloatField, Subquery, OuterRef
+from django.db.models.functions import Cast
+from django.conf import settings
+from django.core.cache import cache
+from django_eventstream import send_event
 
 from rest_framework import viewsets, status, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from django.conf import settings
-from django.core.cache import cache
-from .models import Fixture, Counter, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
-from .serializers import CounterSerializer, CounterFromLastMaintSerializer, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
+
+from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
+from .serializers import FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 from .forms import PasswordForm
-from django_eventstream import send_event
+
 
 
 def home_view(request):
@@ -102,12 +106,34 @@ class CreateUpdateCounter(generics.CreateAPIView):
         )
 
 
-
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FullInfoFixtureSerializer
-    queryset = Fixture.objects.all()
-    
 
+    def get_queryset(self):
+        last_maint_date_subquery = CounterHistory.objects.filter(
+            fixture=OuterRef('pk')
+        ).order_by('-date').values('date')[:1]
+
+        return Fixture.objects.annotate(
+            counter_all_value=F('counter_all__counter'),
+            counter_last_maint_value=F('counter_last_maint__counter'),
+            last_maint_date=Subquery(last_maint_date_subquery),
+            limit_procent=ExpressionWrapper(
+                Cast(F('counter_last_maint__counter'), FloatField()) * 100.0 / F('cycles_limit'),
+                output_field=FloatField()
+            ),
+        )
+
+    ordering_fields = [
+        'name',
+        'counter_all_value',
+        'counter_last_maint_value',
+        'last_maint_date',
+        'limit_procent',
+    ]
+    search_fields = ['name']
+    
+    
 class MachineViewSet(viewsets.ModelViewSet):
     serializer_class = MachineSerializer
     queryset = Machine.objects.all()
