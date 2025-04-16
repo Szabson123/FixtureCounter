@@ -129,7 +129,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
         if last_request_time and (timezone.now() - last_request_time).seconds < 10:
             return Response(
                 {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
-                 "returnCode": 429},
+                "returnCode": 429},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 

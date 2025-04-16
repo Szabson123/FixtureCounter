@@ -35,10 +35,11 @@ class FullInfoFixtureSerializer(serializers.ModelSerializer):
     counter_last_maint = serializers.FloatField(source='counter_last_maint_value', read_only=True)
     last_maint_date = serializers.DateTimeField(read_only=True)
     limit_procent = serializers.SerializerMethodField()
+    cycles_limit = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Fixture
-        fields = ['id', 'name', 'counter_all', 'counter_last_maint', 'last_maint_date', 'limit_procent']
+        fields = ['id', 'name', 'counter_all', 'counter_last_maint', 'last_maint_date', 'limit_procent', 'cycles_limit']
 
     def get_limit_procent(self, obj):
         if obj.limit_procent is not None:
