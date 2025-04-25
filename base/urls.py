@@ -14,9 +14,10 @@ urlpatterns = [
     path('api/clear-counter/<int:fixture_id>/', ClearCounterAPIView.as_view(), name='api_clear_counter'),
     path('api/events/', include(eventstream_urls)),
     path('api/test-cors/', test_cors),
+    path('api/test-clear/<int:fixture_id>/', test_clear_counter),
     
-    path('add-to-counter/', CreateUpdateCounter.as_view(), name='add_to_counter'),
-    path('add-multi-to-counter/', CreateMultiCounter.as_view(), name='add-multi-to-counter'),
+    path('api/add-to-counter/', CreateUpdateCounter.as_view(), name='add_to_counter'),
+    path('api/add-multi-to-counter/', CreateMultiCounter.as_view(), name='add-multi-to-counter'),
     
     path('all_counters/', display_machine_data, name='all_counters'),
     path('clear_counter/<int:fixture_id>/', clear_main_counter, name='clear_main_counter'),

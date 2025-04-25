@@ -8,28 +8,46 @@ from django.db.models.functions import Cast
 from django.conf import settings
 from django.core.cache import cache
 from django_eventstream import send_event
+from django.utils.decorators import method_decorator
 
 from rest_framework import viewsets, status, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.decorators import permission_classes, api_view, authentication_classes
 
 from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
 from .serializers import FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 from .forms import PasswordForm
+from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework.authentication import SessionAuthentication
 
 
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return
 
 def home_view(request):
     return redirect('/all_counters/')
 
 from django.http import JsonResponse
 
+
+@api_view(['POST'])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([AllowAny])
+def test_clear_counter(request, fixture_id):
+    return Response({'status': f'Fixture {fixture_id} zresetowany'}, status=status.HTTP_200_OK)
+
 def test_cors(request):
     return JsonResponse({"message": "CORS działa poprawnie"})
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ClearCounterAPIView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [AllowAny]
 
     def post(self, request, fixture_id):
@@ -111,6 +129,8 @@ class CreateMultiCounter(generics.CreateAPIView):
 class CreateUpdateCounter(generics.CreateAPIView):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
+    
+    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
@@ -127,6 +147,11 @@ class CreateUpdateCounter(generics.CreateAPIView):
         last_request_time = cache.get(cache_key)
 
         if last_request_time and (timezone.now() - last_request_time).seconds < 10:
+            send_event('fixture-updates', 'message', {
+                "fixture_name": fixture_name,
+                "message": "Too soon – request ignored",
+                "timestamp": timezone.now().isoformat(),
+            })
             return Response(
                 {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
                 "returnCode": 429},
