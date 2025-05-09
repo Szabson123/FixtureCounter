@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # My
     'base',
     'map',
+    'goldensample',
 ]
 
 CORS_ALLOWED_ORIGINS = [
