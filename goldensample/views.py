@@ -2,9 +2,8 @@ from .models import *
 from .serializers import *
 
 from rest_framework.response import Response
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
-from rest_framework import generics
 
 
 class GoldenSampleCreateView(APIView):
@@ -97,6 +96,24 @@ class GoldenSampleCheckView(APIView):
         }, status=status.HTTP_200_OK)
         
 
-class GoldenSampleListView(generics.ListAPIView):
-    queryset = GoldenSample.objects.select_related('variant__group').all()
-    serializer_class = GetFullInfoSerializer
+class GroupFullListView(generics.ListAPIView):
+    queryset = VariantCode.objects.all().select_related('group').prefetch_related('goldensample_set')
+    serializer_class = VariantFullSerializer
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['code']
+    
+    
+class GoldenSampleTypeCheckView(APIView):
+    def post(self, request):
+        serializer = GoldenSampleCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        sn_list = serializer.validated_data['goldens']
+
+        results = {}
+
+        for sn in sn_list:
+            sample = GoldenSample.objects.filter(golden_code=sn).first()
+            results[sn] = sample.type_golden if sample else None
+
+        return Response({"result": results}, status=status.HTTP_200_OK)

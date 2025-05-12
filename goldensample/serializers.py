@@ -15,21 +15,21 @@ class GoldenSampleCheckSerializer(serializers.Serializer):
     )
     
 
-class GroupVariantCodeSerializer(serializers.ModelSerializer):
+class GroupMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupVariantCode
-        fields = ['name']
+        fields = ['id', 'name']
 
-class VariantCodeSerializer(serializers.ModelSerializer):
-    group = GroupVariantCodeSerializer()
+class GoldenSampleSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoldenSample
+        fields = ['id', 'golden_code', 'type_golden', 'expire_date']
+
+
+class VariantFullSerializer(serializers.ModelSerializer):
+    group = GroupMiniSerializer(read_only=True)
+    goldens = GoldenSampleSimpleSerializer(source='goldensample_set', many=True)
 
     class Meta:
         model = VariantCode
-        fields = ['code', 'group']
-
-class GetFullInfoSerializer(serializers.ModelSerializer):
-    variant = VariantCodeSerializer()
-
-    class Meta:
-        model = GoldenSample
-        fields = ['id', 'golden_code', 'type_golden', 'expire_date', 'variant']
+        fields = ['code', 'group', 'goldens']
