@@ -2,6 +2,6 @@ from django.contrib import admin
 from .models import *
 
 
-admin.site.register(ProductFamily)
+admin.site.register(GroupVariantCode)
 admin.site.register(VariantCode)
-admin.site.register(GoldenSampleCode)
+admin.site.register(GoldenSample)

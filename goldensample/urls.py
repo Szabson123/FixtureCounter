@@ -1,14 +1,10 @@
-from rest_framework.routers import DefaultRouter
-from django.urls import path, include
-from .views import ProductFamilyViewSet, VariantCodeViewSet, GoldenSampleCodeViewSet, VerifyGoldenSamplesView
+from django.urls import path
+from .views import GoldenSampleCreateView, GoldenSampleCheckView, GoldenSampleListView
 
-router = DefaultRouter()
-router.register(r'families', ProductFamilyViewSet, basename='family')
-router.register(r'variants', VariantCodeViewSet, basename='variant')
-router.register(r'goldens', GoldenSampleCodeViewSet, basename='golden')
 
 urlpatterns = [
-    path('', include(router.urls)),
-    
-    path('verify/', VerifyGoldenSamplesView.as_view(), name='verify-goldens'),
+    path('add-golden/', GoldenSampleCreateView.as_view(), name='create_golden_sample'),
+    path('check/', GoldenSampleCheckView.as_view(), name='check_golden_sample'),
+    path('goldens-list/', GoldenSampleListView.as_view(), name='golden_sample_list'),
+
 ]

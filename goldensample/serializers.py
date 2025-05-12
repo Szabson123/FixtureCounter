@@ -1,42 +1,35 @@
+from .models import *
 from rest_framework import serializers
-from .models import ProductFamily, VariantCode, GoldenSampleCode
 
 
-class GoldenSampleCodeSerializer(serializers.ModelSerializer):
+class GoldenSampleCreateSerializer(serializers.Serializer):
+    sn = serializers.CharField()
+    type_golden = serializers.ChoiceField(choices=GoldenTypes)
+    variant_code = serializers.CharField()
+    expire_date = serializers.DateField(required=False)
+    
+
+class GoldenSampleCheckSerializer(serializers.Serializer):
+    goldens = serializers.ListField(
+        child=serializers.CharField(), allow_empty=False
+    )
+    
+
+class GroupVariantCodeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GoldenSampleCode
-        fields = ['id', 'sample_code']
-
+        model = GroupVariantCode
+        fields = ['name']
 
 class VariantCodeSerializer(serializers.ModelSerializer):
-    golden_samples = GoldenSampleCodeSerializer(source='goldensamplecode_set', many=True, read_only=True)
+    group = GroupVariantCodeSerializer()
 
     class Meta:
         model = VariantCode
-        fields = ['id', 'code', 'golden_samples']
+        fields = ['code', 'group']
 
-
-class ProductFamilySerializer(serializers.ModelSerializer):
-    variants = VariantCodeSerializer(source='variantcode_set', many=True, read_only=True)
+class GetFullInfoSerializer(serializers.ModelSerializer):
+    variant = VariantCodeSerializer()
 
     class Meta:
-        model = ProductFamily
-        fields = ['id', 'name', 'variants']
-        
-    
-class ProductFamilyCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductFamily
-        fields = ['id', 'name']
-
-
-class VariantCodeCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VariantCode
-        fields = ['id', 'code', 'product_family']
-
-
-class GoldenSampleCodeCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GoldenSampleCode
-        fields = ['id', 'sample_code', 'variant_code']
+        model = GoldenSample
+        fields = ['id', 'golden_code', 'type_golden', 'expire_date', 'variant']

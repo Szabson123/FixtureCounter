@@ -11,6 +11,6 @@ urlpatterns = [
     
     path('', include('base.urls')),
     path('map/', include('map.urls')),
-    path('api/goldensamples/', include('goldensample.urls'))
+    path('api/golden-samples/', include('goldensample.urls'))
     
 ]

@@ -1,68 +1,102 @@
-from rest_framework import viewsets, status
-from .models import ProductFamily, VariantCode, GoldenSampleCode
-from .serializers import (
-    ProductFamilySerializer, ProductFamilyCreateSerializer,
-    VariantCodeSerializer, VariantCodeCreateSerializer,
-    GoldenSampleCodeSerializer, GoldenSampleCodeCreateSerializer
-)
+from .models import *
+from .serializers import *
 
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import viewsets, status
+from rest_framework.views import APIView
+from rest_framework import generics
 
 
-class ProductFamilyViewSet(viewsets.ModelViewSet):
-    queryset = ProductFamily.objects.all()
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return ProductFamilyCreateSerializer
-        return ProductFamilySerializer
-
-
-class VariantCodeViewSet(viewsets.ModelViewSet):
-    queryset = VariantCode.objects.select_related('product_family').all()
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return VariantCodeCreateSerializer
-        return VariantCodeSerializer
-
-
-class GoldenSampleCodeViewSet(viewsets.ModelViewSet):
-    queryset = GoldenSampleCode.objects.select_related('variant_code').all()
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return GoldenSampleCodeCreateSerializer
-        return GoldenSampleCodeSerializer
-    
-
-class VerifyGoldenSamplesView(APIView):
+class GoldenSampleCreateView(APIView):
     def post(self, request):
-        family_name = request.data.get('family_name')
-        variant_code = request.data.get('variant_code')
-        golden_list = request.data.get('goldens', [])
+        serializer = GoldenSampleCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        if not all([family_name, variant_code, isinstance(golden_list, list)]):
-            return Response({"error": "Wymagane pola: family_name, variant_code, goldens (jako lista)."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        sn = data['sn']
+        type_golden = data['type_golden']
+        variant_code = data['variant_code']
+        expire_date = data.get('expire_date')
 
-        try:
-            family = ProductFamily.objects.get(name=family_name)
-        except ProductFamily.DoesNotExist:
-            return Response({"error": f"Brak rodziny o nazwie '{family_name}'."},
-                            status=status.HTTP_404_NOT_FOUND)
+        if len(sn) < 13:
+            return Response({"error": "SN za krótki"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            variant = VariantCode.objects.get(product_family=family, code=variant_code)
-        except VariantCode.DoesNotExist:
-            return Response({"error": f"Brak wariantu '{variant_code}' w rodzinie '{family_name}'."},
-                            status=status.HTTP_404_NOT_FOUND)
+        golden_code = sn
+        group_code = sn[12:]
 
-        db_goldens = set(
-            GoldenSampleCode.objects.filter(variant_code=variant)
-            .values_list('sample_code', flat=True)
+        group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
+
+        variant, _ = VariantCode.objects.get_or_create(code=variant_code, group=group)
+
+        existing = GoldenSample.objects.filter(golden_code=golden_code, variant=variant).first()
+        if existing:
+            return Response({
+                "message": "GoldenSample już istnieje",
+                "id": existing.id
+            }, status=status.HTTP_200_OK)
+
+        golden_sample = GoldenSample.objects.create(
+            variant=variant,
+            golden_code=golden_code,
+            type_golden=type_golden,
+            expire_date=expire_date if expire_date else None
         )
 
-        result = {code: (code in db_goldens) for code in golden_list}
-        return Response(result)
+        return Response({
+            "message": "GoldenSample utworzony",
+            "id": golden_sample.id,
+            "golden_code": golden_sample.golden_code,
+            "type": golden_sample.type_golden
+        }, status=status.HTTP_201_CREATED)
+        
+        
+class GoldenSampleCheckView(APIView):
+    def post(self, request):
+        serializer = GoldenSampleCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        sn_list = serializer.validated_data['goldens']
+
+        if not sn_list:
+            return Response({"error": "Lista SN-ów jest pusta."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group_codes = {sn[12:] for sn in sn_list if len(sn) >= 13}
+        except Exception:
+            return Response({"error": "Niepoprawny format SN."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(group_codes) != 1:
+            return Response(
+                {"error": "Nie wszystkie goldeny należą do tej samej grupy."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        group_code = group_codes.pop()
+
+        try:
+            group = GroupVariantCode.objects.get(name=group_code)
+        except GroupVariantCode.DoesNotExist:
+            return Response({"error": "Podana grupa nie istnieje."}, status=status.HTTP_400_BAD_REQUEST)
+
+        variants = VariantCode.objects.filter(group=group)
+        results = {}
+
+        for sn in sn_list:
+            if len(sn) < 20:
+                results[sn] = False
+                continue
+
+            exists = GoldenSample.objects.filter(
+                golden_code=sn,
+                variant__in=variants
+            ).exists()
+
+            results[sn] = exists
+
+        return Response({
+            "result": results
+        }, status=status.HTTP_200_OK)
+        
+
+class GoldenSampleListView(generics.ListAPIView):
+    queryset = GoldenSample.objects.select_related('variant__group').all()
+    serializer_class = GetFullInfoSerializer
