@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
 
+from datetime import date
+
 
 class GoldenSampleCreateView(APIView):
     def post(self, request):
@@ -15,6 +17,7 @@ class GoldenSampleCreateView(APIView):
         sn = data['sn']
         type_golden = data['type_golden']
         variant_code = data['variant_code']
+        variant_name = data.get('variant_name')
         expire_date = data.get('expire_date')
 
         if len(sn) < 13:
@@ -24,8 +27,17 @@ class GoldenSampleCreateView(APIView):
         group_code = sn[12:]
 
         group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
+        
+        if VariantCode.objects.filter(code=variant_code, group=group).exists():
+            return Response({
+                "error": "VariantCode już istnieje w tej grupie"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        variant, _ = VariantCode.objects.get_or_create(code=variant_code, group=group)
+        variant, created = VariantCode.objects.get_or_create(code=variant_code, group=group)
+
+        if created and variant_name:
+            variant.name = variant_name
+            variant.save()
 
         existing = GoldenSample.objects.filter(golden_code=golden_code, variant=variant).first()
         if existing:
@@ -40,12 +52,18 @@ class GoldenSampleCreateView(APIView):
             type_golden=type_golden,
             expire_date=expire_date if expire_date else None
         )
+        
+        counter = CounterOnGolden.objects.create(
+            golden_sample=golden_sample,
+            counter=0
+        )
 
         return Response({
             "message": "GoldenSample utworzony",
             "id": golden_sample.id,
             "golden_code": golden_sample.golden_code,
-            "type": golden_sample.type_golden
+            "type": golden_sample.type_golden,
+            "counter": counter.counter
         }, status=status.HTTP_201_CREATED)
         
         
@@ -84,12 +102,15 @@ class GoldenSampleCheckView(APIView):
                 results[sn] = False
                 continue
 
-            exists = GoldenSample.objects.filter(
+            sample = GoldenSample.objects.filter(
                 golden_code=sn,
                 variant__in=variants
-            ).exists()
+            ).first()
 
-            results[sn] = exists
+            if sample and sample.expire_date and sample.expire_date > date.today():
+                results[sn] = True
+            else:
+                results[sn] = False
 
         return Response({
             "result": results
@@ -101,7 +122,7 @@ class GroupFullListView(generics.ListAPIView):
     serializer_class = VariantFullSerializer
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['code']
+    search_fields = ['code', 'name']
     
     
 class GoldenSampleTypeCheckView(APIView):
@@ -114,6 +135,31 @@ class GoldenSampleTypeCheckView(APIView):
 
         for sn in sn_list:
             sample = GoldenSample.objects.filter(golden_code=sn).first()
-            results[sn] = sample.type_golden if sample else None
+            
+            if sample:
+                try:
+                    counter = sample.counterongolden
+                    counter.counter += 1
+                    counter.save()
+                except CounterOnGolden.DoesNotExist:
+                    CounterOnGolden.objects.create(golden_sample=sample, counter=1)
+
+                results[sn] = sample.type_golden
+            else:
+                results[sn] = None
 
         return Response({"result": results}, status=status.HTTP_200_OK)
+    
+
+class GoldenSampleAdminView(viewsets.ModelViewSet):
+    queryset = GoldenSample.objects.all().select_related('counterongolden')
+    serializer_class = GoldenSampleDetailedSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['expire_date']
+    ordering = ['expire_date']
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )

@@ -18,9 +18,18 @@ class GroupVariantCode(models.Model):
 class VariantCode(models.Model):
     code = models.CharField(max_length=255)
     group = models.ForeignKey(GroupVariantCode, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.code
+    
+    @property
+    def counter(self):
+        return sum(
+            g.counterongolden.counter
+            for g in self.goldensample_set.all()
+            if hasattr(g, 'counterongolden')
+        )
 
 
 class GoldenSample(models.Model):
@@ -31,3 +40,8 @@ class GoldenSample(models.Model):
 
     def __str__(self):
         return f"{self.golden_code} ({self.type_golden})"
+    
+
+class CounterOnGolden(models.Model):
+    golden_sample = models.OneToOneField(GoldenSample, on_delete=models.CASCADE)
+    counter = models.IntegerField(default=0)
