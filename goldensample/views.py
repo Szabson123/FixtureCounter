@@ -29,13 +29,16 @@ class GoldenSampleCreateView(APIView):
         variant = VariantCode.objects.filter(code=variant_code).first()
 
         if variant:
-            if variant.group.name.strip().lower() != group_code.lower():
+            if not variant.group:
+                group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
+                variant.group = group
+                variant.save()
+            elif variant.group.name.strip().lower() != group_code.lower():
                 return Response({
                     "error": "Kod SN nie pasuje do grupy przypisanej do tego wariantu.",
                     "expected_group": variant.group.name,
                     "sn_group": group_code
                 }, status=status.HTTP_400_BAD_REQUEST)
-            group = variant.group
             
         else:
             group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
