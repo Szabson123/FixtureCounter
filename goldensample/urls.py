@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import GoldenSampleCreateView, GoldenSampleCheckView, GroupFullListView, GoldenSampleTypeCheckView, GoldenSampleAdminView
+from .views import GoldenSampleCreateView, GoldenSampleCheckView, GroupFullListView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantSampleAdminView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'goldens/manage', GoldenSampleAdminView, basename='golden-manage')
+router.register(r'variant/manage', VariantSampleAdminView, basename='variant-manage')
 
 urlpatterns = [
     path('add-golden/', GoldenSampleCreateView.as_view(), name='create_golden_sample'),

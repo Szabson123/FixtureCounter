@@ -17,7 +17,7 @@ class GroupVariantCode(models.Model):
 
 class VariantCode(models.Model):
     code = models.CharField(max_length=255)
-    group = models.ForeignKey(GroupVariantCode, on_delete=models.CASCADE)
+    group = models.ForeignKey(GroupVariantCode, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):

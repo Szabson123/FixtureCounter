@@ -24,20 +24,26 @@ class GoldenSampleCreateView(APIView):
             return Response({"error": "SN za krótki"}, status=status.HTTP_400_BAD_REQUEST)
 
         golden_code = sn
-        group_code = sn[12:]
+        group_code = str(sn[12:]).strip()
 
-        group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
-        
-        if VariantCode.objects.filter(code=variant_code, group=group).exists():
-            return Response({
-                "error": "VariantCode już istnieje w tej grupie"
-            }, status=status.HTTP_400_BAD_REQUEST)
+        variant = VariantCode.objects.filter(code=variant_code).first()
 
-        variant, created = VariantCode.objects.get_or_create(code=variant_code, group=group)
-
-        if created and variant_name:
-            variant.name = variant_name
-            variant.save()
+        if variant:
+            if variant.group.name.strip().lower() != group_code.lower():
+                return Response({
+                    "error": "Kod SN nie pasuje do grupy przypisanej do tego wariantu.",
+                    "expected_group": variant.group.name,
+                    "sn_group": group_code
+                }, status=status.HTTP_400_BAD_REQUEST)
+            group = variant.group
+            
+        else:
+            group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
+            variant = VariantCode.objects.create(
+                code=variant_code,
+                group=group,
+                name=variant_name
+            )
 
         existing = GoldenSample.objects.filter(golden_code=golden_code, variant=variant).first()
         if existing:
@@ -50,9 +56,9 @@ class GoldenSampleCreateView(APIView):
             variant=variant,
             golden_code=golden_code,
             type_golden=type_golden,
-            expire_date=expire_date if expire_date else None
+            expire_date=expire_date or None
         )
-        
+
         counter = CounterOnGolden.objects.create(
             golden_sample=golden_sample,
             counter=0
@@ -163,3 +169,11 @@ class GoldenSampleAdminView(viewsets.ModelViewSet):
             {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+        
+
+class VariantSampleAdminView(viewsets.ModelViewSet):
+    queryset = VariantCode.objects.all()
+    serializer_class = VariantShortSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['code']
+    ordering = ['code']

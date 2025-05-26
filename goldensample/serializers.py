@@ -27,10 +27,19 @@ class GroupMiniSerializer(serializers.ModelSerializer):
         model = GroupVariantCode
         fields = ['id', 'name']
 
+
 class GoldenSampleSimpleSerializer(serializers.ModelSerializer):
+    counter = serializers.SerializerMethodField()
+
     class Meta:
         model = GoldenSample
-        fields = ['id', 'golden_code', 'type_golden', 'expire_date']
+        fields = ['id', 'golden_code', 'type_golden', 'expire_date', 'counter']
+
+    def get_counter(self, obj):
+        try:
+            return obj.counterongolden.counter
+        except:
+            return None
 
 
 class VariantFullSerializer(serializers.ModelSerializer):
@@ -40,15 +49,23 @@ class VariantFullSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VariantCode
-        fields = ['code', 'group', 'goldens', 'counter']
+        fields = ['code', 'name', 'group', 'goldens', 'counter']
+
+
+class VariantShortSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = VariantCode
+        fields = ['code', 'name']
         
         
 class GoldenSampleDetailedSerializer(serializers.ModelSerializer):
     counter = serializers.SerializerMethodField()
+    variant = VariantShortSerializer()
 
     class Meta:
         model = GoldenSample
-        fields = ['id', 'golden_code', 'type_golden', 'expire_date', 'counter']
+        fields = ['id', 'golden_code', 'expire_date', 'type_golden', 'counter', 'variant']
 
     def get_counter(self, obj):
         try:
