@@ -92,7 +92,7 @@ class GoldenSampleCheckView(APIView):
 
         if len(group_codes) != 1:
             return Response(
-                {"error": "Nie wszystkie goldeny należą do tej samej grupy."},
+                {"error": "Nie wszystkie SN-y należą do tej samej grupy."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -103,27 +103,22 @@ class GoldenSampleCheckView(APIView):
         except GroupVariantCode.DoesNotExist:
             return Response({"error": "Podana grupa nie istnieje."}, status=status.HTTP_400_BAD_REQUEST)
 
-        variants = VariantCode.objects.filter(group=group)
+        variants_in_group = VariantCode.objects.filter(group=group)
+        today = date.today()
         results = {}
 
         for sn in sn_list:
-            if len(sn) < 20:
-                results[sn] = False
-                continue
-
             sample = GoldenSample.objects.filter(
                 golden_code=sn,
-                variant__in=variants
+                variant__in=variants_in_group
             ).first()
 
-            if sample and sample.expire_date and sample.expire_date > date.today():
+            if sample and sample.expire_date and sample.expire_date > today:
                 results[sn] = True
             else:
                 results[sn] = False
 
-        return Response({
-            "result": results
-        }, status=status.HTTP_200_OK)
+        return Response({"result": results}, status=status.HTTP_200_OK)
         
 
 class GroupFullListView(generics.ListAPIView):
