@@ -4,6 +4,7 @@ from .serializers import *
 from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
+from django.utils.timezone import now
 
 from datetime import date
 
@@ -117,7 +118,10 @@ class GoldenSampleCheckView(APIView):
                 results[sn] = True
             else:
                 results[sn] = False
-
+                
+        group.last_time_tested = now()
+        group.save()
+          
         return Response({"result": results}, status=status.HTTP_200_OK)
         
 

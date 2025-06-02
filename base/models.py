@@ -35,5 +35,10 @@ class CounterHistory(models.Model):
     
 
 class Machine(models.Model):
-    machine_id = models.CharField(max_length=255)
+    machine_id = models.CharField(max_length=255, null=True, blank=True)
     machine_name = models.CharField(max_length=255)
+
+
+class MachineCondition(models.Model):
+    machine = models.OneToOneField(Machine, on_delete=models.CASCADE)
+    last_variant = models.CharField(max_length=255, null=True, blank=True)

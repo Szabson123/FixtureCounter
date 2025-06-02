@@ -156,3 +156,7 @@ REST_FRAMEWORK = {
 }
 
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+
+EVENTSTREAM_CHANNELS = {
+    "fixture-updates": lambda request: True,
+}

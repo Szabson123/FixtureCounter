@@ -16,14 +16,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view, authentication_classes
 
-from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine
+from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine, MachineCondition
 from .serializers import FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
-from .forms import PasswordForm
 from django.views.decorators.csrf import csrf_exempt
 
+from goldensample.models import GroupVariantCode, VariantCode
 from rest_framework.authentication import SessionAuthentication
 
-
+from datetime import timedelta
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
@@ -134,7 +134,11 @@ class CreateUpdateCounter(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
+        
         machine_name = request.data.get('machine_id')
+        variant_info = request.data.get('variant')
+        
+        sn = request.data.get('serial_number')
 
         if not fixture_name:
             return Response(
@@ -154,7 +158,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
             })
             return Response(
                 {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
-                "returnCode": 429},
+                 "returnCode": 429},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
@@ -180,12 +184,40 @@ class CreateUpdateCounter(generics.CreateAPIView):
             "message": message,
             "timestamp": timezone.now().isoformat(),
         })
+        
+        # Logika SN – tylko jeśli SN podany i długi
+        if sn and len(sn) >= 13:
+            
+            group_code = str(sn[12:]).strip()
+            reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"
+            reason = None
+            machine_block = False
 
-        return Response(
-            {"returnCodeDescription": message,
-            "returnCode": 200},
-            status=status.HTTP_200_OK
-        )
+            try:
+                group = GroupVariantCode.objects.get(name=group_code)
+                if group.last_time_tested:
+                    time_diff = timezone.now() - group.last_time_tested
+                    if time_diff > timedelta(hours=8):
+                        machine_block = True
+                        reason = reason_8
+            except GroupVariantCode.DoesNotExist:
+                machine_block = True
+                reason = reason_8
+
+            return Response(
+                {"returnCodeDescription": message,
+                 "returnCode": 200,
+                 "machineBlock": machine_block,
+                 "reason": reason},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Jeśli brak SN, to tylko logika fixture bez blokady
+            return Response(
+                {"returnCodeDescription": message,
+                 "returnCode": 200},
+                status=status.HTTP_200_OK
+            )
 
 
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -220,150 +252,3 @@ class MachineViewSet(viewsets.ModelViewSet):
     serializer_class = MachineSerializer
     queryset = Machine.objects.all()
 
-
-def display_machine_data(request):
-    latest_counterhistory_subquery = CounterHistory.objects.filter(
-        fixture=OuterRef('pk')
-    ).order_by('-date').values('date')[:1]
-
-    fixtures = (
-        Fixture.objects.all()
-        .select_related('counter_last_maint', 'counter_all')
-        .annotate(last_counterhistory_date=Subquery(latest_counterhistory_subquery))
-    )
-
-    sort_param = request.GET.get('sort')
-
-    valid_sorts = {
-        'name': 'name',
-        '-name': '-name',
-        'all_counter': 'counter_all__counter',
-        '-all_counter': '-counter_all__counter',
-        'last_maint': 'counter_last_maint__counter',
-        '-last_maint': '-counter_last_maint__counter',
-        'last_history': 'last_counterhistory_date',
-        '-last_history': '-last_counterhistory_date',
-    }
-
-    if sort_param in valid_sorts:
-        fixtures = fixtures.order_by(valid_sorts[sort_param])
-    else:
-        fixtures = fixtures.order_by('-counter_last_maint__counter')
-
-    fixture_data = []
-    for fixture in fixtures:
-        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else 0
-        all_value = fixture.counter_all.counter if fixture.counter_all else None
-
-        last_date_obj = fixture.last_counterhistory_date
-
-        last_date_formatted = last_date_obj.strftime("%Y-%m-%d") if last_date_obj else "Nigdy nie wykonano przeglądu" 
-
-        progress_percent = (last_maint_value / fixture.cycles_limit * 100) if fixture.cycles_limit else 0
-        progress_percent = min(progress_percent, 100)
-
-        fixture_data.append({
-            'name': fixture.name,
-            'last_maint_counter': last_maint_value,
-            'all_counter': all_value,
-            'last_counterhistory_date': last_date_formatted,
-            'clear_counter_url': reverse('clear_main_counter', args=[fixture.id]),
-            'cycles_limit': fixture.cycles_limit,
-            'progress_percent': round(progress_percent, 2),
-            'tooltip_text': f"Limit: {last_maint_value}/{fixture.cycles_limit}",
-        })
-
-    form = PasswordForm()
-    return render(request, 'base/machine_data.html', {
-        'fixture_data': fixture_data,
-        'form': form,
-        'sort_param': sort_param,
-    })
-
-
-def clear_main_counter(request, fixture_id):
-    fixture = get_object_or_404(Fixture, id=fixture_id)
-    fixtures = Fixture.objects.all()
-
-    if request.method == 'POST':
-        form = PasswordForm(request.POST)
-        if form.is_valid():
-            input_password = form.cleaned_data['password']
-            if input_password == settings.CLEAR_COUNTER_PASSWORD:
-                if fixture.counter_last_maint and fixture.counter_last_maint.counter != 0:
-                    CounterHistory.objects.create(
-                        fixture=fixture,
-                        counter=fixture.counter_last_maint.counter
-                    )
-                    fixture.counter_last_maint.counter = 0
-                    fixture.counter_last_maint.save()
-                else:
-                    print("Brak licznika do wyzerowania")
-            else:
-                print("Nieprawidłowe hasło")
-                return redirect('all_counters')
-            
-        return redirect('all_counters')
-    else:
-        form = PasswordForm()
-
-    return render(request, 'base/machine_data.html', {
-        'fixture_data': fixtures,
-        'form': form
-    })
-
-# AJAX
-def fixture_data_json(request):
-    sort_param = request.GET.get('sort')
-
-    latest_history_subquery = CounterHistory.objects.filter(
-        fixture=OuterRef('pk')
-    ).order_by('-date').values('date')[:1]
-
-    fixtures = (
-        Fixture.objects.all()
-        .select_related('counter_last_maint', 'counter_all')
-        .annotate(last_history_date=Subquery(latest_history_subquery))
-    )
-
-    valid_sorts = {
-        'name': 'name',
-        '-name': '-name',
-        'all_counter': 'counter_all__counter',
-        '-all_counter': '-counter_all__counter',
-        'last_maint': 'counter_last_maint__counter',
-        '-last_maint': '-counter_last_maint__counter',
-        'last_history': 'last_history_date',
-        '-last_history': '-last_history_date',
-    }
-    
-    if sort_param in valid_sorts:
-        fixtures = fixtures.order_by(valid_sorts[sort_param])
-    else:
-        fixtures = fixtures.order_by('name')
-    
-    fixture_data = []
-    for fixture in fixtures:
-        last_maint_value = fixture.counter_last_maint.counter if fixture.counter_last_maint else 0
-        all_value = fixture.counter_all.counter if fixture.counter_all else None
-
-        last_history_value = fixture.last_history_date
-
-        last_history_formatted = last_history_value.strftime("%Y-%m-%d") if last_history_value else None
-
-        progress_percent = (last_maint_value / fixture.cycles_limit * 100) if fixture.cycles_limit else 0
-        progress_percent = min(progress_percent, 100)
-
-        fixture_data.append({
-            'id': fixture.id,
-            'name': fixture.name,
-            'last_maint_counter': last_maint_value,
-            'all_counter': all_value,
-            'last_counterhistory_date': last_history_formatted,
-            'clear_counter_url': reverse('clear_main_counter', args=[fixture.id]),
-            'cycles_limit': fixture.cycles_limit,
-            'progress_percent': round(progress_percent, 2),
-            'tooltip_text': f"Limit: {last_maint_value}/{fixture.cycles_limit}",
-        })
-
-    return JsonResponse({'fixture_data': fixture_data})
