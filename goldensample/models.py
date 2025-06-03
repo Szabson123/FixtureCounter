@@ -10,7 +10,7 @@ GoldenTypes = [
 
 class GroupVariantCode(models.Model):
     name = models.CharField(max_length=255)
-    last_time_tested = models.DateTimeField()
+    last_time_tested = models.DateTimeField(blank=True, null=True, default=None)
 
     def __str__(self):
         return self.name
