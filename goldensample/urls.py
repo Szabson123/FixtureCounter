@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GoldenSampleCreateView, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList
+from .views import GoldenSampleCreateView, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList, GoldenSampleBinChecker, GoldenSampleBinAdder
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -15,6 +15,9 @@ urlpatterns = [
     path('type/', GoldenSampleTypeCheckView.as_view(), name='golden_sample_type_check'),
     
     path('bulk_add/', GoldenSampleBulkUploadView.as_view(), name='bulk_add'),
+    
+    path('check_bin/', GoldenSampleBinChecker.as_view(), name='check_bin/'),
+    path('add_bin/', GoldenSampleBinAdder.as_view(), name='check_bin/')
 ]
 
 urlpatterns += router.urls

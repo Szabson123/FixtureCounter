@@ -46,3 +46,8 @@ class GoldenSample(models.Model):
 class CounterOnGolden(models.Model):
     golden_sample = models.OneToOneField(GoldenSample, on_delete=models.CASCADE)
     counter = models.IntegerField(default=0)
+    
+
+class MapSample(models.Model):
+    i_input = models.CharField(max_length=255)
+    i_output = models.CharField(max_length=255)

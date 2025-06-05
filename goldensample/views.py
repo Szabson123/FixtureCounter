@@ -10,6 +10,7 @@ from datetime import date, datetime
 from rest_framework.pagination import PageNumberPagination
 
 import json
+from django.shortcuts import get_object_or_404
 
 
 class GoldenSampleCreateView(APIView):
@@ -288,3 +289,40 @@ class GoldenSampleAdminView(viewsets.ModelViewSet):
             {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+        
+
+class GoldenSampleBinChecker(APIView):
+    def post(self, request, *args, **kwargs):
+        
+        endpoint_input = request.data.get('code')
+        
+        if not endpoint_input:
+            return Response({'error': 'Missing "name" in request data.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        obj = get_object_or_404(MapSample, i_input=endpoint_input)
+
+        return Response({
+            'output': obj.i_output
+        }, status=status.HTTP_200_OK)
+        
+
+class GoldenSampleBinAdder(APIView):
+    def post(self, request, *args, **kwargs):
+        endpoint_input = request.data.get('code')
+        endpoint_input2 = request.data.get('site_code')
+        
+        if not endpoint_input or not endpoint_input2:
+            return Response({'error': 'Missing "code" or "site_code" in request data.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        obj, created = MapSample.objects.get_or_create(
+            i_input=endpoint_input,
+            i_output=endpoint_input2
+        )
+        
+        return Response({
+            'id': obj.id,
+            'i_input': obj.i_input,
+            'i_output': obj.i_output,
+            'created': created
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        

@@ -78,3 +78,6 @@ class GoldenSampleDetailedSerializer(serializers.ModelSerializer):
             return None
         
 
+class MapSampleSerailizer(serializers.ModelSerializer):
+    class Meta:
+        fields = ['id', 'input', 'output']
