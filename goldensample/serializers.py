@@ -53,10 +53,14 @@ class VariantFullSerializer(serializers.ModelSerializer):
 
 
 class VariantShortSerializer(serializers.ModelSerializer):
-    
+    golden_count = serializers.SerializerMethodField()
+
     class Meta:
         model = VariantCode
-        fields = ['code', 'name']
+        fields = ['id', 'code', 'name', 'group', 'golden_count']
+
+    def get_golden_count(self, obj):
+        return obj.goldensample_set.count()
         
         
 class GoldenSampleDetailedSerializer(serializers.ModelSerializer):
@@ -72,3 +76,5 @@ class GoldenSampleDetailedSerializer(serializers.ModelSerializer):
             return obj.counterongolden.counter
         except:
             return None
+        
+
