@@ -293,16 +293,17 @@ class GoldenSampleAdminView(viewsets.ModelViewSet):
 
 class GoldenSampleBinChecker(APIView):
     def post(self, request, *args, **kwargs):
-        
         endpoint_input = request.data.get('code')
         
         if not endpoint_input:
-            return Response({'error': 'Missing "name" in request data.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Missing "code" in request data.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        obj = get_object_or_404(MapSample, i_input=endpoint_input)
+        obj = MapSample.objects.filter(i_input=endpoint_input).first()
+        
+        output_value = obj.i_output if obj else ""
 
         return Response({
-            'output': obj.i_output
+            'output': output_value
         }, status=status.HTTP_200_OK)
         
 
