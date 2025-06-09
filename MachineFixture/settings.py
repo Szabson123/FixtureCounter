@@ -37,10 +37,12 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_eventstream',
     'django_filters',
+    
     # My
     'base',
     'map',
     'goldensample',
+    'checkprocess',
 ]
 
 CORS_ALLOWED_ORIGINS = [
