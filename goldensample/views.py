@@ -11,10 +11,15 @@ from rest_framework.pagination import PageNumberPagination
 
 import json
 from django.shortcuts import get_object_or_404
+from utils.auth_mixins import PasswordProtectedMixin
 
 
-class GoldenSampleCreateView(APIView):
+class GoldenSampleCreateView(PasswordProtectedMixin, APIView):
     def post(self, request):
+        password_check = self.check_password(request)
+        if password_check:
+            return password_check
+
         serializer = GoldenSampleCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -44,7 +49,6 @@ class GoldenSampleCreateView(APIView):
                     "expected_group": variant.group.name,
                     "sn_group": group_code
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
         else:
             group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
             variant = VariantCode.objects.create(
@@ -260,13 +264,19 @@ class GoldenSampleVariantList(viewsets.ModelViewSet):
         )
 
 
-class VariantListView(viewsets.ModelViewSet):
+class VariantListView(PasswordProtectedMixin, viewsets.ModelViewSet):
     queryset = VariantCode.objects.all()
     serializer_class = VariantShortSerializer
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = ['code']
     ordering = ['code']
     search_fields = ['code', 'name']
+    
+    def create(self, request, *args, **kwargs):
+        password_check = self.check_password(request)
+        if password_check:
+            return password_check
+        return super().create(request, *args, **kwargs)
 
 
 class GoldenSamplePagination(PageNumberPagination):
@@ -275,7 +285,7 @@ class GoldenSamplePagination(PageNumberPagination):
     max_page_size = 100
     
 
-class GoldenSampleAdminView(viewsets.ModelViewSet):
+class GoldenSampleAdminView(PasswordProtectedMixin, viewsets.ModelViewSet):
     queryset = GoldenSample.objects.all().select_related('counterongolden')
     serializer_class = GoldenSampleDetailedSerializer
     pagination_class = GoldenSamplePagination
@@ -289,6 +299,24 @@ class GoldenSampleAdminView(viewsets.ModelViewSet):
             {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+    
+    def update(self, request, *args, **kwargs):
+        password_check = self.check_password(request)
+        if password_check:
+            return password_check
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        password_check = self.check_password(request)
+        if password_check:
+            return password_check
+        return super().partial_update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        password_check = self.check_password(request)
+        if password_check:
+            return password_check
+        return super().destroy(request, *args, **kwargs)
         
 
 class GoldenSampleBinChecker(APIView):
