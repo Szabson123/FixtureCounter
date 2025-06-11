@@ -21,7 +21,7 @@ VARIANT_SECRET_PASSWORD = os.getenv('VARIANT_SECRET_PASSWORD')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['10.140.113.33', 'localhost', '127.0.0.1']
 

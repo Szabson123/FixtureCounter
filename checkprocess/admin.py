@@ -1,3 +1,10 @@
 from django.contrib import admin
+from .models import *
 
-# Register your models here.
+
+admin.site.register(Product)
+admin.site.register(ProductObject)
+admin.site.register(ProductProcess)
+admin.site.register(ProductObjectProcess)
+admin.site.register(ProductObjectProcessLog)
+
