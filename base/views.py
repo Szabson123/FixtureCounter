@@ -20,7 +20,7 @@ from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounte
 from .serializers import FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 from django.views.decorators.csrf import csrf_exempt
 
-from goldensample.models import GroupVariantCode, VariantCode
+from goldensample.models import GroupVariantCode, VariantCode, MapSample, GoldenSample
 from rest_framework.authentication import SessionAuthentication
 
 from datetime import timedelta
@@ -192,30 +192,42 @@ class CreateUpdateCounter(generics.CreateAPIView):
             reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"
             reason = None
             machine_block = False
-
+            
             try:
-                group = GroupVariantCode.objects.get(name=group_code)
-                if group.last_time_tested:
-                    time_diff = timezone.now() - group.last_time_tested
-                    if time_diff > timedelta(hours=8):
-                        machine_block = True
-                        reason = reason_8
-            except GroupVariantCode.DoesNotExist:
-                machine_block = True
-                reason = reason_8
+                check_sn = GoldenSample.objects.get(golden_code=sn)
+                return Response(
+                    {"returnCodeDescription": message,
+                    "returnCode": 200,
+                    "machineBlock": machine_block,
+                    "reason": reason},
+                    status=status.HTTP_200_OK
+                )
+            except GoldenSample.DoesNotExist:
+                try:
+                    inner_variant = MapSample.objects.get(i_output=group_code)
+                    inner_variant = inner_variant.i_input
+                    group = GroupVariantCode.objects.get(name=inner_variant)
+                    if group.last_time_tested:
+                        time_diff = timezone.now() - group.last_time_tested
+                        if time_diff > timedelta(hours=8):
+                            machine_block = True
+                            reason = reason_8
+                            
+                except (GroupVariantCode.DoesNotExist, MapSample.DoesNotExist):
+                    machine_block = True
+                    reason = reason_8
 
-            return Response(
-                {"returnCodeDescription": message,
-                 "returnCode": 200,
-                 "machineBlock": machine_block,
-                 "reason": reason},
-                status=status.HTTP_200_OK
-            )
+                return Response(
+                    {"returnCodeDescription": message,
+                    "returnCode": 200,
+                    "machineBlock": machine_block,
+                    "reason": reason},
+                    status=status.HTTP_200_OK
+                )
         else:
-            # Jeśli brak SN, to tylko logika fixture bez blokady
             return Response(
                 {"returnCodeDescription": message,
-                 "returnCode": 200},
+                "returnCode": 200},
                 status=status.HTTP_200_OK
             )
 
