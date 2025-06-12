@@ -253,6 +253,12 @@ class CreateUpdateCounter(generics.CreateAPIView):
                 "reason": reason,
             }, status=status.HTTP_200_OK)
 
+        else:
+            return Response(
+                {"returnCodeDescription": message,
+                "returnCode": 200},
+                status=status.HTTP_200_OK
+            )
 
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FullInfoFixtureSerializer
