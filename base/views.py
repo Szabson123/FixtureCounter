@@ -24,6 +24,7 @@ from goldensample.models import GroupVariantCode, VariantCode, MapSample, Golden
 from rest_framework.authentication import SessionAuthentication
 
 from datetime import timedelta
+from django.db import models
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
@@ -190,6 +191,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
             
             group_code = str(sn[12:]).strip()
             reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"
+            reason_map = "Nie ma mapowania"
             reason = None
             machine_block = False
             
@@ -202,19 +204,27 @@ class CreateUpdateCounter(generics.CreateAPIView):
                     "reason": reason},
                     status=status.HTTP_200_OK
                 )
-            except GoldenSample.DoesNotExist:
-                try:
-                    map_entry = MapSample.objects.filter(models.Q(i_output=group_code) | models.Q(i_input=group_code)).first()
-                    
-                    if not map_entry:
-                        raise Exception("Kod nie jest powiązany w mapowaniu!")
-
-                    # Ustalamy równoważny kod
+                
+            except GoldenSample.DoesNotExist: 
+                map_entry = MapSample.objects.filter(models.Q(i_output=group_code) | models.Q(i_input=group_code)).first()
+                
+                if not map_entry:
+                    machine_block = True
+                    reason = reason_map
+                    return Response(
+                            {"returnCodeDescription": message,
+                            "returnCode": 403,
+                            "machineBlock": machine_block,
+                            "reason": reason},
+                            status=status.HTTP_200_OK
+                        )
+                else:
                     if map_entry.i_output == group_code:
                         inner_variant = map_entry.i_input
-                    else:
+                    elif map_entry.i_input == group_code:
                         inner_variant = map_entry.i_output
 
+                try:
                     group = GroupVariantCode.objects.get(name=inner_variant)
 
                     if group.last_time_tested:
@@ -222,18 +232,17 @@ class CreateUpdateCounter(generics.CreateAPIView):
                         if time_diff > timedelta(hours=8):
                             machine_block = True
                             reason = reason_8
-                            
-                except (GroupVariantCode.DoesNotExist, MapSample.DoesNotExist):
+                except GroupVariantCode.DoesNotExist:
                     machine_block = True
                     reason = reason_8
 
-                return Response(
-                    {"returnCodeDescription": message,
-                    "returnCode": 200,
-                    "machineBlock": machine_block,
-                    "reason": reason},
-                    status=status.HTTP_200_OK
-                )
+            return Response(
+                {"returnCodeDescription": message,
+                "returnCode": 200,
+                "machineBlock": machine_block,
+                "reason": reason},
+                status=status.HTTP_200_OK
+            )
         else:
             return Response(
                 {"returnCodeDescription": message,
