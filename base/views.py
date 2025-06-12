@@ -188,69 +188,70 @@ class CreateUpdateCounter(generics.CreateAPIView):
         
         # Logika SN – tylko jeśli SN podany i długi
         if sn and len(sn) >= 13:
-            
             group_code = str(sn[12:]).strip()
             reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"
             reason_map = "Nie ma mapowania"
+            reason_group = "Nie znaleziono żadnej grupy"
             reason = None
             machine_block = False
-            
+
             try:
                 check_sn = GoldenSample.objects.get(golden_code=sn)
-                return Response(
-                    {"returnCodeDescription": message,
+                return Response({
+                    "returnCodeDescription": message,
                     "returnCode": 200,
-                    "machineBlock": machine_block,
-                    "reason": reason},
-                    status=status.HTTP_200_OK
-                )
-                
-            except GoldenSample.DoesNotExist: 
-                map_entry = MapSample.objects.filter(models.Q(i_output=group_code) | models.Q(i_input=group_code)).first()
-                
-                if not map_entry:
-                    machine_block = True
-                    reason = reason_map
-                    return Response(
-                            {"returnCodeDescription": message,
+                    "machineBlock": False,
+                    "reason": None,
+                }, status=status.HTTP_200_OK)
+
+            except GoldenSample.DoesNotExist:
+                inner_variant = group_code
+                group = GroupVariantCode.objects.filter(name=group_code).first()
+
+                if not group:
+                    map_entry = MapSample.objects.filter(
+                        models.Q(i_output=group_code) | models.Q(i_input=group_code)
+                    ).first()
+
+                    if not map_entry:
+                        machine_block = True
+                        reason = reason_map
+                        return Response({
+                            "returnCodeDescription": message,
                             "returnCode": 403,
                             "machineBlock": machine_block,
-                            "reason": reason},
-                            status=status.HTTP_200_OK
-                        )
-                else:
-                    if map_entry.i_output == group_code:
-                        inner_variant = map_entry.i_input
-                    elif map_entry.i_input == group_code:
-                        inner_variant = map_entry.i_input
+                            "reason": reason,
+                        }, status=status.HTTP_200_OK)
 
-                print(inner_variant)
+                    alt_code = (
+                        map_entry.i_input if map_entry.i_output == group_code else map_entry.i_output
+                    )
+                    group = GroupVariantCode.objects.filter(name=alt_code).first()
 
-                try:
-                    group = GroupVariantCode.objects.get(name=inner_variant)
-                    print(inner_variant)
-                    if group.last_time_tested:
-                        time_diff = timezone.now() - group.last_time_tested
-                        if time_diff > timedelta(hours=8):
-                            machine_block = True
-                            reason = reason_8
-                except GroupVariantCode.DoesNotExist:
-                    machine_block = True
-                    reason = reason_8
+                    if group:
+                        inner_variant = alt_code
+                    else:
+                        machine_block = True
+                        reason = reason_group
+                        return Response({
+                            "returnCodeDescription": message,
+                            "returnCode": 403,
+                            "machineBlock": machine_block,
+                            "reason": reason,
+                        }, status=status.HTTP_200_OK)
 
-            return Response(
-                {"returnCodeDescription": message,
+                if group.last_time_tested:
+                    time_diff = timezone.now() - group.last_time_tested
+                    if time_diff > timedelta(hours=8):
+                        machine_block = True
+                        reason = reason_8
+
+            return Response({
+                "returnCodeDescription": message,
                 "returnCode": 200,
                 "machineBlock": machine_block,
-                "reason": reason},
-                status=status.HTTP_200_OK
-            )
-        else:
-            return Response(
-                {"returnCodeDescription": message,
-                "returnCode": 200},
-                status=status.HTTP_200_OK
-            )
+                "reason": reason,
+            }, status=status.HTTP_200_OK)
 
 
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
