@@ -222,10 +222,13 @@ class CreateUpdateCounter(generics.CreateAPIView):
                     if map_entry.i_output == group_code:
                         inner_variant = map_entry.i_input
                     elif map_entry.i_input == group_code:
-                        inner_variant = map_entry.i_output
+                        inner_variant = map_entry.i_input
+
+                print(inner_variant)
 
                 try:
                     group = GroupVariantCode.objects.get(name=inner_variant)
+                    print(inner_variant)
                     if group.last_time_tested:
                         time_diff = timezone.now() - group.last_time_tested
                         if time_diff > timedelta(hours=8):
