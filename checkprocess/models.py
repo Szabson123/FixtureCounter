@@ -8,10 +8,6 @@ class Product(models.Model):
         return self.name
 
 
-class Place(models.Model):
-    name = models.CharField(max_length=255)
-
-
 class ProductProcess(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='processes')
     name = models.CharField(max_length=255)
@@ -23,6 +19,11 @@ class ProductProcess(models.Model):
 
     def __str__(self):
         return f"{self.product.name} → {self.name} (order: {self.order})"
+    
+
+class Place(models.Model):
+    name = models.CharField(max_length=255)
+    process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_place')
 
 
 class ProductObject(models.Model):
