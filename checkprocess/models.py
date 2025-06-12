@@ -8,6 +8,10 @@ class Product(models.Model):
         return self.name
 
 
+class Place(models.Model):
+    name = models.CharField(max_length=255)
+
+
 class ProductProcess(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='processes')
     name = models.CharField(max_length=255)
@@ -26,6 +30,7 @@ class ProductObject(models.Model):
     serial_number = models.CharField(max_length=255, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expire_date = models.DateField(null=True, blank=True, default=None)
+    mother_object = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_object')
 
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
@@ -51,6 +56,8 @@ class ProductObjectProcessLog(models.Model):
     who_entry = models.CharField(max_length=255, null=True, blank=True)
     exit_time = models.DateTimeField(null=True, blank=True)
     who_exit = models.CharField(max_length=255, null=True, blank=True)
+    place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
 
     def __str__(self):
         return f"Log for {self.product_object_process} @ {self.entry_time:%Y-%m-%d %H:%M}"
+

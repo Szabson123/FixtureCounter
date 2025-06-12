@@ -16,9 +16,28 @@ class ProductProcessSerializer(serializers.ModelSerializer):
 
 
 class ProductObjectSerializer(serializers.ModelSerializer):
+    initial_place = serializers.SerializerMethodField()
+    who_entry = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductObject
-        fields = ['id', 'serial_number', 'created_at']
+        fields = ['id', 'serial_number', 'created_at', 'initial_place', 'who_entry']
+
+    def get_initial_place(self, obj):
+        log = ProductObjectProcessLog.objects.filter(
+            product_object_process__product_object=obj,
+            product_object_process__process__order=1
+        ).order_by('entry_time').first()
+
+        return log.place.name if log and log.place else None
+
+    def get_who_entry(self, obj):
+        log = ProductObjectProcessLog.objects.filter(
+            product_object_process__product_object=obj,
+            product_object_process__process__order=1
+        ).order_by('entry_time').first()
+
+        return log.who_entry if log else None
 
 
 class ProductObjectProcessSerializer(serializers.ModelSerializer):

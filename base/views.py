@@ -204,9 +204,19 @@ class CreateUpdateCounter(generics.CreateAPIView):
                 )
             except GoldenSample.DoesNotExist:
                 try:
-                    inner_variant = MapSample.objects.get(i_output=group_code)
-                    inner_variant = inner_variant.i_input
+                    map_entry = MapSample.objects.filter(models.Q(i_output=group_code) | models.Q(i_input=group_code)).first()
+                    
+                    if not map_entry:
+                        raise Exception("Kod nie jest powiązany w mapowaniu!")
+
+                    # Ustalamy równoważny kod
+                    if map_entry.i_output == group_code:
+                        inner_variant = map_entry.i_input
+                    else:
+                        inner_variant = map_entry.i_output
+
                     group = GroupVariantCode.objects.get(name=inner_variant)
+
                     if group.last_time_tested:
                         time_diff = timezone.now() - group.last_time_tested
                         if time_diff > timedelta(hours=8):
