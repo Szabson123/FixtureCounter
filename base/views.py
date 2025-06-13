@@ -136,9 +136,6 @@ class CreateUpdateCounter(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
         
-        machine_name = request.data.get('machine_id')
-        variant_info = request.data.get('variant')
-        
         sn = request.data.get('serial_number')
 
         if not fixture_name:
@@ -186,7 +183,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
             "timestamp": timezone.now().isoformat(),
         })
         
-        # Logika SN – tylko jeśli SN podany i długi
+        
         if sn and len(sn) >= 13:
             group_code = str(sn[12:]).strip()
             reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"

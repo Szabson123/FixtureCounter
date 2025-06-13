@@ -19,7 +19,8 @@ CLEAR_COUNTER_PASSWORD = os.getenv('CLEAR_COUNTER_PASSWORD')
 VARIANT_SECRET_PASSWORD = os.getenv('VARIANT_SECRET_PASSWORD')
 
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = "132131sdasdad123123adsd"
+
 
 DEBUG = True
 
@@ -97,24 +98,24 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': os.getenv('DB_PORT'),
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
