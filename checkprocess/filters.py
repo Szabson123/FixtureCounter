@@ -3,13 +3,9 @@ from .models import ProductObject
 
 
 class ProductObjectFilter(django_filters.FilterSet):
-    process_id = django_filters.NumberFilter(
-        field_name='assigned_processes__process_id'
-    )
-    place_id = django_filters.NumberFilter(
-        field_name='assigned_processes__logs__place_id'
-    )
+    current_process = django_filters.NumberFilter(field_name='current_process__id')
+    current_place = django_filters.CharFilter(field_name='current_place__name', lookup_expr='icontains')
 
     class Meta:
         model = ProductObject
-        fields = ['process_id', 'place_id']
+        fields = ['current_process', 'current_place']
