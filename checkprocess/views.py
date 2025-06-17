@@ -179,6 +179,9 @@ class ProductMoveView(APIView):
 
         if current_process.changing_exp_date and current_process.how_much_days_exp_date:
             obj.exp_date_in_process = now().date() + timedelta(days=current_process.how_much_days_exp_date)
+        
+        if current_process.quranteen_time:
+            obj.quranteen_time = now() + timedelta(hours=current_process.quranteen_time)
 
         obj.current_place = None
         obj.save()
@@ -210,6 +213,11 @@ class ProductReceiveView(APIView):
 
         if obj.current_process and obj.current_process.id == process_id:
             return Response({"error": "Obiekt już znajduje się w tym procesie."}, status=400)
+        
+        if target_process.respect_quranteen_time and obj.quranteen_time and now() < obj.quranteen_time:
+            return Response({
+                "error": "Obiekt znajduje się na kwarantannie do: {}".format(obj.quranteen_time.strftime("%Y-%m-%d %H:%M"))
+            }, status=400)
 
         previous_process = ProductProcess.objects.filter(
             product=obj.product,

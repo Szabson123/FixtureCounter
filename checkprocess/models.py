@@ -20,6 +20,8 @@ class ProductProcess(models.Model):
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     
+    respect_quranteen_time = models.BooleanField(default=False)
+    
 
     class Meta:
         ordering = ['order']
@@ -50,6 +52,7 @@ class ProductObject(models.Model):
     expire_date = models.DateField(null=True, blank=True, default=None)
     production_date = models.DateField(null=True, blank=True, default=None)
     exp_date_in_process = models.DateField(null=True, blank=True, default=None)
+    quranteen_time = models.DateTimeField(null=True, blank=True, default=None)
 
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
