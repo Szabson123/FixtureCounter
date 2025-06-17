@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView
+from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, ProductReceiveView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -12,7 +12,8 @@ router.register(r'(?P<product_object_process_id>\d+)/product-object-process-logs
 
 
 urlpatterns = [
-    path('api/product-object/move/<int:process_id>/', ProductMoveView.as_view(), name='product-move'),
+    path('product-object/move/<int:process_id>/', ProductMoveView.as_view(), name='product-move'),
+    path('product-object/receive/<int:process_id>/', ProductReceiveView.as_view(), name='product-receive'),
 ]
 
 urlpatterns += router.urls

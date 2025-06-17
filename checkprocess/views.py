@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.db import transaction
+from django.db import transaction, IntegrityError
 
 from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place
 from .serializers import ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer, ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer
@@ -78,37 +78,41 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             serial_number, production_date, expire_date = parse_full_sn(full_sn)
         except ValueError as e:
             raise ValidationError(str(e))
+        try:
+            with transaction.atomic():
+                place_obj, _ = Place.objects.get_or_create(name=place_name)
 
-        with transaction.atomic():
-            place_obj, _ = Place.objects.get_or_create(name=place_name)
+                serializer.validated_data['serial_number'] = serial_number
+                serializer.validated_data['production_date'] = production_date
+                serializer.validated_data['expire_date'] = expire_date
+                serializer.validated_data['product'] = product
 
-            serializer.validated_data['serial_number'] = serial_number
-            serializer.validated_data['production_date'] = production_date
-            serializer.validated_data['expire_date'] = expire_date
-            serializer.validated_data['product'] = product
+                product_object = serializer.save()
 
-            product_object = serializer.save()
+                processes = list(ProductProcess.objects.filter(product=product).order_by('order'))
+                first_process = processes[0] if processes else None
 
-            processes = list(ProductProcess.objects.filter(product=product).order_by('order'))
-            first_process = processes[0] if processes else None
+                product_object.current_process = first_process
+                product_object.current_place = place_obj
+                product_object.save()
 
-            product_object.current_process = first_process
-            product_object.current_place = place_obj
-            product_object.save()
-
-            for process in processes:
-                po_process = ProductObjectProcess.objects.create(
-                    product_object=product_object,
-                    process=process,
-                    is_completed=False
-                )
-
-                if process == first_process:
-                    ProductObjectProcessLog.objects.create(
-                        product_object_process=po_process,
-                        who_entry=who_entry,
-                        place=place_obj
+                for process in processes:
+                    po_process = ProductObjectProcess.objects.create(
+                        product_object=product_object,
+                        process=process,
+                        is_completed=False
                     )
+
+                    if process == first_process:
+                        ProductObjectProcessLog.objects.create(
+                            product_object_process=po_process,
+                            who_entry=who_entry,
+                            place=place_obj
+                        )
+        except IntegrityError as e:
+            if "unique" in str(e).lower():
+                raise ValidationError({"error": "Taki obiekt już istnieje"})
+            raise ValidationError("Błąd podczas zapisu")
 
 
 class ProductObjectProcessViewSet(viewsets.ModelViewSet):
@@ -204,7 +208,6 @@ class ProductReceiveView(APIView):
         if target_process.product != obj.product:
             return Response({"error": "Proces nie należy do tego samego produktu."}, status=400)
 
-
         if obj.current_process and obj.current_process.id == process_id:
             return Response({"error": "Obiekt już znajduje się w tym procesie."}, status=400)
 
@@ -218,7 +221,7 @@ class ProductReceiveView(APIView):
             if not prev_proc_instance or not prev_proc_instance.is_completed:
                 return Response({"error": "Poprzedni proces nie został ukończony."}, status=400)
 
-        place, _ = Place.objects.get(name=place_name)
+        place, _ = Place.objects.get_or_create(name=place_name)
 
         target_po_proc = obj.assigned_processes.filter(process=target_process).first()
         if not target_po_proc:

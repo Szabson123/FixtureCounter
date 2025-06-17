@@ -39,7 +39,7 @@ class ProductObjectSerializer(serializers.ModelSerializer):
             'id', 'full_sn', 'serial_number', 'created_at',
             'production_date', 'expire_date',
             'place_name', 'who_entry', 'initial_who_entry',
-            'current_process', 'current_place', 'initial_place'
+            'current_process', 'current_place', 'initial_place', 'exp_date_in_process'
         ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',

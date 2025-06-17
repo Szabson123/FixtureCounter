@@ -31,6 +31,9 @@ class ProductProcess(models.Model):
 class Place(models.Model):
     name = models.CharField(max_length=255)
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_place', null=True, blank=True, default=None)
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class ProductObject(models.Model):
