@@ -25,13 +25,14 @@ class ProductProcessSerializer(serializers.ModelSerializer):
 class ProductObjectSerializer(serializers.ModelSerializer):
     place_name = serializers.CharField(write_only=True)
     who_entry = serializers.CharField(write_only=True)
-    full_sn = serializers.CharField(write_only=True)
+    full_sn = serializers.CharField()
 
     initial_place = serializers.SerializerMethodField()
     initial_who_entry = serializers.SerializerMethodField()
 
     current_process = serializers.StringRelatedField(read_only=True)
     current_place = serializers.StringRelatedField(read_only=True)
+    mother_sn = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = ProductObject
@@ -39,11 +40,11 @@ class ProductObjectSerializer(serializers.ModelSerializer):
             'id', 'full_sn', 'serial_number', 'created_at',
             'production_date', 'expire_date',
             'place_name', 'who_entry', 'initial_who_entry',
-            'current_process', 'current_place', 'initial_place', 'exp_date_in_process', 'quranteen_time'
+            'current_process', 'current_place', 'initial_place', 'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother'
         ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',
-            'current_process', 'current_place'
+            'current_process', 'current_place',
         ]
 
     def get_initial_place(self, obj):

@@ -21,7 +21,9 @@ class ProductProcess(models.Model):
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     
     respect_quranteen_time = models.BooleanField(default=False)
+    expecting_child = models.BooleanField(default=False)
     
+    killing_app = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order']
@@ -41,6 +43,7 @@ class Place(models.Model):
 class ProductObject(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_objects')
     mother_object = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_object')
+    is_mother = models.BooleanField(default=False)
     
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
@@ -53,6 +56,8 @@ class ProductObject(models.Model):
     production_date = models.DateField(null=True, blank=True, default=None)
     exp_date_in_process = models.DateField(null=True, blank=True, default=None)
     quranteen_time = models.DateTimeField(null=True, blank=True, default=None)
+    
+    ex_mother = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
@@ -61,6 +66,7 @@ class ProductObject(models.Model):
 class ProductObjectProcess(models.Model):
     product_object = models.ForeignKey(ProductObject, on_delete=models.CASCADE, related_name='assigned_processes')
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_processes')
+    
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
     is_end = models.BooleanField(default=False)
@@ -84,3 +90,8 @@ class ProductObjectProcessLog(models.Model):
     def __str__(self):
         return f"Log for {self.product_object_process} @ {self.entry_time:%Y-%m-%d %H:%M}"
 
+
+class AppToKill(models.Model):
+    line_name = models.ForeignKey(Place, models.CASCADE)
+    killing_flag = models.BooleanField(default=False)
+    

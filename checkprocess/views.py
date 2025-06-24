@@ -4,18 +4,19 @@ from django.shortcuts import get_object_or_404, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.db import transaction, IntegrityError
+from django.db import transaction, IntegrityError, models
 
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill
 from .serializers import ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer, ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer
 
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductObjectFilter
-from .utils import parse_full_sn
+from .utils import parse_full_sn, check_fifo_violation
 
 from datetime import timedelta
-from django.utils.timezone import now
+from django.utils.timezone import now, localtime
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -60,7 +61,23 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         product_id = self.kwargs.get('product_id')
-        return ProductObject.objects.filter(product_id=product_id)
+        queryset = ProductObject.objects.filter(product_id=product_id)
+
+        return queryset.exclude(
+            mother_object__isnull=False,
+            mother_object__current_process=models.F('current_process')
+        )
+    
+    @action(detail=True, methods=['get'], url_path='children')
+    def get_children(self, request, pk=None, **kwargs):
+        product_object = self.get_object()
+        
+        if not product_object.is_mother:
+            return Response([], status=200)
+
+        children = product_object.child_object.all()
+        serializer = self.get_serializer(children, many=True)
+        return Response(serializer.data, status=200)
 
 
     def perform_create(self, serializer):
@@ -70,22 +87,49 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         place_name = serializer.validated_data.pop('place_name', None)
         who_entry = serializer.validated_data.pop('who_entry', None)
         full_sn = serializer.validated_data.get('full_sn')
+        
+        mother_sn = serializer.validated_data.pop('mother_sn', None)
+        mother_obj = None
 
         if not place_name or not who_entry or not full_sn:
             raise ValidationError("Brakuje 'place', 'who_entry' lub 'full_sn' w danych.")
 
         try:
-            serial_number, production_date, expire_date = parse_full_sn(full_sn)
+            serial_number, production_date, expire_date, serial_type, q_code = parse_full_sn(full_sn)
         except ValueError as e:
             raise ValidationError(str(e))
         try:
             with transaction.atomic():
+                if mother_sn:
+                    try:
+                        mother_serial, _, _, m_serial_type, m_q_code = parse_full_sn(mother_sn)
+                        mother_obj = ProductObject.objects.get(serial_number=mother_serial)
+
+                        if not mother_obj.is_mother:
+                            raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
+
+                        limit = int(m_q_code) if m_q_code and m_q_code.isdigit() else 0
+                        current_children = mother_obj.child_object.count()
+
+                        if current_children >= limit:
+                            raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({limit}).")
+
+                        serializer.validated_data['mother_object'] = mother_obj
+
+                    except ProductObject.DoesNotExist:
+                        raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
+                    except ValueError as e:
+                        raise ValidationError(f"Błąd w analizie mother_sn: {e}")
+    
                 place_obj, _ = Place.objects.get_or_create(name=place_name)
 
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
                 serializer.validated_data['expire_date'] = expire_date
                 serializer.validated_data['product'] = product
+
+                if serial_type == "M" and q_code == "12":
+                    serializer.validated_data['is_mother'] = True
 
                 product_object = serializer.save()
 
@@ -109,6 +153,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                             who_entry=who_entry,
                             place=place_obj
                         )
+
         except IntegrityError as e:
             if "unique" in str(e).lower():
                 raise ValidationError({"error": "Taki obiekt już istnieje"})
@@ -141,7 +186,6 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
         serializer.save(product_object_process=pop)
 
 
-
 class ProductMoveView(APIView):
     @transaction.atomic
     def post(self, request, process_id):
@@ -154,10 +198,7 @@ class ProductMoveView(APIView):
 
         current_process = obj.current_process
         if not current_process or current_process.id != process_id:
-            return Response(
-                {"error": "Obiekt nie znajduje się w podanym procesie."},
-                status=400
-            )
+            return Response({"error": "Obiekt nie znajduje się w podanym procesie."}, status=400)
 
         current_po_proc = obj.assigned_processes.filter(process=current_process).first()
         if not current_po_proc:
@@ -167,6 +208,28 @@ class ProductMoveView(APIView):
             log = current_po_proc.logs.latest("entry_time")
         except ProductObjectProcessLog.DoesNotExist:
             return Response({"error": "Brak logu wejścia dla bieżącego procesu."}, status=400)
+
+        if current_process.respect_quranteen_time and obj.quranteen_time and now() < obj.quranteen_time:
+            return Response({
+                "error": "Obiekt znajduje się na kwarantannie do: {}".format(
+                    localtime(obj.quranteen_time).strftime("%Y-%m-%d %H:%M")
+                )
+            }, status=400)
+
+        if obj.is_mother and current_process.expecting_child:
+            has_children = obj.child_object.filter(current_process=current_process).exists()
+            if not has_children:
+                return Response({
+                    "status": "karton nie został przeniesiony",
+                    "show_add_child_modal": True,
+                    "message": "Dodaj dzieci do kartonu zanim go przeniesiesz.",
+                    "serial_number": obj.serial_number
+                }, status=200)
+                
+        # FIFO violation check
+        violation = check_fifo_violation(obj)
+        if violation:
+            return Response(violation, status=400)        
 
         log.exit_time = now()
         log.who_exit = who_exit
@@ -179,19 +242,56 @@ class ProductMoveView(APIView):
 
         if current_process.changing_exp_date and current_process.how_much_days_exp_date:
             obj.exp_date_in_process = now().date() + timedelta(days=current_process.how_much_days_exp_date)
-        
+
         if current_process.quranteen_time:
             obj.quranteen_time = now() + timedelta(hours=current_process.quranteen_time)
 
         obj.current_place = None
         obj.save()
 
+        if not obj.is_mother and obj.mother_object is not None:
+            obj.ex_mother = obj.mother_object.serial_number
+            obj.mother_object = None
+            obj.save(update_fields=["mother_object", "ex_mother"])
+
+        children_moved = 0
+        if obj.is_mother:
+            children = obj.child_object.filter(current_process=current_process)
+            for child in children:
+                child_po_proc = child.assigned_processes.filter(process=current_process).first()
+                if not child_po_proc:
+                    continue
+                try:
+                    child_log = child_po_proc.logs.latest("entry_time")
+                except ProductObjectProcessLog.DoesNotExist:
+                    continue
+
+                child_log.exit_time = now()
+                child_log.who_exit = who_exit
+                child_log.save()
+
+                if not current_process.can_multi:
+                    child_po_proc.is_completed = True
+                    child_po_proc.completed_at = now()
+                    child_po_proc.save()
+
+                if current_process.changing_exp_date and current_process.how_much_days_exp_date:
+                    child.exp_date_in_process = now().date() + timedelta(days=current_process.how_much_days_exp_date)
+
+                if current_process.quranteen_time:
+                    child.quranteen_time = now() + timedelta(hours=current_process.quranteen_time)
+
+                child.current_place = None
+                child.save()
+                children_moved += 1
+
         return Response({
             "status": "obiekt w drodze",
             "from_process": current_process.name,
+            "children_moved": children_moved
         }, status=200)
         
-
+        
 class ProductReceiveView(APIView):
     @transaction.atomic
     def post(self, request, process_id):
@@ -203,6 +303,11 @@ class ProductReceiveView(APIView):
         who_entry = serializer.validated_data["who_entry"]
         place_name = serializer.validated_data["place_name"]
 
+        def set_kill_flag(value=True):
+            AppToKill.objects.filter(line_name__name=place_name).update(killing_flag=value)
+
+        set_kill_flag(True)
+
         try:
             target_process = ProductProcess.objects.get(id=process_id)
         except ProductProcess.DoesNotExist:
@@ -213,11 +318,6 @@ class ProductReceiveView(APIView):
 
         if obj.current_process and obj.current_process.id == process_id:
             return Response({"error": "Obiekt już znajduje się w tym procesie."}, status=400)
-        
-        if target_process.respect_quranteen_time and obj.quranteen_time and now() < obj.quranteen_time:
-            return Response({
-                "error": "Obiekt znajduje się na kwarantannie do: {}".format(obj.quranteen_time.strftime("%Y-%m-%d %H:%M"))
-            }, status=400)
 
         previous_process = ProductProcess.objects.filter(
             product=obj.product,
@@ -238,9 +338,16 @@ class ProductReceiveView(APIView):
         if target_po_proc.logs.exists():
             return Response({"error": "Obiekt został już odebrany w tym procesie."}, status=400)
 
+        set_kill_flag(False)
+
         obj.current_process = target_process
         obj.current_place = place
         obj.save()
+
+        if not obj.is_mother and obj.mother_object is not None:
+            obj.ex_mother = obj.mother_object.serial_number
+            obj.mother_object = None
+            obj.save(update_fields=["mother_object", "ex_mother"])
 
         ProductObjectProcessLog.objects.create(
             product_object_process=target_po_proc,
@@ -248,8 +355,101 @@ class ProductReceiveView(APIView):
             place=place
         )
 
+        children_received = 0
+        if obj.is_mother and previous_process:
+            children = obj.child_object.filter(current_process=previous_process)
+            for child in children:
+                child_po_proc = child.assigned_processes.filter(process=target_process).first()
+                if not child_po_proc or child_po_proc.logs.exists():
+                    continue
+
+                child.current_process = target_process
+                child.current_place = place
+                child.save()
+
+                ProductObjectProcessLog.objects.create(
+                    product_object_process=child_po_proc,
+                    who_entry=who_entry,
+                    place=place
+                )
+                children_received += 1
+
         return Response({
             "status": "obiekt odebrany",
             "current_process": target_process.name,
-            "place": place.name
+            "place": place.name,
+            "children_received": children_received
         }, status=200)
+
+
+class AppKillStatusView(APIView):
+    def get(self, request):
+        line_name = request.query_params.get("line")
+
+        if not line_name:
+            return Response({"error": "Brakuje parametru 'line'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            place = Place.objects.get(name=line_name)
+            app_kill = AppToKill.objects.get(line_name=place)
+            return Response({"kill": app_kill.killing_flag}, status=200)
+
+        except Place.DoesNotExist:
+            return Response({"error": f"Linia '{line_name}' nie istnieje."}, status=404)
+        except AppToKill.DoesNotExist:
+            return Response({"kill": False}, status=200)
+        
+        
+class QuickAddToMotherView(APIView):
+    @transaction.atomic
+    def post(self, request):
+        full_sn = request.data.get("full_sn")
+        mother_sn = request.data.get("mother_sn")
+        who_entry = request.data.get("who_entry")
+
+        if not all([full_sn, mother_sn, who_entry]):
+            return Response({"error": "Brakuje pełnych danych."}, status=400)
+
+        try:
+            sn, prod_date, exp_date, serial_type, q_code = parse_full_sn(full_sn)
+            mother_sn_parsed, *_ = parse_full_sn(mother_sn)
+        except Exception as e:
+            return Response({"error": f"Błąd SN: {e}"}, status=400)
+
+        try:
+            mother = ProductObject.objects.get(serial_number=mother_sn_parsed)
+        except ProductObject.DoesNotExist:
+            return Response({"error": "Nie znaleziono matki."}, status=404)
+
+        if not mother.is_mother:
+            return Response({"error": "Obiekt matka nie jest kartonem."}, status=400)
+
+        if ProductObject.objects.filter(serial_number=sn).exists():
+            return Response({"error": "Obiekt już istnieje."}, status=400)
+
+        obj = ProductObject.objects.create(
+            product=mother.product,
+            serial_number=sn,
+            full_sn=full_sn,
+            production_date=prod_date,
+            expire_date=exp_date,
+            mother_object=mother,
+            current_process=mother.current_process,
+            current_place=mother.current_place
+        )
+
+        processes = mother.product.processes.order_by('order')
+        for process in processes:
+            pop = ProductObjectProcess.objects.create(
+                product_object=obj,
+                process=process,
+                is_completed=False
+            )
+            if process == mother.current_process:
+                ProductObjectProcessLog.objects.create(
+                    product_object_process=pop,
+                    who_entry=who_entry,
+                    place=mother.current_place
+                )
+
+        return Response({"status": "Dodano obiekt do kartonu", "child_sn": sn}, status=201)

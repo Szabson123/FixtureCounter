@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, ProductReceiveView
+from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, AppKillStatusView, ProductReceiveView, QuickAddToMotherView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -12,8 +12,11 @@ router.register(r'(?P<product_object_process_id>\d+)/product-object-process-logs
 
 
 urlpatterns = [
+    path("quick-add-child/", QuickAddToMotherView.as_view(), name="quick-add-child"),
+    
     path('product-object/move/<int:process_id>/', ProductMoveView.as_view(), name='product-move'),
     path('product-object/receive/<int:process_id>/', ProductReceiveView.as_view(), name='product-receive'),
+    path('kill-app/', AppKillStatusView.as_view(), name='kill-app')
 ]
 
 urlpatterns += router.urls

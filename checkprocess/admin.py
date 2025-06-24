@@ -8,4 +8,5 @@ admin.site.register(ProductProcess)
 admin.site.register(ProductObjectProcess)
 admin.site.register(ProductObjectProcessLog)
 admin.site.register(Place)
+admin.site.register(AppToKill)
 
