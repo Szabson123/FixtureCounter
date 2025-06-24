@@ -45,11 +45,20 @@ def check_fifo_violation(current_object):
     if not current_object.current_process:
         return None
 
+    qs_filters = {
+        'current_process': current_object.current_process,
+        'current_place__isnull': False,
+    }
+
+    excluded_ids = [current_object.id]
+
+    if current_object.is_mother:
+        excluded_ids += list(current_object.child_object.values_list('id', flat=True))
+
     children = ProductObject.objects.filter(
-        current_process=current_object.current_process,
-        current_place__isnull=False,
-        is_mother=False
-    ).exclude(id=current_object.id).annotate(
+        is_mother=False,
+        **qs_filters
+    ).exclude(id__in=excluded_ids).annotate(
         sort_date=Case(
             When(exp_date_in_process__isnull=False, then=F('exp_date_in_process')),
             When(expire_date__isnull=False, then=F('expire_date')),
@@ -59,10 +68,9 @@ def check_fifo_violation(current_object):
     )
 
     empty_mothers = ProductObject.objects.filter(
-        current_process=current_object.current_process,
-        current_place__isnull=False,
-        is_mother=True
-    ).exclude(id=current_object.id).annotate(
+        is_mother=True,
+        **qs_filters
+    ).exclude(id__in=excluded_ids).annotate(
         children_count=Count('child_object'),
         sort_date=Case(
             When(exp_date_in_process__isnull=False, then=F('exp_date_in_process')),
@@ -73,19 +81,18 @@ def check_fifo_violation(current_object):
     ).filter(children_count=0)
 
     combined = list(children) + list(empty_mothers)
-    combined.sort(key=lambda x: (x.sort_date, x.created_at))
 
-    sort_date_current = (
-        current_object.exp_date_in_process or current_object.expire_date or (now().date() + timedelta(days=365 * 100))
+    current_sort_date = (
+        current_object.exp_date_in_process or
+        current_object.expire_date or
+        now().date() + timedelta(days=365 * 100)
     )
+    current_created_at = current_object.created_at
 
     for obj in combined:
-        sort_date_obj = (
-            obj.exp_date_in_process or obj.expire_date or (now().date() + timedelta(days=365 * 100))
-        )
-
-        if sort_date_obj < sort_date_current or (
-            sort_date_obj == sort_date_current and obj.created_at < current_object.created_at
+        obj_sort_date = obj.sort_date
+        if obj_sort_date < current_sort_date or (
+            obj_sort_date == current_sort_date and obj.created_at < current_created_at
         ):
             return {
                 "error": (
