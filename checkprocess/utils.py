@@ -66,10 +66,11 @@ def check_fifo_violation(current_object):
             output_field=DateField()
         )
     )
-
+    
     empty_mothers = ProductObject.objects.filter(
         is_mother=True,
         **qs_filters
+        
     ).exclude(id__in=excluded_ids).annotate(
         children_count=Count('child_object'),
         sort_date=Case(

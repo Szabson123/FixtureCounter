@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 
-from django.shortcuts import get_object_or_404, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -78,6 +78,35 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         children = product_object.child_object.all()
         serializer = self.get_serializer(children, many=True)
         return Response(serializer.data, status=200)
+    
+    @action(detail=True, methods=['patch'], url_path='change-place')
+    def change_place(self, request, pk=None, **kwargs):
+        obj = self.get_object()
+        new_place_name = request.data.get("place_name")
+
+        if not new_place_name:
+            return Response({"error": "Pole 'place_name' jest wymagane."}, status=400)
+
+        if not obj.current_process:
+            return Response({"error": "Obiekt nie znajduje się w żadnym procesie."}, status=400)
+
+        try:
+            new_place = Place.objects.get(name=new_place_name)
+        except Place.DoesNotExist:
+            return Response({"error": f"Miejsce '{new_place_name}' nie istnieje."}, status=400)
+
+        if new_place.process != obj.current_process:
+            return Response({
+                "error": "Nowe miejsce nie należy do tego samego procesu, w którym znajduje się obiekt."
+            }, status=400)
+
+        obj.current_place = new_place
+        obj.save(update_fields=["current_place"])
+
+        return Response({
+            "status": "Zmieniono miejsce obiektu.",
+            "new_place": new_place.name
+        }, status=200)
 
 
     def perform_create(self, serializer):
@@ -108,11 +137,11 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                         if not mother_obj.is_mother:
                             raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
 
-                        limit = int(m_q_code) if m_q_code and m_q_code.isdigit() else 0
-                        current_children = mother_obj.child_object.count()
+                        # limit = int(m_q_code) if m_q_code and m_q_code.isdigit() else 0
+                        # current_children = mother_obj.child_object.count()
 
-                        if current_children >= limit:
-                            raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({limit}).")
+                        # if current_children >= limit:
+                        #     raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({limit}).")
 
                         serializer.validated_data['mother_object'] = mother_obj
 
@@ -195,6 +224,12 @@ class ProductMoveView(APIView):
 
         obj = serializer.validated_data["product_object"]
         who_exit = serializer.validated_data["who_exit"]
+        
+        if obj.end:
+            return Response({
+                "error": "Obiekt zakończył już swój cykl życia i nie może być modyfikowany.",
+                "code": "object_ended"
+            }, status=400)
 
         current_process = obj.current_process
         if not current_process or current_process.id != process_id:
@@ -250,9 +285,13 @@ class ProductMoveView(APIView):
         obj.save()
 
         if not obj.is_mother and obj.mother_object is not None:
-            obj.ex_mother = obj.mother_object.serial_number
+            mother = obj.mother_object
+            obj.ex_mother = mother.serial_number
             obj.mother_object = None
             obj.save(update_fields=["mother_object", "ex_mother"])
+
+            if not mother.child_object.exists():
+                mother.delete()
 
         children_moved = 0
         if obj.is_mother:
@@ -284,6 +323,9 @@ class ProductMoveView(APIView):
                 child.current_place = None
                 child.save()
                 children_moved += 1
+                
+            if not obj.child_object.exists():
+                obj.delete()
 
         return Response({
             "status": "obiekt w drodze",
@@ -302,11 +344,27 @@ class ProductReceiveView(APIView):
         obj = serializer.validated_data["product_object"]
         who_entry = serializer.validated_data["who_entry"]
         place_name = serializer.validated_data["place_name"]
+        
+        place, _ = Place.objects.get_or_create(name=place_name)
+        
+        if place.only_one_product_object:
+            exists = ProductObject.objects.filter(current_place=place).exclude(id=obj.id).exists()
+            if exists:
+                return Response({
+                    "error": f"W miejscu '{place.name}' znajduje się już inny obiekt. Nie można przyjąć więcej niż jednego.",
+                    "code": "place_occupied"
+                }, status=400)
 
         def set_kill_flag(value=True):
             AppToKill.objects.filter(line_name__name=place_name).update(killing_flag=value)
 
         set_kill_flag(True)
+
+        if obj.end:
+            return Response({
+                "error": "Obiekt zakończył już swój cykl życia i nie może być modyfikowany.",
+                "code": "object_ended"
+            }, status=400)
 
         try:
             target_process = ProductProcess.objects.get(id=process_id)
@@ -324,12 +382,23 @@ class ProductReceiveView(APIView):
             order=target_process.order - 1
         ).first()
 
-        if previous_process:
+        # Jeśli proces końcowy – ustaw end=True i zakończ poprzedni proces
+        if target_process.ending_process:
+            obj.end = True
+            obj.save(update_fields=["end"])
+
+            if previous_process:
+                prev_proc_instance = obj.assigned_processes.filter(process=previous_process).first()
+                if prev_proc_instance and not prev_proc_instance.is_completed:
+                    prev_proc_instance.is_completed = True
+                    prev_proc_instance.completed_at = now()
+                    prev_proc_instance.save()
+
+        # Walidacja poprzedniego procesu (o ile to NIE jest proces końcowy)
+        if previous_process and not target_process.ending_process:
             prev_proc_instance = obj.assigned_processes.filter(process=previous_process).first()
             if not prev_proc_instance or not prev_proc_instance.is_completed:
                 return Response({"error": "Poprzedni proces nie został ukończony."}, status=400)
-
-        place, _ = Place.objects.get_or_create(name=place_name)
 
         target_po_proc = obj.assigned_processes.filter(process=target_process).first()
         if not target_po_proc:
@@ -338,6 +407,7 @@ class ProductReceiveView(APIView):
         if target_po_proc.logs.exists():
             return Response({"error": "Obiekt został już odebrany w tym procesie."}, status=400)
 
+        # Sukces – wyłącz flagę kill
         set_kill_flag(False)
 
         obj.current_process = target_process

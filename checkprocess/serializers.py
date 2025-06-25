@@ -19,7 +19,7 @@ class ProductProcessSerializer(serializers.ModelSerializer):
     product_name = serializers.StringRelatedField(source='product.name', read_only=True)
     class Meta:
         model = ProductProcess
-        fields = ['id', 'product_name', 'name', 'is_required', 'order']
+        fields = ['id', 'product_name', 'name', 'is_required', 'order', 'ending_process']
 
 
 class ProductObjectSerializer(serializers.ModelSerializer):
