@@ -137,11 +137,10 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                         if not mother_obj.is_mother:
                             raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
 
-                        # limit = int(m_q_code) if m_q_code and m_q_code.isdigit() else 0
-                        # current_children = mother_obj.child_object.count()
-
-                        # if current_children >= limit:
-                        #     raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({limit}).")
+                        child_limit = mother_obj.product.child_limit or 0
+                        current_children = mother_obj.child_object.count()
+                        if child_limit and current_children >= child_limit:
+                            raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({child_limit}).")
 
                         serializer.validated_data['mother_object'] = mother_obj
 
@@ -149,8 +148,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                         raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
                     except ValueError as e:
                         raise ValidationError(f"Błąd w analizie mother_sn: {e}")
-    
-                place_obj, _ = Place.objects.get_or_create(name=place_name)
+        
+                    place_obj, _ = Place.objects.get_or_create(name=place_name)
 
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
@@ -493,6 +492,14 @@ class QuickAddToMotherView(APIView):
 
         if not mother.is_mother:
             return Response({"error": "Obiekt matka nie jest kartonem."}, status=400)
+        
+        child_limit = mother.product.child_limit or 0
+        current_children = mother.child_object.count()
+        if child_limit and current_children >= child_limit:
+            return Response(
+                {"error": f"Obiekt matka osiągnął limit dzieci ({child_limit})."},
+                status=400
+            )
 
         if ProductObject.objects.filter(serial_number=sn).exists():
             return Response({"error": "Obiekt już istnieje."}, status=400)

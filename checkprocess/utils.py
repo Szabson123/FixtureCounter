@@ -93,7 +93,7 @@ def check_fifo_violation(current_object):
     for obj in combined:
         obj_sort_date = obj.sort_date
         if obj_sort_date < current_sort_date or (
-            obj_sort_date == current_sort_date and obj.created_at < current_created_at
+            obj_sort_date == current_sort_date and obj.created_at < current_created_at - timedelta(hours=2)
         ):
             return {
                 "error": (
