@@ -127,8 +127,11 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             serial_number, production_date, expire_date, serial_type, q_code = parse_full_sn(full_sn)
         except ValueError as e:
             raise ValidationError(str(e))
+
         try:
             with transaction.atomic():
+                place_obj, _ = Place.objects.get_or_create(name=place_name)
+
                 if mother_sn:
                     try:
                         mother_serial, _, _, m_serial_type, m_q_code = parse_full_sn(mother_sn)
@@ -148,8 +151,6 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                         raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
                     except ValueError as e:
                         raise ValidationError(f"Błąd w analizie mother_sn: {e}")
-        
-                    place_obj, _ = Place.objects.get_or_create(name=place_name)
 
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
@@ -221,8 +222,13 @@ class ProductMoveView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        obj = serializer.validated_data["product_object"]
+        full_sn = serializer.validated_data["full_sn"]
         who_exit = serializer.validated_data["who_exit"]
+
+        try:
+            obj = ProductObject.objects.get(full_sn=full_sn)
+        except ProductObject.DoesNotExist:
+            return Response({"error": "Obiekt o podanym numerze SN nie istnieje."}, status=400)
         
         if obj.end:
             return Response({
@@ -340,15 +346,14 @@ class ProductReceiveView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        obj = serializer.validated_data["product_object"]
+        full_sn = serializer.validated_data["full_sn"]
         who_entry = serializer.validated_data["who_entry"]
         place_name = serializer.validated_data["place_name"]
         
         place, _ = Place.objects.get_or_create(name=place_name)
         
         if place.only_one_product_object:
-            exists = ProductObject.objects.filter(current_place=place).exclude(id=obj.id).exists()
-            if exists:
+            if ProductObject.objects.filter(current_place=place).exists():
                 return Response({
                     "error": f"W miejscu '{place.name}' znajduje się już inny obiekt. Nie można przyjąć więcej niż jednego.",
                     "code": "place_occupied"
@@ -358,6 +363,11 @@ class ProductReceiveView(APIView):
             AppToKill.objects.filter(line_name__name=place_name).update(killing_flag=value)
 
         set_kill_flag(True)
+        
+        try:
+            obj = ProductObject.objects.get(full_sn=full_sn)
+        except ProductObject.DoesNotExist:
+            return Response({"error": "Obiekt o podanym numerze SN nie istnieje."}, status=400)
 
         if obj.end:
             return Response({
@@ -408,6 +418,14 @@ class ProductReceiveView(APIView):
 
         # Sukces – wyłącz flagę kill
         set_kill_flag(False)
+        
+        if place.only_one_product_object:
+            exists = ProductObject.objects.filter(current_place=place).exclude(id=obj.id).exists()
+            if exists:
+                return Response({
+                    "error": f"W miejscu '{place.name}' znajduje się już inny obiekt. Nie można przyjąć więcej niż jednego.",
+                    "code": "place_occupied"
+                }, status=400)
 
         obj.current_process = target_process
         obj.current_place = place

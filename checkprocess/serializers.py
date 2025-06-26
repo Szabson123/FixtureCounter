@@ -81,33 +81,8 @@ class ProductMoveSerializer(serializers.Serializer):
     full_sn = serializers.CharField()
     who_exit = serializers.CharField()
 
-    def validate(self, data):
-        full_sn = data["full_sn"]
-
-        try:
-            obj = ProductObject.objects.get(full_sn=full_sn)
-        except ProductObject.DoesNotExist:
-            raise serializers.ValidationError("Obiekt o podanym numerze SN nie istnieje.")
-
-        current_process = obj.current_process
-        if current_process is None:
-            raise serializers.ValidationError("Obiekt nie ma przypisanego bieżącego procesu.")
-
-        data["product_object"] = obj
-        data["current_process"] = current_process
-        return data
-    
 
 class ProductReceiveSerializer(serializers.Serializer):
     full_sn = serializers.CharField()
     who_entry = serializers.CharField()
     place_name = serializers.CharField()
-
-    def validate(self, data):
-        try:
-            obj = ProductObject.objects.get(full_sn=data["full_sn"])
-        except ProductObject.DoesNotExist:
-            raise serializers.ValidationError("Obiekt o podanym numerze SN nie istnieje.")
-
-        data["product_object"] = obj
-        return data
