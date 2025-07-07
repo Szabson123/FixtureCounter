@@ -1,23 +1,32 @@
-from rest_framework import viewsets, status
 
 from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from django.db import transaction, IntegrityError, models
-
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill
-from .serializers import ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer, ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer
-
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
-from .filters import ProductObjectFilter
-from .utils import parse_full_sn, check_fifo_violation
-
-from datetime import timedelta
 from django.utils.timezone import now, localtime
 
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+
+from .filters import ProductObjectFilter
+from .parsers import get_parser
+from .utils import parse_full_sn, check_fifo_violation
+from .validation import ValidationErrorWithCode, ProcessEntryValidator
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill
+from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
+                        ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer)
+
+from datetime import timedelta, date
+from rest_framework.pagination import PageNumberPagination
+
+
+class BasicProcessPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -58,6 +67,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
     
     ordering_fields = ['created_at', 'serial_number', 'current_process', 'current_place']
     ordering = ['-created_at']
+    pagination_class = BasicProcessPagination
 
     def get_queryset(self):
         product_id = self.kwargs.get('product_id')
@@ -107,6 +117,44 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             "status": "Zmieniono miejsce obiektu.",
             "new_place": new_place.name
         }, status=200)
+    
+    @action(detail=False, methods=["patch"], url_path="change-place-by-sn")
+    def change_place_by_sn(self, request, **kwargs):
+        full_sn = request.data.get("obj_full_sn")
+        new_place_name = request.data.get("place_name")
+
+        if not full_sn:
+            return Response({"error": "Pole 'obj_full_sn' jest wymagane."}, status=400)
+        if not new_place_name:
+            return Response({"error": "Pole 'place_name' jest wymagane."}, status=400)
+
+        try:
+            obj = ProductObject.objects.get(full_sn=full_sn)
+        except ProductObject.DoesNotExist:
+            return Response({"error": f"Obiekt SN '{full_sn}' nie istnieje."}, status=404)
+
+        if not obj.current_process:
+            return Response({"error": "Obiekt nie znajduje się w żadnym procesie."}, status=400)
+
+        try:
+            new_place = Place.objects.get(name=new_place_name)
+        except Place.DoesNotExist:
+            return Response({"error": f"Miejsce '{new_place_name}' nie istnieje."}, status=400)
+
+        if new_place.process != obj.current_process:
+            return Response({
+                "error": "Nowe miejsce nie należy do tego samego procesu, w którym znajduje się obiekt."
+            }, status=400)
+
+        obj.current_place = new_place
+        obj.save(update_fields=["current_place"])
+
+        return Response({
+            "status": "Zmieniono miejsce obiektu.",
+            "new_place": new_place.name,
+            "object_id": obj.id,
+            "serial_number": obj.serial_number
+        }, status=200)
 
 
     def perform_create(self, serializer):
@@ -124,7 +172,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             raise ValidationError("Brakuje 'place', 'who_entry' lub 'full_sn' w danych.")
 
         try:
-            serial_number, production_date, expire_date, serial_type, q_code = parse_full_sn(full_sn)
+            parser = get_parser(product.parser_type)
+            serial_number, production_date, expire_date, serial_type, q_code = parser.parse(full_sn)
         except ValueError as e:
             raise ValidationError(str(e))
 
@@ -173,7 +222,6 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                     po_process = ProductObjectProcess.objects.create(
                         product_object=product_object,
                         process=process,
-                        is_completed=False
                     )
 
                     if process == first_process:
@@ -275,10 +323,6 @@ class ProductMoveView(APIView):
         log.who_exit = who_exit
         log.save()
 
-        if not current_process.can_multi:
-            current_po_proc.is_completed = True
-            current_po_proc.completed_at = now()
-            current_po_proc.save()
 
         if current_process.changing_exp_date and current_process.how_much_days_exp_date:
             obj.exp_date_in_process = now().date() + timedelta(days=current_process.how_much_days_exp_date)
@@ -314,11 +358,6 @@ class ProductMoveView(APIView):
                 child_log.who_exit = who_exit
                 child_log.save()
 
-                if not current_process.can_multi:
-                    child_po_proc.is_completed = True
-                    child_po_proc.completed_at = now()
-                    child_po_proc.save()
-
                 if current_process.changing_exp_date and current_process.how_much_days_exp_date:
                     child.exp_date_in_process = now().date() + timedelta(days=current_process.how_much_days_exp_date)
 
@@ -348,8 +387,7 @@ class ProductReceiveView(APIView):
 
         full_sn = serializer.validated_data["full_sn"]
         who_entry = serializer.validated_data["who_entry"]
-        place_name = serializer.validated_data["place_name"]
-        
+        place_name = serializer.validated_data["place_name"]        
         place, _ = Place.objects.get_or_create(name=place_name)
         
         if place.only_one_product_object:
@@ -358,76 +396,15 @@ class ProductReceiveView(APIView):
                     "error": f"W miejscu '{place.name}' znajduje się już inny obiekt. Nie można przyjąć więcej niż jednego.",
                     "code": "place_occupied"
                 }, status=400)
-
-        def set_kill_flag(value=True):
-            AppToKill.objects.filter(line_name__name=place_name).update(killing_flag=value)
-
-        set_kill_flag(True)
         
         try:
-            obj = ProductObject.objects.get(full_sn=full_sn)
-        except ProductObject.DoesNotExist:
-            return Response({"error": "Obiekt o podanym numerze SN nie istnieje."}, status=400)
+            validator = ProcessEntryValidator(full_sn, process_id, place_name)
+            obj, process, target_po_proc = validator.run()
+            previous_process = validator.previous_process
+        except ValidationErrorWithCode as e:
+            return Response({"error": e.message, "code": e.code}, status=400)
 
-        if obj.end:
-            return Response({
-                "error": "Obiekt zakończył już swój cykl życia i nie może być modyfikowany.",
-                "code": "object_ended"
-            }, status=400)
-
-        try:
-            target_process = ProductProcess.objects.get(id=process_id)
-        except ProductProcess.DoesNotExist:
-            return Response({"error": "Proces nie istnieje."}, status=400)
-
-        if target_process.product != obj.product:
-            return Response({"error": "Proces nie należy do tego samego produktu."}, status=400)
-
-        if obj.current_process and obj.current_process.id == process_id:
-            return Response({"error": "Obiekt już znajduje się w tym procesie."}, status=400)
-
-        previous_process = ProductProcess.objects.filter(
-            product=obj.product,
-            order=target_process.order - 1
-        ).first()
-
-        # Jeśli proces końcowy – ustaw end=True i zakończ poprzedni proces
-        if target_process.ending_process:
-            obj.end = True
-            obj.save(update_fields=["end"])
-
-            if previous_process:
-                prev_proc_instance = obj.assigned_processes.filter(process=previous_process).first()
-                if prev_proc_instance and not prev_proc_instance.is_completed:
-                    prev_proc_instance.is_completed = True
-                    prev_proc_instance.completed_at = now()
-                    prev_proc_instance.save()
-
-        # Walidacja poprzedniego procesu (o ile to NIE jest proces końcowy)
-        if previous_process and not target_process.ending_process:
-            prev_proc_instance = obj.assigned_processes.filter(process=previous_process).first()
-            if not prev_proc_instance or not prev_proc_instance.is_completed:
-                return Response({"error": "Poprzedni proces nie został ukończony."}, status=400)
-
-        target_po_proc = obj.assigned_processes.filter(process=target_process).first()
-        if not target_po_proc:
-            return Response({"error": "Brak przypisania procesu do obiektu."}, status=400)
-
-        if target_po_proc.logs.exists():
-            return Response({"error": "Obiekt został już odebrany w tym procesie."}, status=400)
-
-        # Sukces – wyłącz flagę kill
-        set_kill_flag(False)
-        
-        if place.only_one_product_object:
-            exists = ProductObject.objects.filter(current_place=place).exclude(id=obj.id).exists()
-            if exists:
-                return Response({
-                    "error": f"W miejscu '{place.name}' znajduje się już inny obiekt. Nie można przyjąć więcej niż jednego.",
-                    "code": "place_occupied"
-                }, status=400)
-
-        obj.current_process = target_process
+        obj.current_process = process
         obj.current_place = place
         obj.save()
 
@@ -443,14 +420,15 @@ class ProductReceiveView(APIView):
         )
 
         children_received = 0
+        
         if obj.is_mother and previous_process:
             children = obj.child_object.filter(current_process=previous_process)
             for child in children:
-                child_po_proc = child.assigned_processes.filter(process=target_process).first()
+                child_po_proc = child.assigned_processes.filter(process=process).first()
                 if not child_po_proc or child_po_proc.logs.exists():
                     continue
 
-                child.current_process = target_process
+                child.current_process = process
                 child.current_place = place
                 child.save()
 
@@ -460,10 +438,12 @@ class ProductReceiveView(APIView):
                     place=place
                 )
                 children_received += 1
+        
+        AppToKill.objects.filter(line_name__name=place.name).update(killing_flag=False)
 
         return Response({
             "status": "obiekt odebrany",
-            "current_process": target_process.name,
+            "current_process": process.name,
             "place": place.name,
             "children_received": children_received
         }, status=200)
@@ -476,8 +456,25 @@ class AppKillStatusView(APIView):
         if not line_name:
             return Response({"error": "Brakuje parametru 'line'"}, status=status.HTTP_400_BAD_REQUEST)
 
+        def set_kill_flag(value=True):
+            AppToKill.objects.filter(line_name__name=line_name).update(killing_flag=value)
+
         try:
             place = Place.objects.get(name=line_name)
+
+            expired_products = ProductObject.objects.filter(
+                current_place=place,
+                exp_date_in_process__lt=date.today()
+            )
+
+            if expired_products.exists():
+                set_kill_flag(True)
+                return Response({
+                    "kill": True,
+                    "expired": True,
+                    "message": "Wykryto przeterminowany produkt na linii."
+                }, status=200)
+
             app_kill = AppToKill.objects.get(line_name=place)
             return Response({"kill": app_kill.killing_flag}, status=200)
 
@@ -538,7 +535,6 @@ class QuickAddToMotherView(APIView):
             pop = ProductObjectProcess.objects.create(
                 product_object=obj,
                 process=process,
-                is_completed=False
             )
             if process == mother.current_process:
                 ProductObjectProcessLog.objects.create(

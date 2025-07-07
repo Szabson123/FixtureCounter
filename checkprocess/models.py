@@ -4,6 +4,7 @@ from django.db import models
 class Product(models.Model):
     name = models.CharField(max_length=255)
     child_limit = models.IntegerField(null=True, blank=True, default=20)
+    parser_type = models.CharField(max_length=64, default='default')
 
     def __str__(self):
         return self.name
@@ -16,13 +17,11 @@ class ProductProcess(models.Model):
     order = models.PositiveIntegerField(default=0)
     
     # specyfic process types
-    can_multi = models.BooleanField(default=False)
     changing_exp_date = models.BooleanField(default=False)
-    
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
-    
     respect_quranteen_time = models.BooleanField(default=False)
+    
     expecting_child = models.BooleanField(default=False)
     killing_app = models.BooleanField(default=False)
     ending_process = models.BooleanField(default=False)
@@ -62,7 +61,6 @@ class ProductObject(models.Model):
     
     ex_mother = models.CharField(max_length=255, null=True, blank=True)
     
-    re_use = models.BooleanField(default=False)
     end = models.BooleanField(default=False)
 
     def __str__(self):
@@ -72,16 +70,12 @@ class ProductObject(models.Model):
 class ProductObjectProcess(models.Model):
     product_object = models.ForeignKey(ProductObject, on_delete=models.CASCADE, related_name='assigned_processes')
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_processes')
-    
-    is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('product_object', 'process')
 
     def __str__(self):
-        status = "✓" if self.is_completed else "✗"
-        return f"{self.product_object.serial_number} - {self.process.name} [{status}]"
+        return f"{self.product_object.serial_number} - {self.process.name}"
 
 
 class ProductObjectProcessLog(models.Model):
@@ -100,3 +94,10 @@ class AppToKill(models.Model):
     line_name = models.ForeignKey(Place, models.CASCADE)
     killing_flag = models.BooleanField(default=False)
     
+    
+class BackMapProcess(models.Model):
+    front = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='back_map_front')
+    back = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='back_map_back')
+    
+    def __str__(self) -> str:
+        return super().__str__()

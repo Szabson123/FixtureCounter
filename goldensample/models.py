@@ -51,3 +51,6 @@ class CounterOnGolden(models.Model):
 class MapSample(models.Model):
     i_input = models.CharField(max_length=255)
     i_output = models.CharField(max_length=255)
+    
+    def __str__(self) -> str:
+        return f"{self.i_input} to {self.i_output}"
