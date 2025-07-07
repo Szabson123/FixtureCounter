@@ -67,7 +67,7 @@ class ProductObjectProcessSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ProductObjectProcess
-        fields = ['id', 'process_name', 'is_completed', 'completed_at']
+        fields = ['id', 'process_name']
 
 
 class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
