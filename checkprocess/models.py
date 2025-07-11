@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 
 class Product(models.Model):
@@ -101,3 +102,28 @@ class BackMapProcess(models.Model):
     
     def __str__(self) -> str:
         return super().__str__()
+    
+    
+class Node(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    label = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
+    pos_x = models.FloatField()
+    pos_y = models.FloatField()
+    
+    def __str__(self):
+        return self.label
+    
+
+class Edge(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_form')
+    target = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_to')
+    
+    # Na teraz później w type jak Nody
+    animated = models.BooleanField(default=False)
+    edge_type = models.CharField(max_length=50, default='smoothstep')
+    label = models.CharField(max_length=200, blank=True, null=True)
+    
+    def __str__(self):
+        return f'{self.source} → {self.target}'

@@ -14,12 +14,16 @@ from .filters import ProductObjectFilter
 from .parsers import get_parser
 from .utils import parse_full_sn, check_fifo_violation
 from .validation import ValidationErrorWithCode, ProcessEntryValidator
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Node, Edge
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
-                        ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer)
+                        ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer,
+                        NodeSerializer, EdgeSerializer)
 
 from datetime import timedelta, date
 from rest_framework.pagination import PageNumberPagination
+
+
+
 
 
 class BasicProcessPagination(PageNumberPagination):

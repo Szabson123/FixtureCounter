@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Node, Edge
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -86,3 +86,35 @@ class ProductReceiveSerializer(serializers.Serializer):
     full_sn = serializers.CharField()
     who_entry = serializers.CharField()
     place_name = serializers.CharField()
+    
+
+class NodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Node
+        fields = ['id', 'type', 'pos_x', 'pos_y', 'label']
+        
+    def to_internal_value(self, data):
+        internal ={
+            'id': data.get('id'),
+            'type': data.get('type'),
+            'pos_x': data.get('position', {}).get('x'),
+            'pos_y': data.get('position', {}).get('y'),
+            'label': data.get('data', {}).get('label'),
+        }
+        return super().to_internal_value(internal)
+    
+
+class EdgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Edge
+        fields = ['id', 'source', 'target', 'type', 'animated', 'label']
+
+    def to_internal_value(self, data):
+        return {
+            'id': data.get('id'),
+            'type': data.get('type', 'default'),
+            'animated': data.get('animated', False),
+            'label': data.get('label', ''),
+            'source': data.get('source'),
+            'target': data.get('target'),
+        }
