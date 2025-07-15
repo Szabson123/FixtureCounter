@@ -1,11 +1,5 @@
-from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, BackMapProcess
+from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess
 from django.shortcuts import get_list_or_404
-
-
-def can_return_from_to(current_process: ProductProcess, target_process: ProductProcess) -> bool:
-    if not current_process or not target_process:
-        return False
-    return BackMapProcess.objects.filter(front=current_process, back=target_process).exists()
 
 
 class ValidationErrorWithCode(Exception):
@@ -122,14 +116,7 @@ class ProcessEntryValidator:
                     "Obiekt już ma otwarty log w tym procesie.",
                     code="open_log_exists"
                 )
-            return 
-
-        allowed_back = can_return_from_to(current_process, self.process)
-        if not allowed_back:
-            raise ValidationErrorWithCode(
-                "Cofnięcie nie jest dozwolone.",
-                code="not_in_back_map"
-            )
+            return
 
         current_proc_instance = self.obj.assigned_processes.filter(process=current_process).first()
         not_completed = current_proc_instance

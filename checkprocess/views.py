@@ -14,16 +14,13 @@ from .filters import ProductObjectFilter
 from .parsers import get_parser
 from .utils import parse_full_sn, check_fifo_violation
 from .validation import ValidationErrorWithCode, ProcessEntryValidator
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Node, Edge
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer,
-                        NodeSerializer, EdgeSerializer)
+                        EdgeSerializer)
 
 from datetime import timedelta, date
 from rest_framework.pagination import PageNumberPagination
-
-
-
 
 
 class BasicProcessPagination(PageNumberPagination):
@@ -548,3 +545,60 @@ class QuickAddToMotherView(APIView):
                 )
 
         return Response({"status": "Dodano obiekt do kartonu", "child_sn": sn}, status=201)
+    
+
+class GraphImportView(APIView):
+    @transaction.atomic
+    def post(self, request, product_id):
+        product = Product.objects.get(id=product_id)
+
+        nodes_data = request.data.get('nodes', [])
+        edges_data = request.data.get('edges', [])
+
+        node_serializer = ProductProcessSerializer(data=nodes_data, many=True, context={'product': product})
+        node_serializer.is_valid(raise_exception=True)
+
+        created_nodes = []
+        for item in node_serializer.validated_data:
+            node = ProductProcess.objects.create(**item)
+            created_nodes.append(node)
+
+        edge_serializer = EdgeSerializer(data=edges_data, many=True)
+        edge_serializer.is_valid(raise_exception=True)
+
+        node_map = {str(n.id): n for n in created_nodes}
+
+        for n in ProductProcess.objects.filter(product=product):
+            node_map[str(n.id)] = n
+
+        for item in edge_serializer.validated_data:
+            source = node_map.get(str(item['source']))
+            target = node_map.get(str(item['target']))
+            if source and target:
+                Edge.objects.create(
+                    id=item['id'],
+                    type=item['type'],
+                    animated=item['animated'],
+                    label=item.get('label', ''),
+                    source=source,
+                    target=target
+                )
+
+        return Response({'status': 'imported'}, status=status.HTTP_201_CREATED)
+    
+    def get(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
+
+        nodes = ProductProcess.objects.filter(product=product)
+        edges = Edge.objects.filter(
+            source__product=product,
+            target__product=product
+        )
+
+        node_serializer = ProductProcessSerializer(nodes, many=True)
+        edge_serializer = EdgeSerializer(edges, many=True)
+
+        return Response({
+            'nodes': node_serializer.data,
+            'edges': edge_serializer.data
+        })

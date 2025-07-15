@@ -4,36 +4,61 @@ import uuid
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    child_limit = models.IntegerField(null=True, blank=True, default=20)
-    parser_type = models.CharField(max_length=64, default='default')
 
     def __str__(self):
+        return self.name
+    
+    
+class SubProduct(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='subproduct')
+    name = models.CharField(max_length=255)
+    child_limit = models.IntegerField(null=True, blank=True, default=20)
+    parser_type = models.CharField(max_length=64, default='default')
+    
+    def __str__(self) -> str:
         return self.name
 
 
 class ProductProcess(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='processes')
-    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
+    label = models.CharField(max_length=255)
+    pos_x = models.FloatField()
+    pos_y = models.FloatField()
     is_required = models.BooleanField(default=True)
-    order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.label} ({self.product.name})"
     
-    # specyfic process types
-    changing_exp_date = models.BooleanField(default=False)
+
+class ProductProcessDefault(models.Model):
+    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='defaults')
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
-    
     expecting_child = models.BooleanField(default=False)
     killing_app = models.BooleanField(default=False)
-    ending_process = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['order']
-
-    def __str__(self):
-        return f"{self.product.name} → {self.name} (order: {self.order})"
     
 
+class ProductProcessCondition(models.Model):
+    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='conditions')
+    pass_fail = models.BooleanField(default=True)
+    
+
+class ProductProcessStart(models.Model):
+    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='starts')
+    how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
+    quranteen_time = models.IntegerField(default=None, blank=True, null=True)
+    respect_quranteen_time = models.BooleanField(default=False)
+    expecting_child = models.BooleanField(default=False)
+    killing_app = models.BooleanField(default=False)
+    
+
+class ProductProcessEnding(models.Model):
+    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='endings')
+
+    
 class Place(models.Model):
     name = models.CharField(max_length=255)
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_place', null=True, blank=True, default=None)
@@ -95,35 +120,19 @@ class AppToKill(models.Model):
     line_name = models.ForeignKey(Place, models.CASCADE)
     killing_flag = models.BooleanField(default=False)
     
-    
-class BackMapProcess(models.Model):
-    front = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='back_map_front')
-    back = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='back_map_back')
-    
-    def __str__(self) -> str:
-        return super().__str__()
-    
-    
-class Node(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    label = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
-    pos_x = models.FloatField()
-    pos_y = models.FloatField()
-    
-    def __str__(self):
-        return self.label
-    
 
 class Edge(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    source = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_form')
-    target = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_to')
-    
-    # Na teraz później w type jak Nody
+    source = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='outgoing_edges')
+    target = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='incoming_edges')
+    type = models.CharField(max_length=50, default='default')
+    label = models.CharField(max_length=255, blank=True)
     animated = models.BooleanField(default=False)
-    edge_type = models.CharField(max_length=50, default='smoothstep')
-    label = models.CharField(max_length=200, blank=True, null=True)
     
-    def __str__(self):
-        return f'{self.source} → {self.target}'
+
+NODE_TYPE_MAP = {
+    'normal': ProductProcessDefault,
+    'start': ProductProcessStart,
+    'end': ProductProcessEnding,
+    'condition': ProductProcessCondition,
+}
