@@ -8,38 +8,6 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django.db import models
 
-def parse_full_sn(full_sn: str) -> Tuple[str, Optional[datetime], Optional[datetime], str, Optional[str]]:
-    
-    if not full_sn:
-        raise ValueError("Brak pełnego numeru seryjnego (full_sn).")
-
-    try:
-        serial_match = re.search(r'3S([A-Z]{1})(\d+)', full_sn)
-        prod_date_match = re.search(r'6D(\d{8})', full_sn)
-        exp_date_match = re.search(r'14D(\d{8})', full_sn)
-        q_match = re.search(r'@Q(\d+)', full_sn)
-
-        if not serial_match:
-            raise ValueError("Brak numeru seryjnego z prefiksem 3S.")
-
-        serial_type = serial_match.group(1)
-        serial_number = serial_match.group(2)
-
-        production_date = (
-            datetime.strptime(prod_date_match.group(1), "%Y%m%d").date()
-            if prod_date_match else None
-        )
-        expire_date = (
-            datetime.strptime(exp_date_match.group(1), "%Y%m%d").date()
-            if exp_date_match else None
-        )
-        q_code = q_match.group(1) if q_match else None
-
-        return serial_number, production_date, expire_date, serial_type, q_code
-
-    except Exception as e:
-        raise ValueError(f"Nie udało się sparsować full_sn: {e}")
-
 
 def check_fifo_violation(current_object):
     if not current_object.current_process:
@@ -105,3 +73,22 @@ def check_fifo_violation(current_object):
             }
 
     return None
+
+
+def detect_parser_type(full_sn: str) -> str:
+    if not full_sn or not isinstance(full_sn, str):
+        return 'undefined'
+
+    full_sn = full_sn.strip()
+
+    if full_sn.startswith('(V)'):
+         # Tutaj w przyszłości wiecej if jesli będizemy mieli typy
+        return 'aim_parser'
+
+    if '[)>' in full_sn:
+        return 'alpha_parser'
+
+    if full_sn.startswith('TX'):
+        return 'tecnolab_parser'
+
+    return 'undefined'

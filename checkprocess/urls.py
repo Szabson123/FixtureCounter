@@ -4,9 +4,9 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='products')
-# router.register(r'(?P<product_id>\d+)/product-processes', ProductProcessViewSet, basename='products-process')
+router.register(r'(?P<product_id>\d+)/product-processes', ProductProcessViewSet, basename='products-process')
 router.register(r'(?P<product_id>\d+)/product-objects', ProductObjectViewSet, basename='product-objects')
-router.register(r'(?P<process_id>\d+)/place', PlaceViewSet, basename='place')
+router.register(r'(?P<process_id>[^/]+)/place', PlaceViewSet, basename='place')
 router.register(r'(?P<product_object_id>\d+)/product-object-processes', ProductObjectProcessViewSet, basename='product-object-processes')
 router.register(r'(?P<product_object_process_id>\d+)/product-object-process-logs', ProductObjectProcessLogViewSet, basename='product-object-process-logs')
 
@@ -19,7 +19,6 @@ urlpatterns = [
     path('kill-app/', AppKillStatusView.as_view(), name='kill-app'),
     
     path('<int:product_id>/graph-import/', GraphImportView.as_view(), name='graph-import'),
-    path('<int:product_id>/graph-import/', GraphImportView.as_view(), name='graph-import')
 ]
 
 urlpatterns += router.urls

@@ -12,9 +12,9 @@ from rest_framework.exceptions import ValidationError
 
 from .filters import ProductObjectFilter
 from .parsers import get_parser
-from .utils import parse_full_sn, check_fifo_violation
+from .utils import check_fifo_violation, detect_parser_type
 from .validation import ValidationErrorWithCode, ProcessEntryValidator
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, ProductMoveSerializer, ProductReceiveSerializer,
                         EdgeSerializer)
@@ -168,15 +168,22 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         
         mother_sn = serializer.validated_data.pop('mother_sn', None)
         mother_obj = None
+        
+        parser_type = detect_parser_type(full_sn)
 
         if not place_name or not who_entry or not full_sn:
             raise ValidationError("Brakuje 'place', 'who_entry' lub 'full_sn' w danych.")
 
         try:
-            parser = get_parser(product.parser_type)
-            serial_number, production_date, expire_date, serial_type, q_code = parser.parse(full_sn)
+            parser = get_parser(parser_type)
+            sub_product, serial_number, production_date, expire_date, serial_type, q_code = parser.parse(full_sn)
         except ValueError as e:
             raise ValidationError(str(e))
+        
+        try:
+            sub_product_obj = SubProduct.objects.get(product=product, name=sub_product)
+        except SubProduct.DoesNotExist:
+            raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
 
         try:
             with transaction.atomic():
@@ -206,31 +213,15 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                 serializer.validated_data['production_date'] = production_date
                 serializer.validated_data['expire_date'] = expire_date
                 serializer.validated_data['product'] = product
-
-                if serial_type == "M" and q_code == "12":
+                serializer.validated_data['sub_product'] = sub_product_obj
+    
+                if serial_type and serial_type == "M" and q_code == "12":
                     serializer.validated_data['is_mother'] = True
 
                 product_object = serializer.save()
 
-                processes = list(ProductProcess.objects.filter(product=product).order_by('order'))
-                first_process = processes[0] if processes else None
-
-                product_object.current_process = first_process
                 product_object.current_place = place_obj
                 product_object.save()
-
-                for process in processes:
-                    po_process = ProductObjectProcess.objects.create(
-                        product_object=product_object,
-                        process=process,
-                    )
-
-                    if process == first_process:
-                        ProductObjectProcessLog.objects.create(
-                            product_object_process=po_process,
-                            who_entry=who_entry,
-                            place=place_obj
-                        )
 
         except IntegrityError as e:
             if "unique" in str(e).lower():
@@ -581,7 +572,9 @@ class GraphImportView(APIView):
                     animated=item['animated'],
                     label=item.get('label', ''),
                     source=source,
-                    target=target
+                    target=target,
+                    source_handle=item.get('source_handle'),
+                    target_handle=item.get('target_handle')
                 )
 
         return Response({'status': 'imported'}, status=status.HTTP_201_CREATED)
@@ -599,6 +592,8 @@ class GraphImportView(APIView):
         edge_serializer = EdgeSerializer(edges, many=True)
 
         return Response({
+            'name': product.name,
             'nodes': node_serializer.data,
             'edges': edge_serializer.data
         })
+        

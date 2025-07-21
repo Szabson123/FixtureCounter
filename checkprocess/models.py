@@ -8,12 +8,10 @@ class Product(models.Model):
     def __str__(self):
         return self.name
     
-    
 class SubProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='subproduct')
     name = models.CharField(max_length=255)
     child_limit = models.IntegerField(null=True, blank=True, default=20)
-    parser_type = models.CharField(max_length=64, default='default')
     
     def __str__(self) -> str:
         return self.name
@@ -71,8 +69,9 @@ class Place(models.Model):
 class ProductObject(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_objects')
     mother_object = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_object')
-    is_mother = models.BooleanField(default=False)
+    sub_product = models.ForeignKey(SubProduct, on_delete=models.SET_NULL, related_name='product_objects', null=True, blank=True)
     
+    is_mother = models.BooleanField(default=False)
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     
@@ -125,14 +124,19 @@ class Edge(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     source = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='outgoing_edges')
     target = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='incoming_edges')
+    source_handle = models.CharField(max_length=255, null=True, blank=True)
+    target_handle = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=50, default='default')
-    label = models.CharField(max_length=255, blank=True)
+    label = models.CharField(max_length=255, blank=True, null=True)
     animated = models.BooleanField(default=False)
+    
+    def __str__(self) -> str:
+        return f"{self.source.label} -> {self.target.label} ({self.source.product.name})"
     
 
 NODE_TYPE_MAP = {
     'normal': ProductProcessDefault,
-    'start': ProductProcessStart,
+    'add_receive': ProductProcessStart,
     'end': ProductProcessEnding,
     'condition': ProductProcessCondition,
 }

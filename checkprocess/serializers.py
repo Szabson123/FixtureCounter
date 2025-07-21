@@ -35,40 +35,26 @@ class ProductObjectSerializer(serializers.ModelSerializer):
     place_name = serializers.CharField(write_only=True)
     who_entry = serializers.CharField(write_only=True)
     full_sn = serializers.CharField()
-
-    initial_place = serializers.SerializerMethodField()
-    initial_who_entry = serializers.SerializerMethodField()
-
-    current_process = serializers.StringRelatedField(read_only=True)
-    current_place = serializers.StringRelatedField(read_only=True)
     mother_sn = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    sub_product_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductObject
         fields = [
             'id', 'full_sn', 'serial_number', 'created_at',
             'production_date', 'expire_date',
-            'place_name', 'who_entry', 'initial_who_entry',
-            'current_process', 'current_place', 'initial_place', 'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother'
+            'place_name', 'who_entry',
+            'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name'
         ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',
-            'current_process', 'current_place',
+            'current_process', 'current_place', 'sub_product_name'
         ]
-
-    def get_initial_place(self, obj):
-        log = ProductObjectProcessLog.objects.filter(
-            product_object_process__product_object=obj,
-            product_object_process__process__order=1
-        ).order_by('entry_time').first()
-        return log.place.name if log and log.place else None
-
-    def get_initial_who_entry(self, obj):
-        log = ProductObjectProcessLog.objects.filter(
-            product_object_process__product_object=obj,
-            product_object_process__process__order=1
-        ).order_by('entry_time').first()
-        return log.who_entry if log else None
+        
+    def get_sub_product_name(self, obj):
+        if obj.sub_product:
+            return obj.sub_product.name
+        return 'No type'
 
 
 class ProductObjectProcessSerializer(serializers.ModelSerializer):
@@ -100,7 +86,7 @@ class ProductReceiveSerializer(serializers.Serializer):
 class EdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Edge
-        fields = ['id', 'source', 'target', 'type', 'animated', 'label']
+        fields = ['id', 'source', 'target', 'type', 'animated', 'label', 'source_handle', 'target_handle']
 
     def to_internal_value(self, data):
         return {
@@ -110,4 +96,6 @@ class EdgeSerializer(serializers.ModelSerializer):
             'label': data.get('label', ''),
             'source': data.get('source'),
             'target': data.get('target'),
+            'source_handle': data.get('sourceHandle'),
+            'target_handle': data.get('targetHandle'),
         }
