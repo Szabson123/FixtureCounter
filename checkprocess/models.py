@@ -62,6 +62,9 @@ class Place(models.Model):
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_place', null=True, blank=True, default=None)
     only_one_product_object = models.BooleanField(default=False)
     
+    class Meta:
+        unique_together = ('name', 'process')
+    
     def __str__(self) -> str:
         return self.name
 
@@ -104,7 +107,8 @@ class ProductObjectProcess(models.Model):
 
 
 class ProductObjectProcessLog(models.Model):
-    product_object_process = models.ForeignKey(ProductObjectProcess, on_delete=models.CASCADE, related_name='logs')
+    product_object = models.ForeignKey(ProductObject, on_delete=models.CASCADE, related_name='logs')
+    process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, null=True, blank=True)
     entry_time = models.DateTimeField(auto_now_add=True)
     who_entry = models.CharField(max_length=255, null=True, blank=True)
     exit_time = models.DateTimeField(null=True, blank=True)

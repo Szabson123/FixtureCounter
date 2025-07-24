@@ -71,18 +71,6 @@ class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
         fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit']
 
 
-
-class ProductMoveSerializer(serializers.Serializer):
-    full_sn = serializers.CharField()
-    who_exit = serializers.CharField()
-
-
-class ProductReceiveSerializer(serializers.Serializer):
-    full_sn = serializers.CharField()
-    who_entry = serializers.CharField()
-    place_name = serializers.CharField()
-    
-
 class EdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Edge

@@ -1,5 +1,8 @@
-from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess
+from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place
 from django.shortcuts import get_list_or_404
+from django.core.exceptions import ObjectDoesNotExist
+from .utils import check_fifo_violation
+from django.utils.timezone import now
 
 
 class ValidationErrorWithCode(Exception):
@@ -9,123 +12,149 @@ class ValidationErrorWithCode(Exception):
         super().__init__(message)
 
 
-class ProcessEntryValidator:
-    def __init__(self, full_sn: str, process_id: int, place_name: str):
+class ProcessMovementValidator:
+    def __init__(self, process_uuid, full_sn, place_name, movement_type):
+        self.process_uuid = process_uuid
         self.full_sn = full_sn
-        self.process_id = process_id
         self.place_name = place_name
-
-        self.obj: ProductObject = None
-        self.process: ProductProcess = None
-        self.previous_process: ProductProcess = None
-        self.target_po_proc: ProductObjectProcess = None
-
+        self.movement_type = movement_type
+        
+        self.product_object = None
+        self.process = None
+        
     def run(self):
-        self._load_process()
-        self._set_killing_flag(True)
-        self._load_object()
-        self._validate_previous_process()
-        self._check_target_process_assigned()
-        self.check_if_can_return_or_raise()
-        return self.obj, self.process, self.target_po_proc
-
-    def _load_process(self):
+        self.validate_exists_and_not_end()
+        self.validate_movement_type()
+        
+        if self.movement_type == 'receive':
+            self.validate_edge_can_move()
+            self.validate_only_one_place()
+            self.validate_process_receive_with_current_place()
+            self.set_killing_flag_on_true_if_need()
+            
+        elif self.movement_type == 'move':
+            self.validate_process_and_current_process()
+            self.validate_fifo_rules()
+            # self.validate_process_receive_with_current_place()
+            self.validate_object_quranteen_time()
+    
+    def validate_exists_and_not_end(self):
         try:
-            self.process = ProductProcess.objects.get(id=self.process_id)
+            self.product_object = ProductObject.objects.get(full_sn=self.full_sn)
+        except ObjectDoesNotExist:
+            raise ValidationErrorWithCode(
+                message=f'Taki objekt nie istnieje {self.full_sn}',
+                code = 'object_does_not_exist'
+            )
+        
+        if self.product_object.end:
+            raise ValidationErrorWithCode(
+                message=f'Obiekt Został oznaczony jako skończony {self.full_sn}',
+                code = 'object_already_ended'
+            )
+            
+    def validate_movement_type(self):
+        if self.movement_type not in ['move', 'receive']:
+            raise ValidationErrorWithCode(
+                message=f'Typ ruchu "{self.movement_type}" nie jest obsługiwany.',
+                code='movement_type_does_not_exist'
+            )
+            
+    def validate_process_and_current_process(self):
+        current_process = self.product_object.current_process
+        
+        if not current_process or str(current_process.id) != self.process_uuid:
+            raise ValidationErrorWithCode(
+                message='Ten produkt nie należy do tego procesu i nie możesz go przenieść.',
+                code='process_mismatch'
+            )
+    
+        self.process = current_process
+    
+    def validate_edge_can_move(self):
+        try:
+            target_process = ProductProcess.objects.get(id=self.process_uuid)
         except ProductProcess.DoesNotExist:
-            raise ValidationErrorWithCode("Proces nie istnieje.")
-
-    def _load_object(self):
+            raise ValidationErrorWithCode(
+                message='Docelowy proces nie istnieje.',
+                code='target_process_not_found'
+            )
+        
+        has_edge = Edge.objects.filter(source=self.product_object.current_process, target=target_process).exists()
+        
+        if not has_edge:
+            raise ValidationErrorWithCode(
+                message=f'Brak przejścia z procesu "{self.product_object.current_process.label}" do "{target_process.label}".',
+                code='edge_not_defined'
+            )
+            
+    def validate_fifo_rules(self):
+        result = check_fifo_violation(self.product_object)
+        if result:
+            raise ValidationErrorWithCode(
+                message=result["error"],
+                code="fifo_violation"
+            )
+            
+    def validate_only_one_place(self):
         try:
-            self.obj = ProductObject.objects.get(full_sn=self.full_sn)
-        except ProductObject.DoesNotExist:
-            raise ValidationErrorWithCode("Obiekt o podanym numerze SN nie istnieje.")
-
-        if self.obj.end:
+            place = Place.objects.get(name=self.place_name, process=self.process)
+        except:
             raise ValidationErrorWithCode(
-                "Obiekt zakończył już swój cykl życia i nie może być modyfikowany.",
-                code="object_ended"
+                message='Podane miejsce nie istnieje',
+                code='place_not_found'
             )
-
-        if self.process.product_id != self.obj.product_id:
-            raise ValidationErrorWithCode("Proces nie należy do tego samego produktu.")
-
-        if self.obj.current_process_id == self.process_id:
-            raise ValidationErrorWithCode("Obiekt już znajduje się w tym procesie.")
-
-        self.previous_process = ProductProcess.objects.filter(
-            product=self.obj.product,
-            order=self.process.order - 1
-        ).first()
-
-        if self.process.ending_process:
-            self.obj.end = True
-            self.obj.save(update_fields=["end"])
-            
-    def _validate_previous_process(self):
-        if self.process.ending_process:
-            return
-
-        if not self._previous_process_is_completed():
-            raise ValidationErrorWithCode("Poprzedni proces nie został zakończony poprawnie.", code="previous_incomplete")
-
-    def _check_target_process_assigned(self):
-        self.target_po_proc = self.obj.assigned_processes.filter(process=self.process).first()
-        if not self.target_po_proc:
-            raise ValidationErrorWithCode("Brak przypisania procesu do obiektu.", code="not_assigned")
-
-    def _previous_process_is_completed(self):
-        if not self.previous_process:
-            return False
-
-        previous_proc_instance = self.obj.assigned_processes.filter(process=self.previous_process).first()
-        if not previous_proc_instance:
-            return False
-
-        last_log = ProductObjectProcessLog.objects.filter(
-            product_object_process=previous_proc_instance
-        ).order_by("-entry_time").first()
-
-        if not last_log:
-            return False
-
-        has_entry_and_exit = last_log.entry_time and last_log.exit_time
-        return has_entry_and_exit
-
-    def _set_killing_flag(self, value: bool = True):
-        if self.process.killing_app:
-            AppToKill.objects.filter(line_name__name=self.place_name).update(killing_flag=value)
-        print(f"USTAWIAM KILL FLAG = {value} dla miejsca: {self.place_name}")
-            
-    def check_if_can_return_or_raise(self):
-        if not self.target_po_proc.logs.exists():
-            return
-
-        current_process = self.obj.current_process
-
-        if not current_process:
-            raise ValidationErrorWithCode(
-                "Obiekt został już odebrany w tym procesie lub cofnięcie nie jest dozwolone.",
-                code="already_received"
-            )
-
-        if current_process.order < self.process.order:
-            open_logs = self.target_po_proc.logs.filter(exit_time__isnull=True).exists()
-            if open_logs:
+        if place.only_one_product_object:
+            exist = ProductObject.objects.filter(current_place=place)
+            if exist:
                 raise ValidationErrorWithCode(
-                    "Obiekt już ma otwarty log w tym procesie.",
-                    code="open_log_exists"
+                message='To miejsce jest oznaczone jako jeden produkt jedno miejsce a w nim już coś się znajduje',
+                code='busy_place'
+            )
+                
+    def validate_object_quranteen_time(self):
+        if self.product_object.quranteen_time:
+            if now() < self.product_object.quranteen_time:
+                raise ValidationErrorWithCode(
+                    message="Obiekt znajduje się w kwarantannie i nie może być jeszcze przeniesiony.",
+                    code="quarantine_active"
                 )
-            return
+            
+    def validate_process_receive_with_current_place(self):
+        try:
+            place = Place.objects.get(name=self.place_name)
+        except Place.DoesNotExist:
+            raise ValidationErrorWithCode(
+                message='Podane miejsce nie istnieje.',
+                code='place_not_found'
+            )
 
-        current_proc_instance = self.obj.assigned_processes.filter(process=current_process).first()
-        not_completed = current_proc_instance
-        no_place = self.obj.current_place is None
+        try:
+            expected_process = ProductProcess.objects.get(id=self.process_uuid)
+        except ProductProcess.DoesNotExist:
+            raise ValidationErrorWithCode(
+                message='Proces nie istnieje.',
+                code='process_not_found'
+            )
 
-        if not_completed and no_place:
-            return
+        if place.process != expected_process:
+            raise ValidationErrorWithCode(
+                message='To miejsce nie należy do wskazanego procesu.',
+                code='place_process_mismatch'
+            )
+    
+    def set_killing_flag_on_true_if_need(self):
+        kill_flag = AppToKill.objects.filter(place=self.place).first()
+        if not kill_flag:
+            raise ValidationErrorWithCode(
+                message='AppKill nie istnieje',
+                code='app_kill_no_exist'
+            )
 
-        raise ValidationErrorWithCode(
-            "Nie spełniono warunków cofnięcia procesu.",
-            code="invalid_return_conditions",
-        )
+        config_attrs = ['default', 'start', 'condition']
+        for attr in config_attrs:
+            conf = getattr(self.process, attr, None)
+            if conf and conf.killing_app:
+                kill_flag.killing_flag = True
+                kill_flag.save()
+                return
