@@ -21,22 +21,65 @@ class ProcessMovementValidator:
         
         self.product_object = None
         self.process = None
+        self.place = None
         
     def run(self):
         self.validate_exists_and_not_end()
         self.validate_movement_type()
         
         if self.movement_type == 'receive':
+            self.resolve_target_process()
+            self.validate_product_not_already_in_process()
+            self.validate_receive_without_move()
             self.validate_edge_can_move()
+            self.validate_settings_in_process()
             self.validate_only_one_place()
             self.validate_process_receive_with_current_place()
             self.set_killing_flag_on_true_if_need()
             
         elif self.movement_type == 'move':
             self.validate_process_and_current_process()
+            self.validate_settings_in_process()
             self.validate_fifo_rules()
             # self.validate_process_receive_with_current_place()
             self.validate_object_quranteen_time()
+    
+    
+    def validate_receive_without_move(self):
+        if self.product_object.current_place:
+            raise ValidationErrorWithCode(
+                message="Nie możesz przyjąć tego produktu bo nie wyciągnąłeś go z poprzedniego procesu",
+                code="receive_without_move"
+            )
+            
+    def validate_settings_in_process(self):
+        settings_attrs = ['default', 'starts', 'condition', 'ending']
+        for attr in settings_attrs:
+            if hasattr(self.process, attr):
+                return 
+            
+        raise ValidationErrorWithCode(
+            message='Proces nie ma zdefiniowanych żadnych ustawień.',
+            code='no_process_settings'
+        )
+        
+    def resolve_target_process(self):
+        try:
+            self.process = ProductProcess.objects.get(id=self.process_uuid)
+        except ProductProcess.DoesNotExist:
+            raise ValidationErrorWithCode(
+                message='Proces docelowy nie istnieje.',
+                code='target_process_not_found'
+            )
+    
+    def validate_product_not_already_in_process(self):
+        current_process = self.product_object.current_process
+
+        if current_process and str(current_process.id) == str(self.process.id):
+            raise ValidationErrorWithCode(
+                message='Ten produkt już znajduje się w tym procesie.',
+                code='already_in_process'
+            )
     
     def validate_exists_and_not_end(self):
         try:
@@ -63,12 +106,12 @@ class ProcessMovementValidator:
     def validate_process_and_current_process(self):
         current_process = self.product_object.current_process
         
-        if not current_process or str(current_process.id) != self.process_uuid:
+        if not current_process or str(current_process.id) != str(self.process_uuid):
             raise ValidationErrorWithCode(
                 message='Ten produkt nie należy do tego procesu i nie możesz go przenieść.',
                 code='process_mismatch'
             )
-    
+        
         self.process = current_process
     
     def validate_edge_can_move(self):
@@ -87,6 +130,7 @@ class ProcessMovementValidator:
                 message=f'Brak przejścia z procesu "{self.product_object.current_process.label}" do "{target_process.label}".',
                 code='edge_not_defined'
             )
+        self.process = target_process
             
     def validate_fifo_rules(self):
         result = check_fifo_violation(self.product_object)
@@ -121,40 +165,40 @@ class ProcessMovementValidator:
                 )
             
     def validate_process_receive_with_current_place(self):
+        if not self.process:
+            try:
+                self.process = ProductProcess.objects.get(id=self.process_uuid)
+            except ProductProcess.DoesNotExist:
+                raise ValidationErrorWithCode(
+                    message='Proces nie istnieje.',
+                    code='process_not_found'
+                )
+        
         try:
-            place = Place.objects.get(name=self.place_name)
+            self.place = Place.objects.get(name=self.place_name, process=self.process)
         except Place.DoesNotExist:
             raise ValidationErrorWithCode(
-                message='Podane miejsce nie istnieje.',
+                message='Podane miejsce nie istnieje lub nie należy do wskazanego procesu.',
                 code='place_not_found'
             )
-
-        try:
-            expected_process = ProductProcess.objects.get(id=self.process_uuid)
-        except ProductProcess.DoesNotExist:
-            raise ValidationErrorWithCode(
-                message='Proces nie istnieje.',
-                code='process_not_found'
-            )
-
-        if place.process != expected_process:
-            raise ValidationErrorWithCode(
-                message='To miejsce nie należy do wskazanego procesu.',
-                code='place_process_mismatch'
-            )
+            
+    def _process_has_killing_app(self):
+        for attr in ['defaults', 'starts']:
+            queryset = getattr(self.process, attr).all()
+            if queryset.filter(killing_app=True).exists():
+                return True
+        return False
     
     def set_killing_flag_on_true_if_need(self):
-        kill_flag = AppToKill.objects.filter(place=self.place).first()
+        if not self._process_has_killing_app():
+            return
+
+        kill_flag = AppToKill.objects.filter(line_name=self.place).first()
         if not kill_flag:
             raise ValidationErrorWithCode(
                 message='AppKill nie istnieje',
                 code='app_kill_no_exist'
             )
 
-        config_attrs = ['default', 'start', 'condition']
-        for attr in config_attrs:
-            conf = getattr(self.process, attr, None)
-            if conf and conf.killing_app:
-                kill_flag.killing_flag = True
-                kill_flag.save()
-                return
+        kill_flag.killing_flag = True
+        kill_flag.save()

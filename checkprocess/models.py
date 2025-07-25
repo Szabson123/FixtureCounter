@@ -116,7 +116,7 @@ class ProductObjectProcessLog(models.Model):
     place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
 
     def __str__(self):
-        return f"Log for {self.product_object_process} @ {self.entry_time:%Y-%m-%d %H:%M}"
+        return f"Log for @ {self.entry_time:%Y-%m-%d %H:%M}"
 
 
 class AppToKill(models.Model):

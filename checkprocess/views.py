@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.timezone import now, localtime
+from django.utils import timezone
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -18,9 +19,9 @@ from .models import Product, ProductProcess, ProductObject, ProductObjectProcess
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer)
 
-from services.movement_service import MovementHandler
+from checkprocess.services.movement_service import MovementHandler
 
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from rest_framework.pagination import PageNumberPagination
 
 
@@ -231,6 +232,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                 product_object.current_process = process
                 
                 product_object.save()
+                
+                ProductObjectProcessLog.objects.create(product_object=product_object, process=process, entry_time=timezone.now(), who_entry=who_entry, place=place_obj)
 
         except IntegrityError as e:
             if "unique" in str(e).lower():
@@ -266,7 +269,7 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
         
 class ProductMoveView(APIView):
     @transaction.atomic
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         
         process_uuid = self.kwargs.get('process_uuid')
         full_sn = request.data.get('full_sn')
@@ -279,11 +282,16 @@ class ProductMoveView(APIView):
             validator.run()
             
             product_object = validator.product_object
-            place = Place.objects.get(name=place_name)
-            process = ProductProcess.objects.get(id=process_uuid)
+            place = validator.place
+            process = validator.process
             
             handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
             handler.execute()
+            
+            return Response(
+                {"detail": "Ruch został wykonany pomyślnie."},
+                status=status.HTTP_200_OK
+            )
         
         except ValidationErrorWithCode as e:
             return Response(
@@ -390,7 +398,7 @@ class QuickAddToMotherView(APIView):
                 )
 
         return Response({"status": "Dodano obiekt do kartonu", "child_sn": sn}, status=201)
-    
+
 
 class GraphImportView(APIView):
     @transaction.atomic

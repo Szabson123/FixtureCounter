@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
 from django.utils.timezone import now
 from django.db import transaction
+from django.utils import timezone
 
 
 class MovementHandler:
@@ -41,13 +42,16 @@ class MoveHandler(BaseMovementHandler):
     
     # Log creation
     def create_move_log(self):
-        try:
-            log = ProductObjectProcessLog.objects.filter(product_object=self.product_object, process=self.process, exit_time__isnull=True).order_by('-entry_time').first()
-            
-        except ObjectDoesNotExist:
+        log = ProductObjectProcessLog.objects.filter(
+            product_object=self.product_object,
+            process=self.process,
+            exit_time__isnull=True
+        ).order_by('-entry_time').first()
+
+        if not log:
             raise ValidationErrorWithCode(
-                message='Taki log nie istnieje co oznacza że produkt nie powinien być w tym procesie',
-                code = 'log_no_exist'
+                message='Taki log nie istnieje, co oznacza że produkt nie powinien być w tym procesie',
+                code='log_no_exist'
             )
         log.exit_time = datetime.now()
         log.who_exit = self.who
@@ -90,33 +94,36 @@ class ReceiveHandler(BaseMovementHandler):
         self.set_current_place_and_process()
         self.create_log()
         self.set_killing_flag_on_false_if_need()
-    # Log creation
+
     def create_log(self):
-        ProductObjectProcessLog.objects.create(product_object=self.product_object, process=self.process, entry_time=datetime.now(), who_entry=self.who, place=self.place)
-    # Set new place
+        ProductObjectProcessLog.objects.create(product_object=self.product_object, process=self.process, entry_time=timezone.now(), who_entry=self.who, place=self.place)
     
     def set_current_place_and_process(self):
         product_object = self.product_object
         product_object.current_place = self.place
         product_object.current_process = self.process
         product_object.save()
-    # Set kill flag False -> jeśli tego wymaga
+    
+    def _process_has_killing_app(self):
+        for attr in ['defaults', 'starts']:
+            queryset = getattr(self.process, attr).all()
+            if queryset.filter(killing_app=True).exists():
+                return True
+        return False
     
     def set_killing_flag_on_false_if_need(self):
-        kill_flag = AppToKill.objects.filter(place=self.place).first()
+        if not self._process_has_killing_app():
+            return
+
+        kill_flag = AppToKill.objects.filter(line_name=self.place).first()
         if not kill_flag:
             raise ValidationErrorWithCode(
                 message='AppKill nie istnieje',
                 code='app_kill_no_exist'
             )
 
-        config_attrs = ['default', 'start', 'condition']
-        for attr in config_attrs:
-            conf = getattr(self.process, attr, None)
-            if conf and conf.killing_app:
-                kill_flag.killing_flag = False
-                kill_flag.save()
-                return
+        kill_flag.killing_flag = False
+        kill_flag.save()
     
         
 
