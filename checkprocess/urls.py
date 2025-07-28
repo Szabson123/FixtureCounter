@@ -8,7 +8,7 @@ router.register(r'(?P<product_id>\d+)/product-processes', ProductProcessViewSet,
 router.register(r'(?P<product_id>\d+)/(?P<process_uuid>[0-9a-f-]+)/product-objects', ProductObjectViewSet, basename='product-objects')
 router.register(r'(?P<process_id>[^/]+)/place', PlaceViewSet, basename='place')
 router.register(r'(?P<product_object_id>\d+)/product-object-processes', ProductObjectProcessViewSet, basename='product-object-processes')
-router.register(r'(?P<product_object_process_id>\d+)/product-object-process-logs', ProductObjectProcessLogViewSet, basename='product-object-process-logs')
+router.register(r'(?P<product_object_id>\d+)/product-object-process-logs', ProductObjectProcessLogViewSet, basename='product-object-process-logs')
 
 
 urlpatterns = [

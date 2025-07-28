@@ -176,7 +176,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         
         parser_type = detect_parser_type(full_sn)
         
-        if not process.starts.exists():
+        if not process.starts:
             raise ValidationError("To nie jest process startowy")
 
         if not place_name or not who_entry or not full_sn:
@@ -258,8 +258,8 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectProcessLogSerializer
 
     def get_queryset(self):
-        product_object_process_id = self.kwargs.get('product_object_process_id')
-        return ProductObjectProcessLog.objects.filter(product_object_process_id=product_object_process_id)
+        product_object_id = self.kwargs.get('product_object_id')
+        return ProductObjectProcessLog.objects.filter(product_object_id=product_object_id)
 
     def perform_create(self, serializer):
         product_object_process_id = self.kwargs.get('product_object_process_id')
@@ -278,7 +278,7 @@ class ProductMoveView(APIView):
         who = request.data.get('who')
 
         try:
-            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type)
+            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
             validator.run()
             
             product_object = validator.product_object

@@ -31,7 +31,7 @@ class ProductProcess(models.Model):
     
 
 class ProductProcessDefault(models.Model):
-    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='defaults')
+    product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='defaults')
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
@@ -40,12 +40,12 @@ class ProductProcessDefault(models.Model):
     
 
 class ProductProcessCondition(models.Model):
-    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='conditions')
+    product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='conditions')
     pass_fail = models.BooleanField(default=True)
     
 
 class ProductProcessStart(models.Model):
-    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='starts')
+    product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='starts')
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
@@ -54,7 +54,7 @@ class ProductProcessStart(models.Model):
     
 
 class ProductProcessEnding(models.Model):
-    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='endings')
+    product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='endings')
 
     
 class Place(models.Model):
@@ -120,7 +120,8 @@ class ProductObjectProcessLog(models.Model):
 
 
 class AppToKill(models.Model):
-    line_name = models.ForeignKey(Place, models.CASCADE)
+    line_name = models.OneToOneField(Place, on_delete=models.CASCADE)
+    process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, null=True, blank=True)
     killing_flag = models.BooleanField(default=False)
     
 

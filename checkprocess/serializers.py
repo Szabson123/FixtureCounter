@@ -66,9 +66,22 @@ class ProductObjectProcessSerializer(serializers.ModelSerializer):
 
 
 class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
+    full_sn = serializers.CharField(source='product_object.full_sn', read_only=True)
+    process_name = serializers.CharField(source='process.label', read_only=True)
+    place_name = serializers.CharField(source='place.name', read_only=True)
+
     class Meta:
         model = ProductObjectProcessLog
-        fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit']
+        fields = [
+            'id',
+            'entry_time',
+            'who_entry',
+            'exit_time',
+            'who_exit',
+            'full_sn',
+            'process_name',
+            'place_name',
+        ]
 
 
 class EdgeSerializer(serializers.ModelSerializer):

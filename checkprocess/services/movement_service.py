@@ -45,7 +45,7 @@ class MoveHandler(BaseMovementHandler):
         log = ProductObjectProcessLog.objects.filter(
             product_object=self.product_object,
             process=self.process,
-            exit_time__isnull=True
+            exit_time__isnull=True,
         ).order_by('-entry_time').first()
 
         if not log:
@@ -54,6 +54,7 @@ class MoveHandler(BaseMovementHandler):
                 code='log_no_exist'
             )
         log.exit_time = datetime.now()
+        print(self.who)
         log.who_exit = self.who
         
         log.save()
@@ -67,18 +68,19 @@ class MoveHandler(BaseMovementHandler):
     
     def set_quarantin_if_needed(self):
         process = self.process
-        config_attrs = ['default', 'start', 'condition']
+        config_attrs = ['defaults', 'starts', 'conditions']
 
         for attr in config_attrs:
             conf = getattr(process, attr, None)
             if conf and conf.quranteen_time:
-                self.product_object.quranteen_time = now() + timedelta(minutes=conf.quranteen_time)
+                self.product_object.quranteen_time = now() + timedelta(hours=conf.quranteen_time)
                 self.product_object.save()
+                print(self.product_object.quranteen_time)
                 return
     
     def set_expire_if_needed(self):
         process = self.process
-        config_attrs = ['default', 'start', 'condition']
+        config_attrs = ['defaults', 'starts', 'conditions']
 
         for attr in config_attrs:
             conf = getattr(process, attr, None)
@@ -96,7 +98,11 @@ class ReceiveHandler(BaseMovementHandler):
         self.set_killing_flag_on_false_if_need()
 
     def create_log(self):
-        ProductObjectProcessLog.objects.create(product_object=self.product_object, process=self.process, entry_time=timezone.now(), who_entry=self.who, place=self.place)
+        ProductObjectProcessLog.objects.create(product_object=self.product_object,
+                                               process=self.process,
+                                               entry_time=timezone.now(),
+                                               who_entry=self.who,
+                                               place=self.place)
     
     def set_current_place_and_process(self):
         product_object = self.product_object
@@ -105,9 +111,9 @@ class ReceiveHandler(BaseMovementHandler):
         product_object.save()
     
     def _process_has_killing_app(self):
-        for attr in ['defaults', 'starts']:
-            queryset = getattr(self.process, attr).all()
-            if queryset.filter(killing_app=True).exists():
+        for attr in ['defaults', 'starts']:  # zmienione z 'defaults', 'starts'
+            conf = getattr(self.process, attr, None)
+            if conf and conf.killing_app:
                 return True
         return False
     
@@ -115,15 +121,17 @@ class ReceiveHandler(BaseMovementHandler):
         if not self._process_has_killing_app():
             return
 
-        kill_flag = AppToKill.objects.filter(line_name=self.place).first()
-        if not kill_flag:
+        try:
+            kill_flag = AppToKill.objects.get(line_name=self.place)
+        except AppToKill.DoesNotExist:
             raise ValidationErrorWithCode(
-                message='AppKill nie istnieje',
+                message='AppKill nie istnieje dla danego miejsca.',
                 code='app_kill_no_exist'
             )
 
-        kill_flag.killing_flag = False
-        kill_flag.save()
+        if kill_flag.killing_flag:
+            kill_flag.killing_flag = False
+            kill_flag.save()
     
         
 
