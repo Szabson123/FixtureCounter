@@ -2,7 +2,6 @@
 from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.timezone import now, localtime
 from django.utils import timezone
 
 from rest_framework import viewsets, status
@@ -11,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from .filters import ProductObjectFilter
+from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
 from .utils import check_fifo_violation, detect_parser_type
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
@@ -26,7 +25,7 @@ from rest_framework.pagination import PageNumberPagination
 
 
 class BasicProcessPagination(PageNumberPagination):
-    page_size = 15
+    page_size = 25
     page_size_query_param = 'page_size'
     max_page_size = 100
     
@@ -74,11 +73,11 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         product_id = self.kwargs.get('product_id')
-        queryset = ProductObject.objects.filter(product_id=product_id)
+        process_uuid = self.kwargs.get('process_uuid')
 
-        return queryset.exclude(
-            mother_object__isnull=False,
-            mother_object__current_process=models.F('current_process')
+        return ProductObject.objects.filter(
+            product_id=product_id,
+            current_process_id=process_uuid
         )
     
     @action(detail=True, methods=['get'], url_path='children')
@@ -197,25 +196,25 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 place_obj, _ = Place.objects.get_or_create(name=place_name)
 
-                if mother_sn:
-                    try:
-                        mother_serial, _, _, m_serial_type, m_q_code = parser.parse(mother_sn)
-                        mother_obj = ProductObject.objects.get(serial_number=mother_serial)
+                # if mother_sn:
+                #     try:
+                #         mother_serial, _, _, m_serial_type, m_q_code = parser.parse(mother_sn)
+                #         mother_obj = ProductObject.objects.get(serial_number=mother_serial)
 
-                        if not mother_obj.is_mother:
-                            raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
+                #         if not mother_obj.is_mother:
+                #             raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
 
-                        child_limit = mother_obj.product.child_limit or 0
-                        current_children = mother_obj.child_object.count()
-                        if child_limit and current_children >= child_limit:
-                            raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({child_limit}).")
+                #         child_limit = mother_obj.product.child_limit or 0
+                #         current_children = mother_obj.child_object.count()
+                #         if child_limit and current_children >= child_limit:
+                #             raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({child_limit}).")
 
-                        serializer.validated_data['mother_object'] = mother_obj
+                #         serializer.validated_data['mother_object'] = mother_obj
 
-                    except ProductObject.DoesNotExist:
-                        raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
-                    except ValueError as e:
-                        raise ValidationError(f"Błąd w analizie mother_sn: {e}")
+                #     except ProductObject.DoesNotExist:
+                #         raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
+                #     except ValueError as e:
+                #         raise ValidationError(f"Błąd w analizie mother_sn: {e}")
 
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
@@ -256,15 +255,30 @@ class ProductObjectProcessViewSet(viewsets.ModelViewSet):
 
 class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectProcessLogSerializer
+    queryset = ProductObjectProcessLog.objects.all()
+
+    search_fields = ['product_object__serial_number', 'product_object__full_sn']
+    ordering_fields = ['entry_time', 'exit_time']
+    ordering = ['-entry_time']
 
     def get_queryset(self):
-        product_object_id = self.kwargs.get('product_object_id')
-        return ProductObjectProcessLog.objects.filter(product_object_id=product_object_id)
+        queryset = super().get_queryset()
+        sn = self.request.query_params.get('sn')
 
-    def perform_create(self, serializer):
-        product_object_process_id = self.kwargs.get('product_object_process_id')
-        pop = get_object_or_404(ProductObjectProcess, pk=product_object_process_id)
-        serializer.save(product_object_process=pop)
+        if sn:
+            try:
+                product_object = ProductObject.objects.get(
+                    models.Q(serial_number=sn) | models.Q(full_sn=sn)
+                )
+            except ProductObject.DoesNotExist:
+                raise ValidationError({"sn": "Product object with this SN not found."})
+
+            queryset = queryset.filter(product_object=product_object)
+            
+        else:
+            raise ValidationError({"sn": "Musisz podać jaki kolwiek sn"})
+
+        return queryset
 
         
 class ProductMoveView(APIView):

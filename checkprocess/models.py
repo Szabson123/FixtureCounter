@@ -37,6 +37,8 @@ class ProductProcessDefault(models.Model):
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
     killing_app = models.BooleanField(default=False)
+    production_process_type = models.BooleanField(default=False) # place when we can show -> continue the production or start new
+    check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
     
 
 class ProductProcessCondition(models.Model):
@@ -51,7 +53,8 @@ class ProductProcessStart(models.Model):
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
     killing_app = models.BooleanField(default=False)
-    
+    add_multi = models.BooleanField(default=False)
+
 
 class ProductProcessEnding(models.Model):
     product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='endings')

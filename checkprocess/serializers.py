@@ -1,6 +1,31 @@
 from rest_framework import serializers
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge
+from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge,
+                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding)
 
+
+class ProductProcessDefaultsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcessDefault
+        exclude = ['product_process']
+
+
+class ProductProcessStartsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcessStart
+        exclude = ['product_process']
+
+
+class ProductProcessConditionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcessCondition
+        exclude = ['product_process']
+
+
+class ProductProcessEndingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcessEnding
+        exclude = ['product_process']
+        
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,9 +41,15 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 
 class ProductProcessSerializer(serializers.ModelSerializer):
+    defaults = ProductProcessDefaultsSerializer(read_only=True)
+    conditions = ProductProcessConditionsSerializer(read_only=True)
+    starts = ProductProcessStartsSerializer(read_only=True)
+    endings = ProductProcessEndingsSerializer(read_only=True)
+
     class Meta:
         model = ProductProcess
-        fields = ['id', 'product', 'type', 'label', 'pos_x', 'pos_y', 'is_required']
+        fields = ['id', 'product', 'type', 'label', 'pos_x', 'pos_y', 'is_required',
+                  'defaults', 'conditions', 'starts', 'endings']
 
     def to_internal_value(self, data):
         return {
@@ -37,19 +68,23 @@ class ProductObjectSerializer(serializers.ModelSerializer):
     full_sn = serializers.CharField()
     mother_sn = serializers.CharField(write_only=True, required=False, allow_blank=True)
     sub_product_name = serializers.SerializerMethodField()
+    current_place_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductObject
         fields = [
-            'id', 'full_sn', 'serial_number', 'created_at',
-            'production_date', 'expire_date',
-            'place_name', 'who_entry',
-            'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name'
-        ]
+                'id', 'full_sn', 'serial_number', 'created_at',
+                'production_date', 'expire_date',
+                'place_name', 'who_entry', 'current_place_name',
+                'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name',
+            ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',
             'current_process', 'current_place', 'sub_product_name'
         ]
+        
+    def get_current_place_name(self, obj):
+        return obj.current_place.name if obj.current_place else None
         
     def get_sub_product_name(self, obj):
         if obj.sub_product:
@@ -72,16 +107,7 @@ class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductObjectProcessLog
-        fields = [
-            'id',
-            'entry_time',
-            'who_entry',
-            'exit_time',
-            'who_exit',
-            'full_sn',
-            'process_name',
-            'place_name',
-        ]
+        fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit', 'full_sn', 'process_name', 'place_name',]
 
 
 class EdgeSerializer(serializers.ModelSerializer):
