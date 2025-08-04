@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, AppKillStatusView, QuickAddToMotherView, GraphImportView
+from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, AppKillStatusView, QuickAddToMotherView, GraphImportView, ProductStartNewProduction
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -15,7 +15,7 @@ urlpatterns = [
     path("quick-add-child/", QuickAddToMotherView.as_view(), name="quick-add-child"),
     
     path('product-object/move/<uuid:process_uuid>/', ProductMoveView.as_view(), name='product-move'),
-    # path('product-object/receive/<int:process_id>/', ProductReceiveView.as_view(), name='product-receive'),
+    path('start-new-prod/<uuid:process_uuid>/', ProductStartNewProduction.as_view(), name='start-prouduction'),
     path('kill-app/', AppKillStatusView.as_view(), name='kill-app'),
     
     path('<int:product_id>/graph-import/', GraphImportView.as_view(), name='graph-import'),

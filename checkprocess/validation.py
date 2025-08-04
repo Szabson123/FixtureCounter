@@ -33,7 +33,7 @@ class ProcessMovementValidator:
             self.resolve_target_process()
             self.validate_process_receive_with_current_place()
             self.set_killing_flag_on_true_if_need()
-            
+
             self.validate_object_existence_and_status()
             self.validate_product_not_already_in_process()
             self.validate_receive_without_move()
@@ -48,6 +48,7 @@ class ProcessMovementValidator:
             self.validate_no_current_place_in_move()
             self.validate_fifo_rules()
             self.validate_object_quranteen_time()
+    
     
     def validate_object_existence_and_status(self):
         if not self.product_object:
@@ -264,3 +265,6 @@ class ProcessMovementValidator:
 
         kill_flag.killing_flag = True
         kill_flag.save()
+    
+
+        

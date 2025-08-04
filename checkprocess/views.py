@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
-from .utils import check_fifo_violation, detect_parser_type
+from .utils import check_fifo_violation, detect_parser_type, get_printer_info_from_card
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
@@ -312,7 +312,60 @@ class ProductMoveView(APIView):
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+
+class ProductStartNewProduction(APIView):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
         
+        process_uuid = self.kwargs.get('process_uuid')
+        production_card = request.data.get('production_card')
+        place_name = request.data.get('place_name')
+        movement_type = request.data.get('movement_type')
+        who = request.data.get('who')
+        full_sn = request.data.get('full_sn')
+        
+        # For logic its always receive but we are using class ProcessMovementValidator and class requires it.
+        if movement_type != 'receive':
+            raise ValidationError("Tylko przyjmowanie dla tego enpointu")
+        
+        if not production_card:
+            raise ValidationError("Bez karty nie możemy pójść dalej")
+        
+        try:
+            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
+            validator.run()
+            
+            product_object = validator.product_object
+            
+            place = validator.place
+            process = validator.process
+            
+            normalized_name = get_printer_info_from_card(production_card)
+            
+            if not product_object.sub_product:
+                raise ValidationError("Obiekt nie ma przypisanego subproduktu.")
+            
+            if product_object.sub_product.name != normalized_name:
+                raise ValidationError(f"Nie możesz użyc tego typu pasty dla tego produktu")
+            
+            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
+            handler.execute()
+            
+            if not hasattr(process, 'defaults') or not process.defaults.production_process_type:
+                raise ValidationError("Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint.")
+            
+            return Response(
+                {"detail": "Ruch został wykonany pomyślnie."},
+                status=status.HTTP_200_OK
+            )
+        
+        except ValidationErrorWithCode as e:
+            return Response(
+                {"detail": e.message, "code": e.code},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
                 
 class AppKillStatusView(APIView):
     def get(self, request):

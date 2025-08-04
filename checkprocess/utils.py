@@ -1,12 +1,48 @@
-import re
-from datetime import datetime
-from typing import Optional, Tuple
 from .models import ProductObject
 from django.db.models import Count, Case, When, Value, DateField, F
 
 from django.utils.timezone import now
 from datetime import timedelta
-from django.db import models
+
+from django.conf import settings
+from rest_framework.exceptions import ValidationError
+from .models import OneToOneMap
+import pyodbc
+
+
+def get_printer_info_from_card(production_card):
+    conn_str = (
+        f"DRIVER={{SQL Server}};"
+        f"SERVER={settings.EXTERNAL_SQL_SERVER};"
+        f"DATABASE={settings.EXTERNAL_SQL_DB};"
+        f"UID={settings.EXTERNAL_SQL_USER};"
+        f"PWD={settings.EXTERNAL_SQL_PASSWORD}"
+    )
+
+    try:
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM printers WHERE name = ?", production_card)
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+    except Exception as e:
+        raise ValidationError(f"Błąd podczas łączenia z bazą zewnętrzną: {str(e)}")
+
+    if not result:
+        raise ValidationError(f"Brak danych drukarki dla production_card: {production_card}")
+
+    printer_name = result[3]   # '15007535'
+    raw_model_name = result[4] # 'LF(OM-338-PT)'
+
+    try:
+        map_entry = OneToOneMap.objects.get(s_input=raw_model_name)
+        normalized_name = map_entry.s_output
+    except OneToOneMap.DoesNotExist:
+        raise ValidationError(f"Nie znaleziono mapowania dla modelu: {raw_model_name}")
+
+    return normalized_name
 
 
 def check_fifo_violation(current_object):

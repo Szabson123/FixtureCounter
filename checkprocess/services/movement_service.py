@@ -39,8 +39,7 @@ class MoveHandler(BaseMovementHandler):
         self.set_quarantin_if_needed()
         self.set_expire_if_needed()
         self.create_move_log()
-    
-    # Log creation
+
     def create_move_log(self):
         log = ProductObjectProcessLog.objects.filter(
             product_object=self.product_object,
@@ -58,14 +57,11 @@ class MoveHandler(BaseMovementHandler):
         log.who_exit = self.who
         
         log.save()
-    
-    # Delete current Place
+        
     def delete_current_place(self):
         self.product_object.current_place = None
         self.product_object.save()
         
-    # if quarantin set quarantin
-    
     def set_quarantin_if_needed(self):
         process = self.process
         config_attrs = ['defaults', 'starts', 'conditions']
@@ -111,7 +107,7 @@ class ReceiveHandler(BaseMovementHandler):
         product_object.save()
     
     def _process_has_killing_app(self):
-        for attr in ['defaults', 'starts']:  # zmienione z 'defaults', 'starts'
+        for attr in ['defaults', 'starts']:
             conf = getattr(self.process, attr, None)
             if conf and conf.killing_app:
                 return True
@@ -133,5 +129,5 @@ class ReceiveHandler(BaseMovementHandler):
             kill_flag.killing_flag = False
             kill_flag.save()
     
-        
+    
 

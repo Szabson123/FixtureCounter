@@ -37,7 +37,7 @@ class ProductProcessDefault(models.Model):
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
     killing_app = models.BooleanField(default=False)
-    production_process_type = models.BooleanField(default=False) # place when we can show -> continue the production or start new
+    production_process_type = models.BooleanField(default=False) # place when we can set -> possible or continue production
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
     
 
@@ -142,6 +142,11 @@ class Edge(models.Model):
         return f"{self.source.label} -> {self.target.label} ({self.source.product.name})"
     
 
+class OneToOneMap(models.Model):
+    s_input = models.CharField(max_length=255)
+    s_output = models.CharField(max_length=255)
+    
+    
 NODE_TYPE_MAP = {
     'normal': ProductProcessDefault,
     'add_receive': ProductProcessStart,

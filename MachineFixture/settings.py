@@ -19,12 +19,20 @@ CLEAR_COUNTER_PASSWORD = os.getenv('CLEAR_COUNTER_PASSWORD')
 VARIANT_SECRET_PASSWORD = os.getenv('VARIANT_SECRET_PASSWORD')
 
 
-SECRET_KEY = "132131sdasdad123123adsd"
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is missing from environment variables!")
 
 
 DEBUG = True
 
 ALLOWED_HOSTS = ['10.140.113.33', 'localhost', '127.0.0.1']
+
+
+EXTERNAL_SQL_SERVER = os.getenv('EXTERNAL_SQL_SERVER')
+EXTERNAL_SQL_DB = os.getenv('EXTERNAL_SQL_DB')
+EXTERNAL_SQL_USER = os.getenv('EXTERNAL_SQL_USER')
+EXTERNAL_SQL_PASSWORD = os.getenv('EXTERNAL_SQL_PASSWORD')
 
 
 # Application definition
