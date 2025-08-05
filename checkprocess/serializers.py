@@ -126,3 +126,8 @@ class EdgeSerializer(serializers.ModelSerializer):
             'source_handle': data.get('sourceHandle'),
             'target_handle': data.get('targetHandle'),
         }
+        
+class BulkProductObjectCreateSerializer(serializers.Serializer):
+    place = serializers.CharField()
+    who_entry = serializers.CharField()
+    objects = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))

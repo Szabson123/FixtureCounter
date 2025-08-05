@@ -146,6 +146,13 @@ class OneToOneMap(models.Model):
     s_input = models.CharField(max_length=255)
     s_output = models.CharField(max_length=255)
     
+
+class LastProductOnPlace(models.Model):
+    product_process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE)
+    place = models.ForeignKey(Place, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+    p_type = models.ForeignKey(SubProduct, on_delete=models.CASCADE, blank=True, null=True)
+    
     
 NODE_TYPE_MAP = {
     'normal': ProductProcessDefault,

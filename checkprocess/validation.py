@@ -48,6 +48,14 @@ class ProcessMovementValidator:
             self.validate_no_current_place_in_move()
             self.validate_fifo_rules()
             self.validate_object_quranteen_time()
+            
+        elif self.movement_type == 'trash':
+            self.validate_process_receive_with_current_place()
+            self.validate_object_existence_and_status()
+            self.validate_is_trash_process()
+        
+        elif self.movement_type == 'check':
+            pass
     
     
     def validate_object_existence_and_status(self):
@@ -135,7 +143,7 @@ class ProcessMovementValidator:
             )
             
     def validate_movement_type(self):
-        if self.movement_type not in ['move', 'receive']:
+        if self.movement_type not in ['move', 'receive', 'trash']:
             raise ValidationErrorWithCode(
                 message=f'Typ ruchu "{self.movement_type}" nie jest obsługiwany.',
                 code='movement_type_does_not_exist'
@@ -266,5 +274,10 @@ class ProcessMovementValidator:
         kill_flag.killing_flag = True
         kill_flag.save()
     
-
+    def validate_is_trash_process(self):
+        if not hasattr(self.process, 'endings'):
+            raise ValidationErrorWithCode(
+                message='Ten proces nie jest oznaczony jako trash (brakuje ustawień zakończenia).',
+                code='not_a_trash_process'
+            )
         

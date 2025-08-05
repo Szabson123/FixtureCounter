@@ -14,9 +14,9 @@ from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
 from .utils import check_fifo_violation, detect_parser_type, get_printer_info_from_card
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct, LastProductOnPlace
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
-                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer)
+                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 
@@ -314,6 +314,95 @@ class ProductMoveView(APIView):
             )
             
 
+class ScrapProduct(APIView):
+    def post(self, request, *args, **kwargs):
+        process_uuid = self.kwargs.get('process_uuid')
+        place_name = request.data.get('place_name')
+        who = request.data.get('who')
+        full_sn = request.data.get("full_sn")
+        movement_type = request.data.get("movement_type")
+        
+        # For logic its always receive but we are using class ProcessMovementValidator and class requires it.
+        if movement_type != 'trash':
+            raise ValidationError("Tylko przyjmowanie dla tego enpointu")
+        
+        try:
+            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
+            validator.run()
+            
+            product_object = validator.product_object
+            place = validator.place
+            process = validator.process
+            
+            ProductObjectProcessLog.objects.create(product_object=product_object, process=process, who_entry=who, place=place)
+            
+            product_object.end = True
+            product_object.current_process = process
+            product_object.current_place = place
+            product_object.save()
+            
+            return Response(
+                {"detail": "Ruch został wykonany pomyślnie."},
+                status=status.HTTP_200_OK
+            )
+        
+        except ValidationErrorWithCode as e:
+            return Response(
+                {"detail": e.message, "code": e.code},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+
+class ContinueProduction(APIView):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        process_uuid = self.kwargs.get('process_uuid')
+        place_name = request.data.get('place_name')
+        movement_type = request.data.get('movement_type')
+        who = request.data.get('who')
+        full_sn = request.data.get('full_sn')
+        
+        # For logic its always receive but we are using class ProcessMovementValidator and class requires it.
+        if movement_type != 'receive':
+            raise ValidationError("Tylko przyjmowanie dla tego enpointu")
+        
+        try:
+            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
+            validator.run()
+            
+            product_object = validator.product_object
+            place = validator.place
+            process = validator.process
+            
+            last_production = (
+                LastProductOnPlace.objects
+                .filter(product_process=process, place=place)
+                .order_by('-date')
+                .first()
+            )
+
+            if not last_production:
+                raise ValidationError("Brak historii pasty na tym stanowisku – nie można kontynuować produkcji.")
+
+            if last_production.p_type.name != product_object.sub_product.name:
+                raise ValidationError("Nie możesz użyć tej pasty do tego produktu – ostatnia używana była inna.")
+
+            
+            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
+            handler.execute()
+            
+            return Response(
+                {"detail": "Ruch został wykonany pomyślnie."},
+                status=status.HTTP_200_OK
+            )
+        
+        except ValidationErrorWithCode as e:
+            return Response(
+                {"detail": e.message, "code": e.code},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+
 class ProductStartNewProduction(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -341,6 +430,9 @@ class ProductStartNewProduction(APIView):
             place = validator.place
             process = validator.process
             
+            if not hasattr(process, 'defaults') or not process.defaults.production_process_type:
+                raise ValidationError("Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint.")
+            
             normalized_name = get_printer_info_from_card(production_card)
             
             if not product_object.sub_product:
@@ -352,8 +444,7 @@ class ProductStartNewProduction(APIView):
             handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
             handler.execute()
             
-            if not hasattr(process, 'defaults') or not process.defaults.production_process_type:
-                raise ValidationError("Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint.")
+            LastProductOnPlace.objects.create(product_process=process, place=place, p_type=product_object.sub_product)
             
             return Response(
                 {"detail": "Ruch został wykonany pomyślnie."},
@@ -526,3 +617,74 @@ class GraphImportView(APIView):
             'edges': edge_serializer.data
         })
         
+        
+class BulkProductObjectCreateView(APIView):
+    def post(self, request, product_id, process_uuid):
+        serializer = BulkProductObjectCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        place_name = serializer.validated_data['place']
+        who_entry = serializer.validated_data['who_entry']
+        objects_data = serializer.validated_data['objects']
+
+        product = get_object_or_404(Product, pk=product_id)
+        process = get_object_or_404(ProductProcess, pk=process_uuid)
+
+        if not process.starts:
+            raise ValidationError("To nie jest process startowy")
+
+        try:
+            with transaction.atomic():
+                place_obj, _ = Place.objects.get_or_create(name=place_name)
+                created_serials = []
+
+                for obj in objects_data:
+                    full_sn = obj.get('full_sn')
+                    if not full_sn:
+                        raise ValidationError("Brakuje 'full_sn' w jednym z obiektów.")
+
+                    parser_type = detect_parser_type(full_sn)
+                    try:
+                        parser = get_parser(parser_type)
+                        sub_product, serial_number, production_date, expire_date, serial_type, q_code = parser.parse(full_sn)
+                    except ValueError as e:
+                        raise ValidationError(f"Błąd parsowania SN '{full_sn}': {str(e)}")
+
+                    try:
+                        sub_product_obj = SubProduct.objects.get(product=product, name=sub_product)
+                    except SubProduct.DoesNotExist:
+                        raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
+
+                    product_object = ProductObject(
+                        product=product,
+                        sub_product=sub_product_obj,
+                        serial_number=serial_number,
+                        production_date=production_date,
+                        expire_date=expire_date,
+                        current_place=place_obj,
+                        current_process=process
+                    )
+
+                    if serial_type and serial_type == "M" and q_code == "12":
+                        product_object.is_mother = True
+
+                    product_object.save()
+                    created_serials.append(serial_number)
+
+                    ProductObjectProcessLog.objects.create(
+                        product_object=product_object,
+                        process=process,
+                        entry_time=timezone.now(),
+                        who_entry=who_entry,
+                        place=place_obj
+                    )
+
+        except IntegrityError as e:
+            if "unique" in str(e).lower():
+                raise ValidationError({"error": "Jeden z obiektów już istnieje"})
+            raise ValidationError("Błąd podczas zapisu")
+
+        return Response({"message": "Dodano obiekty", "serials": created_serials}, status=status.HTTP_201_CREATED)
+
+            
+            

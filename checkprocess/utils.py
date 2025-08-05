@@ -52,6 +52,7 @@ def check_fifo_violation(current_object):
     qs_filters = {
         'current_process': current_object.current_process,
         'current_place__isnull': False,
+        'sub_product': current_object.sub_product,
     }
 
     excluded_ids = [current_object.id]
