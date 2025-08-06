@@ -656,6 +656,7 @@ class BulkProductObjectCreateView(APIView):
                         raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
 
                     product_object = ProductObject(
+                        full_sn=full_sn,
                         product=product,
                         sub_product=sub_product_obj,
                         serial_number=serial_number,
