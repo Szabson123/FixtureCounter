@@ -25,6 +25,7 @@ class ProductProcess(models.Model):
     pos_x = models.FloatField(null=True, blank=True)
     pos_y = models.FloatField(null=True, blank=True)
     is_required = models.BooleanField(default=True)
+    cond_path = models.BooleanField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"
@@ -153,6 +154,17 @@ class LastProductOnPlace(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     p_type = models.ForeignKey(SubProduct, on_delete=models.CASCADE, blank=True, null=True)
     
+    
+class ConditionLog(models.Model):
+    process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey(ProductObject, on_delete=models.CASCADE, null=True, blank=True)
+    time_date = models.DateTimeField(auto_now_add=True)
+    result = models.BooleanField(default=False)
+    who = models.CharField(max_length=255, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-time_date']
+        
     
 NODE_TYPE_MAP = {
     'normal': ProductProcessDefault,

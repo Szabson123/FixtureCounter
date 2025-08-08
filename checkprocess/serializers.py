@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge,
-                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding)
+                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog)
 
 
 class ProductProcessDefaultsSerializer(serializers.ModelSerializer):
@@ -131,3 +131,10 @@ class BulkProductObjectCreateSerializer(serializers.Serializer):
     place = serializers.CharField()
     who_entry = serializers.CharField()
     objects = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))
+    
+
+class ConditionLogSerializer(serializers.ModelSerializer):
+    result = serializers.BooleanField(allow_null=True, required=False)
+    class Meta:
+        model = ConditionLog
+        fields = "__all__"

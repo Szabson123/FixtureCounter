@@ -1,5 +1,5 @@
 from checkprocess.validation import ValidationErrorWithCode
-from checkprocess.models import ProductObjectProcessLog, AppToKill
+from checkprocess.models import ProductObjectProcessLog, AppToKill, ConditionLog
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
 from django.utils.timezone import now
@@ -9,11 +9,13 @@ from django.utils import timezone
 
 class MovementHandler:
     @staticmethod
-    def get_handler(movement_type, product_object, place, process, who):
+    def get_handler(movement_type, product_object, place, process, who, result):
         if movement_type == 'move':
             return MoveHandler(product_object, place, process, who)
         elif movement_type == 'receive':
             return ReceiveHandler(product_object, place, process, who)
+        elif movement_type == 'check':
+            return CheckHandler(product_object, place, process, who, result)
         else:
             raise ValidationErrorWithCode(
                 message='Brak obsługi dla tego typu ruchu',
@@ -22,11 +24,12 @@ class MovementHandler:
         
 
 class BaseMovementHandler:
-    def __init__(self, product_object, place, process, who):
+    def __init__(self, product_object, place, process, who, result=None):
         self.product_object = product_object
         self.place = place
         self.process = process
         self.who = who
+        self.result = result
     
     def execute(self):
         raise NotImplementedError
@@ -125,9 +128,23 @@ class ReceiveHandler(BaseMovementHandler):
                 code='app_kill_no_exist'
             )
 
-        if kill_flag.killing_flag:
+        if  kill_flag.killing_flag:
             kill_flag.killing_flag = False
             kill_flag.save()
-    
+
+
+class CheckHandler(BaseMovementHandler):
+    @transaction.atomic
+    def execute(self):
+        self.create_log()
+        self.set_current_place_and_process()
+
+    def create_log(self):
+        ConditionLog.objects.create(process=self.process, product=self.product_object, result=self.result, who=self.who)
+        
+    def set_current_place_and_process(self):
+        product_object = self.product_object
+        product_object.current_process = self.process
+        product_object.save()
     
 

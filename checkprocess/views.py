@@ -194,27 +194,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                place_obj, _ = Place.objects.get_or_create(name=place_name)
-
-                # if mother_sn:
-                #     try:
-                #         mother_serial, _, _, m_serial_type, m_q_code = parser.parse(mother_sn)
-                #         mother_obj = ProductObject.objects.get(serial_number=mother_serial)
-
-                #         if not mother_obj.is_mother:
-                #             raise ValidationError("Podany mother_sn nie należy do obiektu matki.")
-
-                #         child_limit = mother_obj.product.child_limit or 0
-                #         current_children = mother_obj.child_object.count()
-                #         if child_limit and current_children >= child_limit:
-                #             raise ValidationError(f"Obiekt matka osiągnął limit dzieci ({child_limit}).")
-
-                #         serializer.validated_data['mother_object'] = mother_obj
-
-                #     except ProductObject.DoesNotExist:
-                #         raise ValidationError("Obiekt matka o podanym numerze seryjnym nie istnieje.")
-                #     except ValueError as e:
-                #         raise ValidationError(f"Błąd w analizie mother_sn: {e}")
+                place_obj, _ = Place.objects.get_or_create(name=place_name, process=process)
 
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
@@ -290,6 +270,7 @@ class ProductMoveView(APIView):
         place_name = request.data.get('place_name')
         movement_type = request.data.get('movement_type')
         who = request.data.get('who')
+        result = request.data.get('result')
 
         try:
             validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
@@ -299,7 +280,7 @@ class ProductMoveView(APIView):
             place = validator.place
             process = validator.process
             
-            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
+            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who, result)
             handler.execute()
             
             return Response(

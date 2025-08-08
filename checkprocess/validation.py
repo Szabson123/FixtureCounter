@@ -1,4 +1,4 @@
-from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place
+from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place, ProductProcessCondition, ConditionLog
 from django.shortcuts import get_list_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import check_fifo_violation
@@ -29,14 +29,18 @@ class ProcessMovementValidator:
         self.validate_movement_type()
         self.validate_who_make_move()
 
-        if self.movement_type == 'receive':
+        if self.movement_type == 'receive' or self.movement_type == 'check':
             self.resolve_target_process()
             self.validate_process_receive_with_current_place()
             self.set_killing_flag_on_true_if_need()
+            if self.check_current_process_condition():
+                self.check_cond_path()
 
             self.validate_object_existence_and_status()
             self.validate_product_not_already_in_process()
-            self.validate_receive_without_move()
+            
+            if not self.check_current_process_condition():
+                self.validate_receive_without_move()
             self.validate_edge_can_move()
             self.validate_settings_in_process()
             self.validate_only_one_place()
@@ -54,9 +58,6 @@ class ProcessMovementValidator:
             self.validate_object_existence_and_status()
             self.validate_is_trash_process()
         
-        elif self.movement_type == 'check':
-            pass
-    
     
     def validate_object_existence_and_status(self):
         if not self.product_object:
@@ -90,7 +91,6 @@ class ProcessMovementValidator:
                 code="no_user_loged"
             )
     
-    
     def validate_receive_without_move(self):
         if self.product_object.current_place:
             raise ValidationErrorWithCode(
@@ -99,15 +99,13 @@ class ProcessMovementValidator:
             )
             
     def validate_settings_in_process(self):
-        settings_attrs = ['defaults', 'starts', 'conditions', 'endings']
-        for attr in settings_attrs:
-            if hasattr(self.process, attr):
-                return 
-            
-        raise ValidationErrorWithCode(
-            message='Proces nie ma zdefiniowanych żadnych ustawień.',
-            code='no_process_settings'
-        )
+        for attr in ['defaults','starts','conditions','endings']:
+            try:
+                if getattr(self.process, attr):
+                    return
+            except ObjectDoesNotExist:
+                pass
+        raise ValidationErrorWithCode('Proces nie ma zdefiniowanych żadnych ustawień.', 'no_process_settings')
         
     def resolve_target_process(self):
         try:
@@ -143,7 +141,7 @@ class ProcessMovementValidator:
             )
             
     def validate_movement_type(self):
-        if self.movement_type not in ['move', 'receive', 'trash']:
+        if self.movement_type not in ['move', 'receive', 'trash', 'check']:
             raise ValidationErrorWithCode(
                 message=f'Typ ruchu "{self.movement_type}" nie jest obsługiwany.',
                 code='movement_type_does_not_exist'
@@ -164,16 +162,14 @@ class ProcessMovementValidator:
         try:
             target_process = ProductProcess.objects.get(id=self.process_uuid)
         except ProductProcess.DoesNotExist:
-            raise ValidationErrorWithCode(
-                message='Docelowy proces nie istnieje.',
-                code='target_process_not_found'
-            )
-        
-        has_edge = Edge.objects.filter(source=self.product_object.current_process, target=target_process).exists()
-        
+            raise ValidationErrorWithCode('Docelowy proces nie istnieje.','target_process_not_found')
+
+        src = self.product_object.current_process
+        has_edge = Edge.objects.filter(source=src, target=target_process).exists()
         if not has_edge:
+            src_label = src.label if src else '(brak bieżącego procesu)'
             raise ValidationErrorWithCode(
-                message=f'Brak przejścia z procesu "{self.product_object.current_process.label}" do "{target_process.label}".',
+                message=f'Brak przejścia z procesu "{src_label}" do "{target_process.label}".',
                 code='edge_not_defined'
             )
         self.process = target_process
@@ -195,8 +191,7 @@ class ProcessMovementValidator:
                 code='place_not_found'
             )
         if place.only_one_product_object:
-            exist = ProductObject.objects.filter(current_place=place)
-            if exist:
+            if ProductObject.objects.filter(current_place=place, end=False).exists():
                 raise ValidationErrorWithCode(
                 message='To miejsce jest oznaczone jako "jeden produkt jedno miejsce" a w nim już coś się znajduje',
                 code='busy_place'
@@ -281,3 +276,32 @@ class ProcessMovementValidator:
                 code='not_a_trash_process'
             )
         
+    def check_current_process_condition(self):
+        src = getattr(self.product_object, 'current_process', None)
+        if not src:
+            return False
+        
+        if not Edge.objects.filter(source=src, target=self.process).exists():
+            return False
+        
+        return ProductProcessCondition.objects.filter(product_process=src).exists()
+    
+    def check_cond_path(self):
+        if self.process.cond_path is None:
+            raise ValidationErrorWithCode(
+                message="Poprzednia faza jest warunkowa, ale w docelowej nie skonfigurowano drogi True/False.",
+                code="no_settings_phase"
+            )
+        src = self.product_object.current_process
+        cond_log = (ConditionLog.objects.filter(process=src, product=self.product_object).order_by('-time_date').first())
+        if not cond_log:
+            raise ValidationErrorWithCode(
+                message="Brak logu z fazy warunkowej — nie można przyjąć obiektu do nowego procesu.",
+                code='log_not_exist'
+            )
+
+        if cond_log.result != self.process.cond_path:
+            raise ValidationErrorWithCode(
+                message="Próbujesz przenieść obiekt niezgodnie z wynikiem poprzedniej fazy.",
+                code="wrong_condition"
+            )
