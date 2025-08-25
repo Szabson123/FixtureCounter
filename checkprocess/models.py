@@ -25,7 +25,8 @@ class ProductProcess(models.Model):
     pos_x = models.FloatField(null=True, blank=True)
     pos_y = models.FloatField(null=True, blank=True)
     is_required = models.BooleanField(default=True)
-    cond_path = models.BooleanField(null=True, blank=True)
+    cond_path = models.BooleanField(null=True, blank=True) # -> checking condition path True: Pass Path False: Fail Path None: Dont check
+    killing_app = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"
@@ -37,7 +38,6 @@ class ProductProcessDefault(models.Model):
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
-    killing_app = models.BooleanField(default=False)
     production_process_type = models.BooleanField(default=False) # place when we can set -> possible or continue production
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
     
@@ -53,15 +53,19 @@ class ProductProcessStart(models.Model):
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
-    killing_app = models.BooleanField(default=False)
     add_multi = models.BooleanField(default=False)
 
 
 class ProductProcessEnding(models.Model):
     product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='endings')
 
-    
+
+class PlaceGroupToAppKill(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+
 class Place(models.Model):
+    group = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.CASCADE, related_name='place', null=True, blank=True)
     name = models.CharField(max_length=255)
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, related_name='assigned_place', null=True, blank=True, default=None)
     only_one_product_object = models.BooleanField(default=False)
@@ -70,7 +74,7 @@ class Place(models.Model):
         unique_together = ('name', 'process')
     
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name} -- {self.process.product.name}"
 
 
 class ProductObject(models.Model):
@@ -125,8 +129,10 @@ class ProductObjectProcessLog(models.Model):
 
 class AppToKill(models.Model):
     line_name = models.OneToOneField(Place, on_delete=models.CASCADE)
-    process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, null=True, blank=True)
     killing_flag = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.line_name.name} -- {self.line_name.process.product.name} (Group: {self.line_name.group.name})"
     
 
 class Edge(models.Model):

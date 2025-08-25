@@ -9,7 +9,7 @@ from django.utils import timezone
 
 class MovementHandler:
     @staticmethod
-    def get_handler(movement_type, product_object, place, process, who, result):
+    def get_handler(movement_type, product_object, place, process, who, result=None):
         if movement_type == 'move':
             return MoveHandler(product_object, place, process, who)
         elif movement_type == 'receive':
@@ -109,17 +109,10 @@ class ReceiveHandler(BaseMovementHandler):
         product_object.current_process = self.process
         product_object.save()
     
-    def _process_has_killing_app(self):
-        for attr in ['defaults', 'starts']:
-            conf = getattr(self.process, attr, None)
-            if conf and conf.killing_app:
-                return True
-        return False
-    
     def set_killing_flag_on_false_if_need(self):
-        if not self._process_has_killing_app():
+        if not self.process or not self.process.killing_app:
             return
-
+        
         try:
             kill_flag = AppToKill.objects.get(line_name=self.place)
         except AppToKill.DoesNotExist:
@@ -128,7 +121,7 @@ class ReceiveHandler(BaseMovementHandler):
                 code='app_kill_no_exist'
             )
 
-        if  kill_flag.killing_flag:
+        if kill_flag.killing_flag:
             kill_flag.killing_flag = False
             kill_flag.save()
 

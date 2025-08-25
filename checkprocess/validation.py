@@ -41,9 +41,13 @@ class ProcessMovementValidator:
             
             if not self.check_current_process_condition():
                 self.validate_receive_without_move()
+                
+            if self.movement_type == 'receive':
+                self.validate_only_one_place()
+
             self.validate_edge_can_move()
             self.validate_settings_in_process()
-            self.validate_only_one_place()
+            
 
         elif self.movement_type == 'move':
             self.validate_object_existence_and_status()
@@ -214,52 +218,24 @@ class ProcessMovementValidator:
                     message='Proces nie istnieje.',
                     code='process_not_found'
                 )
-        
-        try:
-            self.place = Place.objects.get(name=self.place_name, process=self.process)
-        except Place.DoesNotExist:
-            raise ValidationErrorWithCode(
-                message='Podane miejsce nie istnieje lub nie należy do wskazanego procesu.',
-                code='place_not_found'
-            )
-            
-    def _process_has_killing_app(self):
-        for attr in ['defaults', 'starts']:
-            conf = getattr(self.process, attr, None)
-            if conf and conf.killing_app:
-                return True
-        return False
-    
-    def _should_kill_app(self):
-        line_empty = not ProductObject.objects.filter(
-            current_place=self.place,
-            current_process=self.process,
-            end=False
-        ).exists()
-        
-        object_bad = (
-            self.product_object is None
-            or self.product_object.end
-            or (
-                self.product_object.quranteen_time and
-                self.product_object.quranteen_time > now()
-            )
-        )
-
-        return line_empty and object_bad
+        if self.movement_type != 'check':
+            try:
+                self.place = Place.objects.get(name=self.place_name, process=self.process)
+            except Place.DoesNotExist:
+                raise ValidationErrorWithCode(
+                    message='Podane miejsce nie istnieje lub nie należy do wskazanego procesu.',
+                    code='place_not_found'
+                )
     
     def set_killing_flag_on_true_if_need(self):
-        if not self._process_has_killing_app():
+        if not self.process or not self.process.killing_app:
             return
-
-        if not self.place or not self.process:
+        
+        if not self.place:
             return
-
-        if not self._should_kill_app():
-            return
-
+        
         try:
-            kill_flag = AppToKill.objects.get(line_name=self.place, process=self.process)
+            kill_flag = AppToKill.objects.get(line_name=self.place)
         except AppToKill.DoesNotExist:
             raise ValidationErrorWithCode(
                 message='AppKill nie istnieje',

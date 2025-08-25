@@ -14,7 +14,7 @@ from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
 from .utils import check_fifo_violation, detect_parser_type, get_printer_info_from_card
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct, LastProductOnPlace
+from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct, LastProductOnPlace, PlaceGroupToAppKill
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer)
 
@@ -194,8 +194,13 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                place_obj, _ = Place.objects.get_or_create(name=place_name, process=process)
-
+                try:
+                    place_obj = Place.objects.get(name=place_name)
+                except Place.DoesNotExist:
+                    raise ValidationError(
+                        {"message": f"Takie miejsce nie istnieje: {place_name}", "code": "place_not_found"}
+                    )
+    
                 serializer.validated_data['serial_number'] = serial_number
                 serializer.validated_data['production_date'] = production_date
                 serializer.validated_data['expire_date'] = expire_date
@@ -418,7 +423,8 @@ class ProductStartNewProduction(APIView):
             
             if not product_object.sub_product:
                 raise ValidationError("Obiekt nie ma przypisanego subproduktu.")
-            
+
+
             if product_object.sub_product.name != normalized_name:
                 raise ValidationError(f"Nie możesz użyc tego typu pasty dla tego produktu")
             
@@ -441,37 +447,56 @@ class ProductStartNewProduction(APIView):
                 
 class AppKillStatusView(APIView):
     def get(self, request):
-        line_name = request.query_params.get("line")
-
-        if not line_name:
-            return Response({"error": "Brakuje parametru 'line'"}, status=status.HTTP_400_BAD_REQUEST)
-
-        def set_kill_flag(value=True):
-            AppToKill.objects.filter(line_name__name=line_name).update(killing_flag=value)
+        group_name = request.query_params.get("group")
+        if not group_name:
+            return Response({"error": "Brakuje parametru 'group'."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            place = Place.objects.get(name=line_name)
+            group = PlaceGroupToAppKill.objects.get(name=group_name)
+        except PlaceGroupToAppKill.DoesNotExist:
+            return Response({"error": f"Grupa '{group_name}' nie istnieje."}, status=status.HTTP_404_NOT_FOUND)
 
-            expired_products = ProductObject.objects.filter(
-                current_place=place,
+        places_qs = (
+            Place.objects
+            .filter(group=group, process__killing_app=True)
+            .only("id", "name")
+        )
+
+        place_ids = list(places_qs.values_list("id", flat=True))
+
+        if not place_ids:
+            return Response({
+                "group": group_name,
+                "expired": False,
+                "places_with_expired": [],
+                "kill": False,
+                "per_place": {}
+            }, status=200)
+
+        expired_ids = list(
+            ProductObject.objects.filter(
+                current_place_id__in=place_ids,
                 exp_date_in_process__lt=date.today()
-            )
+            ).values_list("current_place_id", flat=True).distinct()
+        )
+        places_with_expired = list(
+            Place.objects.filter(id__in=expired_ids).values_list("name", flat=True)
+        )
+        expired_any = bool(expired_ids)
 
-            if expired_products.exists():
-                set_kill_flag(True)
-                return Response({
-                    "kill": True,
-                    "expired": True,
-                    "message": "Wykryto przeterminowany produkt na linii."
-                }, status=200)
+        per_place_flags = dict(
+            AppToKill.objects.filter(line_name_id__in=place_ids)
+            .values_list("line_name__name", "killing_flag")
+        )
+        kill_any = any(per_place_flags.values()) if per_place_flags else False
 
-            app_kill = AppToKill.objects.get(line_name=place)
-            return Response({"kill": app_kill.killing_flag}, status=200)
-
-        except Place.DoesNotExist:
-            return Response({"error": f"Linia '{line_name}' nie istnieje."}, status=404)
-        except AppToKill.DoesNotExist:
-            return Response({"kill": False}, status=200)
+        return Response({
+            "group": group_name,
+            "expired": expired_any,
+            "places_with_expired": places_with_expired,
+            "kill": kill_any,
+            "per_place": per_place_flags
+        }, status=200)
         
         
 class QuickAddToMotherView(APIView):
@@ -616,7 +641,10 @@ class BulkProductObjectCreateView(APIView):
 
         try:
             with transaction.atomic():
-                place_obj, _ = Place.objects.get_or_create(name=place_name)
+                try:
+                    place_obj, _ = Place.objects.get(name=place_name)
+                except:
+                    raise ValidationError("Takie miejsce nie istnieje")
                 created_serials = []
 
                 for obj in objects_data:
