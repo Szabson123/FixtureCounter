@@ -16,7 +16,7 @@ from .utils import check_fifo_violation, detect_parser_type, get_printer_info_fr
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct, LastProductOnPlace, PlaceGroupToAppKill
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
-                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer)
+                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 
@@ -195,7 +195,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 try:
-                    place_obj = Place.objects.get(name=place_name)
+                    place_obj = Place.objects.get(name=place_name, process=process)
                 except Place.DoesNotExist:
                     raise ValidationError(
                         {"message": f"Takie miejsce nie istnieje: {place_name}", "code": "place_not_found"}
@@ -642,7 +642,7 @@ class BulkProductObjectCreateView(APIView):
         try:
             with transaction.atomic():
                 try:
-                    place_obj, _ = Place.objects.get(name=place_name)
+                    place_obj = Place.objects.get(name=place_name, process=process)
                 except:
                     raise ValidationError("Takie miejsce nie istnieje")
                 created_serials = []
@@ -697,4 +697,78 @@ class BulkProductObjectCreateView(APIView):
         return Response({"message": "Dodano obiekty", "serials": created_serials}, status=status.HTTP_201_CREATED)
 
             
-            
+class BulkProductObjectCreateAndAddMotherView(APIView):
+    def post(self, request, product_id, process_uuid):
+        serializer = BulkProductObjectCreateToMotherSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        who_entry = serializer.validated_data['who_entry']
+        objects_data = serializer.validated_data['objects']
+        mother_sn = serializer.validated_data['mother_sn']
+
+        product = get_object_or_404(Product, pk=product_id)
+        process = get_object_or_404(ProductProcess, pk=process_uuid)
+
+        mother = get_object_or_404(ProductObject, full_sn=mother_sn, is_mother=True)
+
+        place_name = mother.current_place.name
+        print(place_name)
+
+        if not process.starts:
+            raise ValidationError("To nie jest process startowy")
+
+        try:
+            with transaction.atomic():
+                try:
+                    place_obj = Place.objects.get(name=place_name, process=process)
+                except Place.DoesNotExist:
+                    raise ValidationError("Takie miejsce nie istnieje")
+                created_serials = []
+
+                for obj in objects_data:
+                    full_sn = obj.get('full_sn')
+                    if not full_sn:
+                        raise ValidationError("Brakuje 'full_sn' w jednym z obiektów.")
+
+                    parser_type = detect_parser_type(full_sn)
+                    try:
+                        parser = get_parser(parser_type)
+                        sub_product, serial_number, production_date, expire_date, serial_type, q_code = parser.parse(full_sn)
+                    except ValueError as e:
+                        raise ValidationError(f"Błąd parsowania SN '{full_sn}': {str(e)}")
+
+                    try:
+                        sub_product_obj = SubProduct.objects.get(product=product, name=sub_product)
+                    except SubProduct.DoesNotExist:
+                        raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
+
+                    product_object = ProductObject(
+                        full_sn=full_sn,
+                        product=product,
+                        sub_product=sub_product_obj,
+                        serial_number=serial_number,
+                        production_date=production_date,
+                        expire_date=expire_date,
+                        current_place=place_obj,
+                        current_process=process,
+
+                        mother_object = mother
+                    )
+
+                    product_object.save()
+                    created_serials.append(serial_number)
+
+                    ProductObjectProcessLog.objects.create(
+                        product_object=product_object,
+                        process=process,
+                        entry_time=timezone.now(),
+                        who_entry=who_entry,
+                        place=place_obj
+                    )
+
+        except IntegrityError as e:
+            if "unique" in str(e).lower():
+                raise ValidationError({"error": "Jeden z obiektów już istnieje"})
+            raise ValidationError("Błąd podczas zapisu")
+
+        return Response({"message": "Dodano obiekty", "serials": created_serials}, status=status.HTTP_201_CREATED)

@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import ProductViewSet, ProductProcessViewSet, ProductObjectViewSet, ProductObjectProcessViewSet, ProductObjectProcessLogViewSet, PlaceViewSet, ProductMoveView, AppKillStatusView, QuickAddToMotherView, GraphImportView, ProductStartNewProduction, ContinueProduction, ScrapProduct, BulkProductObjectCreateView
+from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
+                    ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
+                    PlaceViewSet, ProductMoveView, AppKillStatusView, QuickAddToMotherView, GraphImportView, ProductStartNewProduction,
+                    ContinueProduction, ScrapProduct, BulkProductObjectCreateView)
+
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -19,7 +23,8 @@ urlpatterns = [
     path('continue-prod/<uuid:process_uuid>/', ContinueProduction.as_view(), name='continue-prouduction'),
     path('trash-obj/<uuid:process_uuid>/', ScrapProduct.as_view(), name='scrap-product'),
     
-    path('<int:product_id>/<uuid:process_uuid>/bulk-create/', BulkProductObjectCreateView.as_view(),name='bulk-product-object-create'),
+    path('<int:product_id>/<uuid:process_uuid>/bulk-create/', BulkProductObjectCreateView.as_view(), name='bulk-product-object-create'),
+    path('<int:product_id>/<uuid:process_uuid>/bulk-create-to-mother/', BulkProductObjectCreateAndAddMotherView.as_view(), name='bulk-product-object-create-to-mother'),
     
     path('kill-app/', AppKillStatusView.as_view(), name='kill-app'),
     

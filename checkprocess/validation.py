@@ -179,12 +179,15 @@ class ProcessMovementValidator:
         self.process = target_process
             
     def validate_fifo_rules(self):
-        result = check_fifo_violation(self.product_object)
-        if result:
-            raise ValidationErrorWithCode(
-                message=result["error"],
-                code="fifo_violation"
-            )
+        if self.process.respect_fifo_rules:
+            result = check_fifo_violation(self.product_object)
+            if result:
+                raise ValidationErrorWithCode(
+                    message=result["error"],
+                    code="fifo_violation"
+                )
+        else:
+            return
             
     def validate_only_one_place(self):
         try:

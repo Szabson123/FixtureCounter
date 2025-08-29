@@ -27,6 +27,7 @@ class ProductProcess(models.Model):
     is_required = models.BooleanField(default=True)
     cond_path = models.BooleanField(null=True, blank=True) # -> checking condition path True: Pass Path False: Fail Path None: Dont check
     killing_app = models.BooleanField(default=False)
+    respect_fifo_rules = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"

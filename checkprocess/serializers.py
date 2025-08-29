@@ -75,7 +75,7 @@ class ProductObjectSerializer(serializers.ModelSerializer):
         fields = [
                 'id', 'full_sn', 'serial_number', 'created_at',
                 'production_date', 'expire_date',
-                'place_name', 'who_entry', 'current_place_name',
+                'place_name', 'who_entry', 'current_place_name', 'mother_object',
                 'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name',
             ]
         read_only_fields = [
@@ -138,3 +138,9 @@ class ConditionLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConditionLog
         fields = "__all__"
+
+
+class BulkProductObjectCreateToMotherSerializer(serializers.Serializer):
+    who_entry = serializers.CharField()
+    objects = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))
+    mother_sn = serializers.CharField()
