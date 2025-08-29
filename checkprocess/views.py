@@ -711,18 +711,20 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
 
         mother = get_object_or_404(ProductObject, full_sn=mother_sn, is_mother=True)
 
-        place_name = mother.current_place.name
-        print(place_name)
+        place_name = mother.current_place.name if mother.current_place else None
 
         if not process.starts:
             raise ValidationError("To nie jest process startowy")
 
         try:
             with transaction.atomic():
-                try:
-                    place_obj = Place.objects.get(name=place_name, process=process)
-                except Place.DoesNotExist:
-                    raise ValidationError("Takie miejsce nie istnieje")
+                if place_name and mother.current_place:
+                    try:
+                        place_obj = Place.objects.get(name=place_name, process=process)
+                    except Place.DoesNotExist:
+                        raise ValidationError("Takie miejsce nie istnieje")
+                else:
+                    place_obj = None
                 created_serials = []
 
                 for obj in objects_data:
@@ -751,7 +753,8 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
                         expire_date=expire_date,
                         current_place=place_obj,
                         current_process=process,
-
+                        exp_date_in_process = mother.exp_date_in_process if mother else None,
+                        quranteen_time = mother.quranteen_time if mother else None,
                         mother_object = mother
                     )
 
