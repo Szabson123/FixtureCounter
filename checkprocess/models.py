@@ -64,6 +64,9 @@ class ProductProcessEnding(models.Model):
 class PlaceGroupToAppKill(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class Place(models.Model):
     group = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.CASCADE, related_name='place', null=True, blank=True)

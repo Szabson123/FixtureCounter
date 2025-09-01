@@ -486,7 +486,7 @@ class AppKillStatusView(APIView):
 
         per_place_flags = dict(
             AppToKill.objects.filter(line_name_id__in=place_ids)
-            .values_list("line_name__name", "killing_flag")
+            .values_list("line_name_id", "killing_flag")
         )
         kill_any = any(per_place_flags.values()) if per_place_flags else False
 
