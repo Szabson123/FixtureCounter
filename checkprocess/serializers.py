@@ -128,7 +128,7 @@ class EdgeSerializer(serializers.ModelSerializer):
         }
         
 class BulkProductObjectCreateSerializer(serializers.Serializer):
-    place = serializers.CharField()
+    place_name = serializers.CharField()
     who_entry = serializers.CharField()
     objects = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))
     

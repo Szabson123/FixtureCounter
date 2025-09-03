@@ -54,3 +54,10 @@ class MapSample(models.Model):
     
     def __str__(self) -> str:
         return f"{self.i_input} to {self.i_output}"
+
+
+class PcbEvent(models.Model):
+    group = models.ForeignKey(GroupVariantCode, null=True, blank=True, on_delete=models.SET_NULL)
+    sn = models.CharField(max_length=255)
+    result = models.BooleanField(null=True, blank=True)
+    time_date_tested = models.DateTimeField(auto_now_add=True)

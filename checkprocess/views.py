@@ -287,9 +287,13 @@ class ProductMoveView(APIView):
             
             handler = MovementHandler.get_handler(movement_type, product_object, place, process, who, result)
             handler.execute()
+
+            obj = ProductObject.objects.get(full_sn=full_sn)
             
             return Response(
-                {"detail": "Ruch został wykonany pomyślnie."},
+                {"detail": "Ruch został wykonany pomyślnie.",
+                 "id": obj.id,
+                 "is_mother": obj.is_mother},
                 status=status.HTTP_200_OK
             )
         
@@ -498,71 +502,6 @@ class AppKillStatusView(APIView):
             "per_place": per_place_flags
         }, status=200)
         
-        
-class QuickAddToMotherView(APIView):
-    @transaction.atomic
-    def post(self, request):
-        full_sn = request.data.get("full_sn")
-        mother_sn = request.data.get("mother_sn")
-        who_entry = request.data.get("who_entry")
-
-        if not all([full_sn, mother_sn, who_entry]):
-            return Response({"error": "Brakuje pełnych danych."}, status=400)
-        
-        parser_type = detect_parser_type(full_sn)
-        parser = get_parser(parser_type)
-
-        try:
-            sn, prod_date, exp_date, serial_type, q_code = parser.parse(full_sn)
-            mother_sn_parsed, *_ = parser.parse(mother_sn)
-        except Exception as e:
-            return Response({"error": f"Błąd SN: {e}"}, status=400)
-
-        try:
-            mother = ProductObject.objects.get(serial_number=mother_sn_parsed)
-        except ProductObject.DoesNotExist:
-            return Response({"error": "Nie znaleziono matki."}, status=404)
-
-        if not mother.is_mother:
-            return Response({"error": "Obiekt matka nie jest kartonem."}, status=400)
-        
-        child_limit = mother.product.child_limit or 0
-        current_children = mother.child_object.count()
-        if child_limit and current_children >= child_limit:
-            return Response(
-                {"error": f"Obiekt matka osiągnął limit dzieci ({child_limit})."},
-                status=400
-            )
-
-        if ProductObject.objects.filter(serial_number=sn).exists():
-            return Response({"error": "Obiekt już istnieje."}, status=400)
-
-        obj = ProductObject.objects.create(
-            product=mother.product,
-            serial_number=sn,
-            full_sn=full_sn,
-            production_date=prod_date,
-            expire_date=exp_date,
-            mother_object=mother,
-            current_process=mother.current_process,
-            current_place=mother.current_place
-        )
-
-        processes = mother.product.processes.order_by('order')
-        for process in processes:
-            pop = ProductObjectProcess.objects.create(
-                product_object=obj,
-                process=process,
-            )
-            if process == mother.current_process:
-                ProductObjectProcessLog.objects.create(
-                    product_object_process=pop,
-                    who_entry=who_entry,
-                    place=mother.current_place
-                )
-
-        return Response({"status": "Dodano obiekt do kartonu", "child_sn": sn}, status=201)
-
 
 class GraphImportView(APIView):
     @transaction.atomic
@@ -629,7 +568,7 @@ class BulkProductObjectCreateView(APIView):
         serializer = BulkProductObjectCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        place_name = serializer.validated_data['place']
+        place_name = serializer.validated_data['place_name']
         who_entry = serializer.validated_data['who_entry']
         objects_data = serializer.validated_data['objects']
 
