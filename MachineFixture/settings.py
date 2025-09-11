@@ -186,3 +186,29 @@ CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 EVENTSTREAM_CHANNELS = {
     "fixture-updates": lambda request: True,
 }
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "10.10.10.34"
+EMAIL_PORT = 25
+DEFAULT_FROM_EMAIL = "Registrations@bitron.pl"
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django.core.mail": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}

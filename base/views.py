@@ -288,3 +288,9 @@ class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
 class MachineViewSet(viewsets.ModelViewSet):
     serializer_class = MachineSerializer
     queryset = Machine.objects.all()
+
+
+
+class ReturnServerStatus(APIView):
+    def get(self, request):
+        return Response("Server is working", status=status.HTTP_200_OK)

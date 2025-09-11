@@ -57,7 +57,18 @@ class MapSample(models.Model):
 
 
 class PcbEvent(models.Model):
-    group = models.ForeignKey(GroupVariantCode, null=True, blank=True, on_delete=models.SET_NULL)
+    group = models.ForeignKey(GroupVariantCode, null=True, blank=True, on_delete=models.SET_NULL, related_name="pcb_events")
     sn = models.CharField(max_length=255)
     result = models.BooleanField(null=True, blank=True)
     time_date_tested = models.DateTimeField(auto_now_add=True)
+    shared_plate = models.CharField(max_length=10, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["sn", "time_date_tested"]),
+            models.Index(fields=["shared_plate", "result"]),
+        ]
+        ordering = ["-time_date_tested"]
+
+    def __str__(self):
+        return f"{self.sn} -- {self.result}"

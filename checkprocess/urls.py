@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
-                    ContinueProduction, ScrapProduct, BulkProductObjectCreateView)
+                    ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses)
 
 from rest_framework.routers import DefaultRouter
 
@@ -27,6 +27,7 @@ urlpatterns = [
     path('kill-app/', AppKillStatusView.as_view(), name='kill-app'),
     
     path('<int:product_id>/graph-import/', GraphImportView.as_view(), name='graph-import'),
+    path('get-statuses-groups', ListGroupsStatuses.as_view(), name='list-group-statuses')
 ]
 
 urlpatterns += router.urls

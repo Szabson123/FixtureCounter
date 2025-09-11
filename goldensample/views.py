@@ -1,10 +1,12 @@
 from .models import *
 from .serializers import *
+from .utils import gen_code
 
 from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.generics import GenericAPIView
 
 from django.utils.timezone import now
 from datetime import date, datetime
@@ -325,4 +327,42 @@ class GoldenSampleBinAdder(APIView):
             'i_output': obj.i_output,
             'created': created
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    
+
+class AddEventSn(GenericAPIView):
+    serializer_class = PcbEventSerializer
+
+    def post(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        instances = ser.save()
         
+        return Response(
+            [{"sn": obj.sn, "result": obj.result, "shared_plate": obj.shared_plate} for obj in instances],
+            status=status.HTTP_201_CREATED
+        )
+
+
+class CheckEventSn(GenericAPIView):
+    serializer_class = PcbEventSerializerCheck
+
+    def post(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        sn = ser.validated_data["sn"]
+
+        obj = PcbEvent.objects.filter(sn=sn).order_by("-time_date_tested").first()
+        if not obj or not obj.shared_plate:
+            return Response({"result": False}, status=status.HTTP_200_OK)
+
+        code = obj.shared_plate
+
+        if PcbEvent.objects.filter(shared_plate=code, result=False).exists():
+            return Response({"result": False}, status=status.HTTP_200_OK)
+
+        if PcbEvent.objects.filter(shared_plate=code, result=True).exists():
+            return Response({"result": True}, status=status.HTTP_200_OK)
+
+        return Response({"result": False}, status=status.HTTP_200_OK)
+    

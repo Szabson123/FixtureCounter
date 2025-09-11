@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge,
-                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog)
+                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog, PlaceGroupToAppKill)
 
+from datetime import timedelta
+from django.utils import timezone
 
 class ProductProcessDefaultsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -144,3 +146,16 @@ class BulkProductObjectCreateToMotherSerializer(serializers.Serializer):
     who_entry = serializers.CharField()
     objects = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))
     mother_sn = serializers.CharField()
+
+
+class PlaceGroupToAppKillSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlaceGroupToAppKill
+        fields = ['id', 'name', 'last_check', 'status']
+
+    def get_status(self, obj):
+        if obj.last_check is None:
+            return False
+        return (timezone.now() - obj.last_check) <= timedelta(minutes=1)

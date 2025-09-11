@@ -18,5 +18,7 @@ urlpatterns = [
     
     path('api/add-to-counter/', CreateUpdateCounter.as_view(), name='add_to_counter'),
     path('api/add-multi-to-counter/', CreateMultiCounter.as_view(), name='add-multi-to-counter'),
+
+    path('api/check-status/', ReturnServerStatus.as_view(), name='check-status'),
     
 ]

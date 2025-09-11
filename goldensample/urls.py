@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GoldenSampleCreateView, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList, GoldenSampleBinChecker, GoldenSampleBinAdder
+from .views import GoldenSampleCreateView, AddEventSn, CheckEventSn, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList, GoldenSampleBinChecker, GoldenSampleBinAdder
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -16,8 +16,11 @@ urlpatterns = [
     
     path('bulk_add/', GoldenSampleBulkUploadView.as_view(), name='bulk_add'),
     
-    path('check_bin/', GoldenSampleBinChecker.as_view(), name='check_bin/'),
-    path('add_bin/', GoldenSampleBinAdder.as_view(), name='check_bin/')
+    path('check_bin/', GoldenSampleBinChecker.as_view(), name='check_bin'),
+    path('add_bin/', GoldenSampleBinAdder.as_view(), name='add-bin'),
+
+    path('add-event-sn/', AddEventSn.as_view(), name='add-event-sn'),
+    path('check-event-sn/', CheckEventSn.as_view(), name='add-event-sn'),
 ]
 
 urlpatterns += router.urls

@@ -1,5 +1,6 @@
 from .models import *
 from rest_framework import serializers
+from .utils import gen_code
 
 
 class GoldenCounterSerializer(serializers.ModelSerializer):
@@ -81,3 +82,23 @@ class GoldenSampleDetailedSerializer(serializers.ModelSerializer):
 class MapSampleSerailizer(serializers.ModelSerializer):
     class Meta:
         fields = ['id', 'input', 'output']
+
+
+class PcbEventSerializer(serializers.Serializer):
+    group = serializers.CharField(required=False)
+    events = serializers.DictField(
+        child = serializers.BooleanField()
+    )
+
+    def create(self, validated_data):
+        code = gen_code(8)
+        events = validated_data["events"]
+        objs = [
+            PcbEvent(sn=sn, result=result, shared_plate=code)
+            for sn, result in events.items()
+        ]
+        return PcbEvent.objects.bulk_create(objs)
+    
+
+class PcbEventSerializerCheck(serializers.Serializer):
+    sn = serializers.CharField(required=True)

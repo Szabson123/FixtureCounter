@@ -9,14 +9,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import ListAPIView
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
 from .utils import check_fifo_violation, detect_parser_type, get_printer_info_from_card
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
-from .models import Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct, LastProductOnPlace, PlaceGroupToAppKill
+from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct,
+                    LastProductOnPlace, PlaceGroupToAppKill)
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
-                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer)
+                        ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
+                        PlaceGroupToAppKillSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 
@@ -493,6 +496,10 @@ class AppKillStatusView(APIView):
             .values_list("line_name_id", "killing_flag")
         )
         kill_any = any(per_place_flags.values()) if per_place_flags else False
+        
+        group_obj = PlaceGroupToAppKill.objects.get(name=group_name)
+        group_obj.last_check = timezone.now()
+        group_obj.save()
 
         return Response({
             "group": group_name,
@@ -714,3 +721,9 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
             raise ValidationError("Błąd podczas zapisu")
 
         return Response({"message": "Dodano obiekty", "serials": created_serials}, status=status.HTTP_201_CREATED)
+    
+
+class ListGroupsStatuses(ListAPIView):
+    serializer_class = PlaceGroupToAppKillSerializer
+    queryset = PlaceGroupToAppKill.objects.all()
+    ordering = ["name"]

@@ -63,6 +63,10 @@ class ProductProcessEnding(models.Model):
 
 class PlaceGroupToAppKill(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    last_check = models.DateTimeField()
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -90,7 +94,7 @@ class ProductObject(models.Model):
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     
-    serial_number = models.CharField(max_length=255, unique=True, db_index=True)
+    serial_number = models.CharField(max_length=255, db_index=True)
     full_sn = models.CharField(max_length=255, unique=True, db_index=True, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
