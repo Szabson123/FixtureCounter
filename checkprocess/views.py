@@ -375,7 +375,7 @@ class ContinueProduction(APIView):
             )
 
             if not last_production:
-                raise ValidationError("Brak historii pasty na tym stanowisku – nie można kontynuować produkcji.")
+                raise ValidationErrorWithCode("Brak historii pasty na tym stanowsku", code="NO_PASTE_HISTORY")
 
             if last_production.p_type.name != product_object.sub_product.name:
                 raise ValidationError("Nie możesz użyć tej pasty do tego produktu – ostatnia używana była inna.")
@@ -689,6 +689,16 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
                         sub_product_obj = SubProduct.objects.get(product=product, name=sub_product)
                     except SubProduct.DoesNotExist:
                         raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
+                    
+                    existing_children_count = ProductObject.objects.filter(
+                        mother_object=mother,
+                        sub_product=sub_product_obj
+                    ).count()
+
+                    if sub_product_obj.child_limit is not None and existing_children_count >= sub_product_obj.child_limit:
+                        raise ValidationError(
+                            f"Przekroczono limit {sub_product_obj.child_limit} dla SubProduct '{sub_product_obj.name}' (matka {mother.full_sn})."
+                        )
 
                     product_object = ProductObject(
                         full_sn=full_sn,
@@ -727,3 +737,5 @@ class ListGroupsStatuses(ListAPIView):
     serializer_class = PlaceGroupToAppKillSerializer
     queryset = PlaceGroupToAppKill.objects.all()
     ordering = ["name"]
+
+ 

@@ -22,8 +22,18 @@ def get_printer_info_from_card(production_card):
     try:
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM printers WHERE name = ?", production_card)
+
+        cursor.execute(
+            """
+            SELECT TOP 1 *
+            FROM printers
+            WHERE name IN (?, ?)
+            ORDER BY CASE WHEN name = ? THEN 0 ELSE 1 END
+            """,
+            (str(production_card), f"{production_card}_str1", str(production_card))
+        )
         result = cursor.fetchone()
+        
         cursor.close()
         conn.close()
         

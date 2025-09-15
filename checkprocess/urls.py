@@ -27,7 +27,7 @@ urlpatterns = [
     path('kill-app/', AppKillStatusView.as_view(), name='kill-app'),
     
     path('<int:product_id>/graph-import/', GraphImportView.as_view(), name='graph-import'),
-    path('get-statuses-groups', ListGroupsStatuses.as_view(), name='list-group-statuses')
+    path('get-statuses-groups/', ListGroupsStatuses.as_view(), name='list-group-statuses')
 ]
 
 urlpatterns += router.urls
