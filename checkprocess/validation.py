@@ -3,7 +3,8 @@ from django.shortcuts import get_list_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import check_fifo_violation
 from django.utils.timezone import now
-
+from datetime import timedelta
+from django.utils import timezone
 
 class ValidationErrorWithCode(Exception):
     def __init__(self, message, code=None):
@@ -47,6 +48,7 @@ class ProcessMovementValidator:
 
             self.validate_edge_can_move()
             self.validate_settings_in_process()
+            self.validate_status_of_line()
             
 
         elif self.movement_type == 'move':
@@ -61,7 +63,18 @@ class ProcessMovementValidator:
             self.validate_process_receive_with_current_place()
             self.validate_object_existence_and_status()
             self.validate_is_trash_process()
-        
+
+
+    def validate_status_of_line(self):
+        if self.process.killing_app:
+            last_check = self.place.group.last_check
+            if not last_check or (timezone.now() - last_check) > timedelta(minutes=1):
+                raise ValidationErrorWithCode(
+                    message='Aplikacja na maszynie nie odpowiada – nie można produkować',
+                    code='app_does_not_reply'
+                )
+        else:
+            return
     
     def validate_object_existence_and_status(self):
         if not self.product_object:
