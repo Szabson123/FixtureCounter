@@ -6,6 +6,7 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django.utils import timezone
 
+
 class ValidationErrorWithCode(Exception):
     def __init__(self, message, code=None):
         self.message = message
@@ -49,7 +50,6 @@ class ProcessMovementValidator:
             self.validate_edge_can_move()
             self.validate_settings_in_process()
             self.validate_status_of_line()
-            
 
         elif self.movement_type == 'move':
             self.validate_object_existence_and_status()

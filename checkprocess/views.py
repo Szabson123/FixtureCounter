@@ -3,6 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.db.models import F, Count
+from django.db.models.functions import Coalesce
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -10,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
+from rest_framework.filters import OrderingFilter
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
@@ -22,6 +25,7 @@ from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObj
                         PlaceGroupToAppKillSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
+from checkprocess.services.edge_service import EdgeSets
 
 from datetime import timedelta, date, datetime
 from rest_framework.pagination import PageNumberPagination
@@ -64,13 +68,26 @@ class PlaceViewSet(viewsets.ModelViewSet):
         serializer.save(process=process)
 
 
+
 class ProductObjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectSerializer
-    
-    filter_backends = [DjangoFilterBackend]
+    queryset = ProductObject.objects.all()
+
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = ProductObjectFilter
-    
-    ordering_fields = ['created_at', 'serial_number', 'current_process', 'current_place']
+
+    ordering_fields = [
+        'serial_number',
+        'created_at',
+        'quranteen_time',
+        'production_date',
+        'exp_date_in_process',
+        'expire_date',
+        'expire_date_final',
+        'product__name',
+        'current_place',
+    ]
+
     ordering = ['-created_at']
     pagination_class = BasicProcessPagination
 
@@ -78,10 +95,19 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         product_id = self.kwargs.get('product_id')
         process_uuid = self.kwargs.get('process_uuid')
 
-        return ProductObject.objects.filter(
-            product_id=product_id,
-            current_process_id=process_uuid
+        return (
+            ProductObject.objects.filter(
+                product_id=product_id,
+                current_process_id=process_uuid
+            )
+            .annotate(
+                expire_date_final=Coalesce(
+                    F("exp_date_in_process"),
+                    F("expire_date"),
+                )
+            )
         )
+
     
     @action(detail=True, methods=['get'], url_path='children')
     def get_children(self, request, pk=None, **kwargs):
@@ -292,6 +318,10 @@ class ProductMoveView(APIView):
             handler.execute()
 
             obj = ProductObject.objects.get(full_sn=full_sn)
+
+            if movement_type == 'recive':
+                edge_sets = EdgeSets(process_uuid, full_sn)
+                edge_sets.execute()
             
             return Response(
                 {"detail": "Ruch został wykonany pomyślnie.",
@@ -301,11 +331,12 @@ class ProductMoveView(APIView):
             )
         
         except ValidationErrorWithCode as e:
+            transaction.set_rollback(True)
             return Response(
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+                    
 
 class ScrapProduct(APIView):
     def post(self, request, *args, **kwargs):
@@ -738,4 +769,32 @@ class ListGroupsStatuses(ListAPIView):
     queryset = PlaceGroupToAppKill.objects.all()
     ordering = ["name"]
 
- 
+
+class SubProductsCounter(ListAPIView):
+    def get(self, request, *args, **kwargs):
+        product_id = request.query_params.get("product_id")
+        process_uuid = request.query_params.get("process_uuid")
+
+        if not product_id or not process_uuid:
+            return Response(
+                {"detail": "Brak wymaganych parametrów: product_id, process_uuid"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Filtruj ProductObject
+        queryset = (
+            ProductObject.objects.filter(
+                product_id=product_id,
+                current_process_id=process_uuid,
+                current_place__isnull=False,
+            )
+            .values("sub_product__name")
+            .annotate(count=Count("id"))
+        )
+
+        result = {}
+        for row in queryset:
+            name = row["sub_product__name"] or "Brak sub produktu"
+            result[name] = row["count"]
+
+        return Response(result, status=status.HTTP_200_OK)

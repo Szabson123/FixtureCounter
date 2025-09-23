@@ -29,6 +29,7 @@ class ProductProcess(models.Model):
     killing_app = models.BooleanField(default=False)
     respect_fifo_rules = models.BooleanField(default=True)
 
+
     def __str__(self):
         return f"{self.label} ({self.product.name})"
     
@@ -39,6 +40,8 @@ class ProductProcessDefault(models.Model):
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
+    validate_fish = models.BooleanField(default=False) # FrontEnd settings to know when check skanning fich
+    show_the_couter = models.BooleanField(default=False) # FrontEnd settings to know when use endpoint
     production_process_type = models.BooleanField(default=False) # place when we can set -> possible or continue production
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
     
@@ -106,6 +109,7 @@ class ProductObject(models.Model):
     ex_mother = models.CharField(max_length=255, null=True, blank=True)
     
     end = models.BooleanField(default=False)
+    is_full = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
@@ -152,9 +156,16 @@ class Edge(models.Model):
     type = models.CharField(max_length=50, default='default')
     label = models.CharField(max_length=255, blank=True, null=True)
     animated = models.BooleanField(default=False)
+
     
     def __str__(self) -> str:
         return f"{self.source.label} -> {self.target.label} ({self.source.product.name})"
+    
+
+class EdgeOptionsSets(models.Model):
+    edge = models.OneToOneField(Edge, on_delete=models.CASCADE, related_name='edgeoptions')
+    set_not_full = models.BooleanField(default=True)
+    check_same_out_same_in = models.BooleanField(default=False)
     
 
 class OneToOneMap(models.Model):
