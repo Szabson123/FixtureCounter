@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GoldenSampleCreateView, AddEventSn, CheckEventSn, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList, GoldenSampleBinChecker, GoldenSampleBinAdder
+from .views import GoldenSampleCreateView, MasterSampleListView, AddEventSn, CheckEventSn, GoldenSampleCheckView, GoldenSampleTypeCheckView, GoldenSampleAdminView, VariantListView, GoldenSampleBulkUploadView, GoldenSampleVariantList, GoldenSampleBinChecker, GoldenSampleBinAdder
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -21,6 +21,8 @@ urlpatterns = [
 
     path('add-event-sn/', AddEventSn.as_view(), name='add-event-sn'),
     path('check-event-sn/', CheckEventSn.as_view(), name='add-event-sn'),
+
+    path("mastersamples/", MasterSampleListView.as_view(), name="mastersample-list"),
 ]
 
 urlpatterns += router.urls

@@ -1,7 +1,8 @@
 from .models import *
 from .serializers import *
 from .utils import gen_code
-
+from rest_framework.generics import ListAPIView
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
@@ -366,3 +367,14 @@ class CheckEventSn(GenericAPIView):
 
         return Response({"result": False}, status=status.HTTP_200_OK)
     
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=["MasterSample"]
+    )
+)
+class MasterSampleListView(ListAPIView):
+    queryset = MasterSample.objects.all().select_related(
+        "client", "process_name", "master_type", "created_by"
+    )
+    serializer_class = MasterSampleSerializerList

@@ -1,7 +1,8 @@
 from .models import *
 from rest_framework import serializers
 from .utils import gen_code
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class GoldenCounterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -102,3 +103,63 @@ class PcbEventSerializer(serializers.Serializer):
 
 class PcbEventSerializerCheck(serializers.Serializer):
     sn = serializers.CharField(required=True)
+
+
+from .models import TimerGroup, CodeSmd, ClientName, ProcessName, TypeName, Department, MasterSample, EndCode
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name']
+
+
+class ClientNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientName
+        fields = ['id', 'name']
+
+
+class ProcessNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProcessName
+        fields = ['id', 'name']
+
+
+class TypeNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TypeName
+        fields = ['id', 'name']
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ['id', 'name']
+
+
+class CodeSmdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CodeSmd
+        fields = ['id', 'code']
+
+
+class EndCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EndCode
+        fields = ['id', 'code']
+
+
+class MasterSampleSerializerList(serializers.ModelSerializer):
+    client = ClientNameSerializer(read_only=True)
+    process_name = ProcessNameSerializer(read_only=True)
+    master_type = TypeNameSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True)
+    endcodes = EndCodeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MasterSample
+        fields = [
+            'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
+            'client', 'process_name', 'master_type','created_by', 'endcodes',
+        ]
