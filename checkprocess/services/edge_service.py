@@ -2,65 +2,52 @@ from checkprocess.models import Edge, EdgeOptionsSets, ProductObject, ProductPro
 from checkprocess.validation import ValidationErrorWithCode
 from django.db import models
 
-class EdgeSets:
-    def __init__(self, process_uuid, full_sn):
+
+class EdgeSameInSameOut:
+    def __init__(self, process_uuid, last_sn):
         self.edge = None
-        self.process_uuid = process_uuid
-        self.full_sn = full_sn
         self.edge_settings = None
+        self.process_uuid = process_uuid
+        self.last_sn = last_sn
 
     def execute(self):
         self.get_edge()
-        self._check_edge_settings()
-        self.settings_step_by_step()
+        self.get_edge_settings()
+
+        if not self.edge_settings or not self.edge_settings.check_same_out_same_in:
+            return {
+                "info": "Sprawdzanie ilości pominięte (brak ustawień lub flaga wyłączona).",
+                "code": "check_same_out_same_in_disabled"
+            }
+        
+        self._check_same_out_same_in()
+        return {
+            "info": "Sprawdzenie zakończone pomyślnie.",
+            "code": "check_same_out_same_in_ok"
+        }
     
     def get_edge(self):
         try:
-            self.edge = Edge.objects.get(source=self.process_uuid)
+            self.edge = Edge.objects.get(target=self.process_uuid)
         except Edge.DoesNotExist:
-            try:
-                self.edge = Edge.objects.get(target=self.process_uuid)
-            except Edge.DoesNotExist:
-                raise ValidationErrorWithCode(
-                    message='Nie można znaleźć takiej drogi',
-                    code='edge_doesnt_exist'
-                )
+            raise ValidationErrorWithCode(
+                message='Nie można znaleźć takiej drogi',
+                code='edge_doesnt_exist'
+            )
         return self.edge
-    
-    def _check_edge_settings(self):
-        if not self.edge.edgeoptions:
-            return
-        self.edge_settings = self.edge.edgeoptions
 
-    def settings_step_by_step(self):
-        if not self.edge_settings:
-            return
+    def get_edge_settings(self):
+        try:
+            self.edge_settings = self.edge.edgeoptions
+        except EdgeOptionsSets.DoesNotExist:
+            self.edge_settings = None
+        return self.edge_settings
 
-        # Pobierz wszystkie pola w EdgeOptionsSets
-        for field in EdgeOptionsSets._meta.get_fields():
-            if isinstance(field, models.BooleanField):
-                field_name = field.name
-                value = getattr(self.edge_settings, field_name, False)
-
-                if value:
-                    method_name = f"_{field_name}"
-                    if hasattr(self, method_name):
-                        getattr(self, method_name)()
-                    else:
-                        continue
-
-    def _set_not_full(self):
-        # Na tym etapie wiem że istanieje bo mam validatory przed
-        obj = ProductObject.objects.get(full_sn=self.full_sn)
-        obj.is_full = False
-        obj.save()
-    
     def _check_same_out_same_in(self):
         source = self.edge.source
-
-        if ProductObject.objects.filter(current_process=source).exists():
+        if ProductObject.objects.filter(current_process=source, place=None).exists():
             raise ValidationErrorWithCode(
-                message='Inna ilość produktów włożonych do szafy niż wyciągnietych z poprzedniego procesu',
+                message='Inna ilość produktów włożonych do szafy niż wyciągniętych z poprzedniego procesu',
                 code='wrong_quantity'
             )
 

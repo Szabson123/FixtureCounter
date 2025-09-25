@@ -29,7 +29,6 @@ class ProductProcess(models.Model):
     killing_app = models.BooleanField(default=False)
     respect_fifo_rules = models.BooleanField(default=True)
 
-
     def __str__(self):
         return f"{self.label} ({self.product.name})"
     
@@ -42,8 +41,12 @@ class ProductProcessDefault(models.Model):
     expecting_child = models.BooleanField(default=False)
     validate_fish = models.BooleanField(default=False) # FrontEnd settings to know when check skanning fich
     show_the_couter = models.BooleanField(default=False) # FrontEnd settings to know when use endpoint
+    use_list_endpoint = models.BooleanField(default=False)
     production_process_type = models.BooleanField(default=False) # place when we can set -> possible or continue production
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
+
+    def __str__(self):
+        return f'{self.product_process.label} -- {self.product_process.product.name}'
     
 
 class ProductProcessCondition(models.Model):

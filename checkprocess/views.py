@@ -25,7 +25,7 @@ from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObj
                         PlaceGroupToAppKillSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
-from checkprocess.services.edge_service import EdgeSets
+from checkprocess.services.edge_service import EdgeSameInSameOut
 
 from datetime import timedelta, date, datetime
 from rest_framework.pagination import PageNumberPagination
@@ -294,7 +294,7 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-        
+
 class ProductMoveView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -318,10 +318,6 @@ class ProductMoveView(APIView):
             handler.execute()
 
             obj = ProductObject.objects.get(full_sn=full_sn)
-
-            if movement_type == 'recive':
-                edge_sets = EdgeSets(process_uuid, full_sn)
-                edge_sets.execute()
             
             return Response(
                 {"detail": "Ruch został wykonany pomyślnie.",
@@ -336,7 +332,70 @@ class ProductMoveView(APIView):
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
             )
-                    
+
+        
+class ProductMoveListView(APIView):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        
+        process_uuid = self.kwargs.get('process_uuid')
+        full_sn = request.data.get('full_sn')
+        place_name = request.data.get('place_name')
+        movement_type = request.data.get('movement_type')
+        who = request.data.get('who')
+        result = request.data.get('result')
+
+        if not isinstance(full_sn, list):
+            full_sn = [full_sn]
+        
+        product_objects = ProductObject.objects.filter(full_sn__in=full_sn)
+        processes = product_objects.values_list("current_process_id", flat=True).distinct()
+        if processes.count() > 1:
+            return Response(
+                {"detail": "Wszystkie obiekty muszą należeć do tego samego procesu."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        responses = []
+
+        try:
+            for sn in full_sn:
+                validator = ProcessMovementValidator(process_uuid, sn, place_name, movement_type, who)
+                validator.run()
+                
+                product_object = validator.product_object
+                place = validator.place
+                process = validator.process
+                
+                handler = MovementHandler.get_handler(movement_type, product_object, place, process, who, result)
+                handler.execute()
+
+                obj = ProductObject.objects.get(full_sn=sn)
+                
+                responses.append({
+                    "id": obj.id,
+                    "is_mother": obj.is_mother,
+                    "full_sn": sn,
+                    "detail": "Ruch został wykonany pomyślnie."
+                })
+
+                last_sn = sn 
+            
+            # To check if all in - in
+            if movement_type == 'recive':
+                edge_sets = EdgeSameInSameOut(process_uuid, last_sn)
+                info = edge_sets.execute()
+                responses.append(info)
+
+            return Response(responses, status=status.HTTP_200_OK)
+
+        except ValidationErrorWithCode as e:
+            transaction.set_rollback(True)
+            return Response(
+                {"detail": e.message, "code": e.code},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class ScrapProduct(APIView):
     def post(self, request, *args, **kwargs):
