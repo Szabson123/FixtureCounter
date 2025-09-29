@@ -1,13 +1,16 @@
 from .models import *
 from .serializers import *
 from .utils import gen_code
-from rest_framework.generics import ListAPIView
+from .filters import MasterSampleFilter
+from rest_framework.generics import ListAPIView, CreateAPIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils.timezone import now
 from datetime import date, datetime
@@ -378,3 +381,40 @@ class MasterSampleListView(ListAPIView):
         "client", "process_name", "master_type", "created_by"
     )
     serializer_class = MasterSampleSerializerList
+    pagination_class = GoldenSamplePagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['sn', 'pcb_rev_code', 'client', 'process_name', 'departament']
+    search_fields = ['project_name', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name']
+    ordering_fields = ['id', 'client__name', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name']
+    filterset_class = MasterSampleFilter
+
+
+class ClientNameViewSet(viewsets.ModelViewSet):
+    queryset = ClientName.objects.all()
+    serializer_class = ClientNameSerializer
+
+class ProcessNameViewSet(viewsets.ModelViewSet):
+    queryset = ProcessName.objects.all()
+    serializer_class = ProcessNameSerializer
+
+class TypeNameViewSet(viewsets.ModelViewSet):
+    queryset = TypeName.objects.all()
+    serializer_class = TypeNameSerializer
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+class CodeSmdViewSet(viewsets.ModelViewSet):
+    queryset = CodeSmd.objects.all()
+    serializer_class = CodeSmdSerializer
+
+class EndCodeViewSet(viewsets.ModelViewSet):
+    queryset = EndCode.objects.all()
+    serializer_class = CodeSmdSerializer
+
+# -----------------------------------------------------------------------
+
+class MasterSampleCreateView(CreateAPIView):
+    queryset = MasterSample.objects.all()
+

@@ -82,7 +82,7 @@ class TimerGroup(models.Model):
 
 class CodeSmd(models.Model):
     timer_group = models.ForeignKey(TimerGroup, on_delete=models.CASCADE, null=True, blank=True)
-    code = models.CharField(max_length=255)
+    code = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.code
@@ -102,23 +102,26 @@ class ProcessName(models.Model):
 
 class TypeName(models.Model):
     name = models.CharField(max_length=255)
+    color = models.CharField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return self.name
 
 class Department(models.Model):
     name = models.CharField(max_length=255)
+    color = models.CharField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return self.name
 
 
 class MasterSample(models.Model):
-    code_smd = models.ManyToManyField(CodeSmd, null=True, blank=True)
+    code_smd = models.ManyToManyField(CodeSmd, blank=True)
     client = models.ForeignKey(ClientName, on_delete=models.SET_NULL, null=True, blank=True)
     process_name = models.ForeignKey(ProcessName, on_delete=models.CASCADE)
-    master_type = models.ForeignKey(TypeName, on_delete=models.Model)
+    master_type = models.ForeignKey(TypeName, on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    departament = models.ForeignKey(Department, on_delete=models.CASCADE, null=True, blank=True)
 
     details = models.TextField(null=True, blank=True)
     comennt = models.TextField(null=True, blank=True)
@@ -126,8 +129,8 @@ class MasterSample(models.Model):
     # endcodes -> multi
     project_name = models.CharField(max_length=255)
     sn = models.CharField(max_length=255)
-    date_created = models.DateTimeField(auto_now_add=True)
-    expire_date = models.DateTimeField()
+    date_created = models.DateField(auto_now_add=True)
+    expire_date = models.DateField()
     pcb_rev_code = models.CharField(max_length=255)
 
     def __str__(self):

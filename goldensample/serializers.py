@@ -129,13 +129,13 @@ class ProcessNameSerializer(serializers.ModelSerializer):
 class TypeNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = TypeName
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'color']
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'color']
 
 
 class CodeSmdSerializer(serializers.ModelSerializer):
@@ -156,10 +156,12 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
     master_type = TypeNameSerializer(read_only=True)
     created_by = UserSerializer(read_only=True)
     endcodes = EndCodeSerializer(many=True, read_only=True)
+    code_smd = CodeSmdSerializer(read_only=True, many=True)
+    departament = DepartmentSerializer(read_only=True)
 
     class Meta:
         model = MasterSample
         fields = [
             'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
-            'client', 'process_name', 'master_type','created_by', 'endcodes',
+            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament'
         ]
