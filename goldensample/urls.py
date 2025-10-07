@@ -29,6 +29,7 @@ urlpatterns = [
     path('check-event-sn/', CheckEventSn.as_view(), name='add-event-sn'),
 
     path("mastersamples/", MasterSampleListView.as_view(), name="mastersample-list"),
+    path("mastersamples/create/", MasterSampleCreateView.as_view(), name='mastersample-create')
 ]
 
 urlpatterns += router.urls

@@ -417,4 +417,11 @@ class EndCodeViewSet(viewsets.ModelViewSet):
 
 class MasterSampleCreateView(CreateAPIView):
     queryset = MasterSample.objects.all()
+    serializer_class = MasterSampleManyCreateSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        masters = serializer.save()
+        output = MasterSampleSerializerList(masters, many=True)
+        return Response(output.data, status=status.HTTP_201_CREATED)

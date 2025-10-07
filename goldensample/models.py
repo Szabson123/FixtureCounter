@@ -114,9 +114,16 @@ class Department(models.Model):
     def __str__(self):
         return self.name
 
+class EndCode(models.Model):
+    code = models.CharField(max_length=255, unique=True)
 
+    def __str__(self):
+        return self.code
+    
+    
 class MasterSample(models.Model):
     code_smd = models.ManyToManyField(CodeSmd, blank=True)
+    endcodes = models.ManyToManyField(EndCode, blank=True) 
     client = models.ForeignKey(ClientName, on_delete=models.SET_NULL, null=True, blank=True)
     process_name = models.ForeignKey(ProcessName, on_delete=models.CASCADE)
     master_type = models.ForeignKey(TypeName, on_delete=models.CASCADE)
@@ -137,9 +144,4 @@ class MasterSample(models.Model):
         return self.sn
    
 
-class EndCode(models.Model):
-    master_sample = models.ForeignKey(MasterSample, on_delete=models.CASCADE, null=True, blank=True, related_name='endcodes')
-    code = models.CharField(max_length=255)
 
-    def __str__(self):
-        return self.code
