@@ -68,7 +68,6 @@ class PlaceViewSet(viewsets.ModelViewSet):
         serializer.save(process=process)
 
 
-
 class ProductObjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectSerializer
     queryset = ProductObject.objects.all()
@@ -238,7 +237,10 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
     
                 if serial_type and serial_type == "M" and q_code == "12":
                     serializer.validated_data['is_mother'] = True
-
+                
+                if serial_type == 'karton':
+                    serializer.validated_data['is_mother'] = True
+                
                 product_object = serializer.save()
 
                 product_object.current_place = place_obj

@@ -17,7 +17,7 @@ router.register(r'product-object-process-logs', ProductObjectProcessLogViewSet, 
 
 urlpatterns = [
     path('product-object/move/<uuid:process_uuid>/', ProductMoveView.as_view(), name='product-move'),
-    path('product-object/move-list/uuid:process_uuid/', ProductMoveListView.as_view(), name='product-move-list'),
+    path('product-object/move-list/<uuid:process_uuid>/', ProductMoveListView.as_view(), name='product-move-list'),
 
     path('start-new-prod/<uuid:process_uuid>/', ProductStartNewProduction.as_view(), name='start-prouduction'),
     path('continue-prod/<uuid:process_uuid>/', ContinueProduction.as_view(), name='continue-prouduction'),
