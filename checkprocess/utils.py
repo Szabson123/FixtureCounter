@@ -44,15 +44,19 @@ def get_printer_info_from_card(production_card):
         raise ValidationError(f"Brak danych drukarki dla production_card: {production_card}")
 
     printer_name = result[3]   # '15007535'
-    raw_model_name = result[4] # 'LF(OM-338-PT)'
+    raw_model_name = result[4]  # np. 'LF(AIM-H10-SAC305); LF(OM-338-PT)'
+    model_names = [x.strip() for x in raw_model_name.split(';') if x.strip()]
 
-    try:
-        map_entry = OneToOneMap.objects.get(s_input=raw_model_name)
-        normalized_name = map_entry.s_output
-    except OneToOneMap.DoesNotExist:
-        raise ValidationError(f"Nie znaleziono mapowania dla modelu: {raw_model_name}")
+    mapped_names = []
 
-    return normalized_name
+    for name in model_names:
+        try:
+            map_entry = OneToOneMap.objects.get(s_input=name)
+            mapped_names.append(map_entry.s_output)
+        except OneToOneMap.DoesNotExist:
+            raise ValidationError(f"Nie znaleziono mapowania dla modelu: {name}")
+
+    return mapped_names
 
 
 def check_fifo_violation(current_object):

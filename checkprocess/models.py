@@ -174,6 +174,9 @@ class EdgeOptionsSets(models.Model):
 class OneToOneMap(models.Model):
     s_input = models.CharField(max_length=255)
     s_output = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.s_input} - {self.s_output}"
     
 
 class LastProductOnPlace(models.Model):
