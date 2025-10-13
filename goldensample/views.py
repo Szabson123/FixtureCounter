@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status, filters, generics
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -371,22 +371,32 @@ class CheckEventSn(GenericAPIView):
         return Response({"result": False}, status=status.HTTP_200_OK)
     
 
+class MasterSamplePagination(PageNumberPagination):
+    page_size = 20
+    max_page_size = 100
+
+from django.db import connection
 @extend_schema_view(
     list=extend_schema(
         tags=["MasterSample"]
     )
 )
 class MasterSampleListView(ListAPIView):
-    queryset = MasterSample.objects.all().select_related(
-        "client", "process_name", "master_type", "created_by"
-    )
+    queryset = (MasterSample.objects.select_related("client", "process_name", "master_type", "created_by", "departament",).prefetch_related("endcodes","code_smd",))
     serializer_class = MasterSampleSerializerList
-    pagination_class = GoldenSamplePagination
+    pagination_class = MasterSamplePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sn', 'pcb_rev_code', 'client', 'process_name', 'departament']
     search_fields = ['project_name', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name']
     ordering_fields = ['id', 'client__name', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name']
     filterset_class = MasterSampleFilter
+    
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        print(f"Zapytania SQL: {len(connection.queries)}")
+        for i, q in enumerate(connection.queries, start=1):
+            print(f"{i}. {q['sql']} ({q['time']}s)")
+        return response
 
 
 class ClientNameViewSet(viewsets.ModelViewSet):
@@ -425,3 +435,17 @@ class MasterSampleCreateView(CreateAPIView):
         masters = serializer.save()
         output = MasterSampleSerializerList(masters, many=True)
         return Response(output.data, status=status.HTTP_201_CREATED)
+
+
+class MasterSampleRetrieveUpdateView(RetrieveUpdateAPIView):
+    queryset = MasterSample.objects.all()
+    serializer_class = MasterSampleUpdateSerializer
+    http_method_names = ["get", "patch", "put"]
+
+    def update(self, request, *args, **kwargs):
+        partial = request.method.lower() == "patch"
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response(MasterSampleSerializerList(instance).data)

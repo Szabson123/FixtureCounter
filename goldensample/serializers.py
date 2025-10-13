@@ -191,16 +191,13 @@ class CodeSmdListField(serializers.ListField):
 class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
     samples = serializers.ListField(child=serializers.DictField(), write_only=True)
     code_smd = CodeSmdListField(required=False)
-    endcodes = serializers.ListField(
-    child=serializers.CharField(), required=False
-)
+    endcodes = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = MasterSample
         fields = [
             "client", "process_name", "created_by", "departament",
-            "details", "comennt", "project_name",
-            "expire_date", "pcb_rev_code",
+            "project_name", "expire_date", "pcb_rev_code",
             "code_smd", "endcodes", "samples",
         ]
 
@@ -214,36 +211,80 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         for sample in samples_data:
             sn = sample.get("sn")
             master_type_id = sample.get("master_type")
+            details_text = sample.get("details", "")
+
             master_type = get_object_or_404(TypeName, pk=master_type_id)
 
             master = MasterSample.objects.create(
                 **validated_data,
                 sn=sn,
-                master_type=master_type
+                master_type=master_type,
+                details=details_text,
             )
 
-            # obsługa code_smd
             if code_smd_data:
                 mode = code_smd_data["mode"]
                 items = code_smd_data["data"]
                 smd_instances = []
-
                 if mode == "id":
                     smd_instances = list(CodeSmd.objects.filter(pk__in=items))
                 elif mode == "code":
                     for code in items:
                         obj, _ = CodeSmd.objects.get_or_create(code=code)
                         smd_instances.append(obj)
-
                 master.code_smd.set(smd_instances)
 
-            # obsługa endcodes
             if endcodes_data:
                 endcode_instances = []
                 for code in endcodes_data:
                     obj, _ = EndCode.objects.get_or_create(code=code)
                     endcode_instances.append(obj)
                 master.endcodes.set(endcode_instances)
+
             created_objects.append(master)
 
         return created_objects
+
+
+class MasterSampleUpdateSerializer(serializers.ModelSerializer):
+    code_smd = serializers.SerializerMethodField()
+    endcodes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MasterSample
+        fields = [
+            "id",
+            "client", "process_name", "master_type", "created_by", "departament",
+            "details", "comennt",
+            "project_name", "sn",
+            "expire_date", "pcb_rev_code",
+            "code_smd", "endcodes",
+        ]
+        extra_kwargs = {f: {"required": False, "allow_null": True} for f in fields}
+
+    def get_code_smd(self, instance):
+        return list(instance.code_smd.values_list("code", flat=True))
+
+    def get_endcodes(self, instance):
+        return list(instance.endcodes.values_list("code", flat=True))
+
+    def update(self, instance, validated_data):
+        code_smd_list = self.initial_data.get("code_smd", None)
+        endcode_list = self.initial_data.get("endcodes", None)
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+
+        # Obsługa M2M
+        from .models import CodeSmd, EndCode
+
+        if isinstance(code_smd_list, list):
+            smd_objs = [CodeSmd.objects.get_or_create(code=c)[0] for c in code_smd_list]
+            instance.code_smd.set(smd_objs)
+
+        if isinstance(endcode_list, list):
+            end_objs = [EndCode.objects.get_or_create(code=c)[0] for c in endcode_list]
+            instance.endcodes.set(end_objs)
+
+        return instance

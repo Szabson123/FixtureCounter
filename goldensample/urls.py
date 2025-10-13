@@ -29,7 +29,8 @@ urlpatterns = [
     path('check-event-sn/', CheckEventSn.as_view(), name='add-event-sn'),
 
     path("mastersamples/", MasterSampleListView.as_view(), name="mastersample-list"),
-    path("mastersamples/create/", MasterSampleCreateView.as_view(), name='mastersample-create')
+    path("mastersamples/create/", MasterSampleCreateView.as_view(), name='mastersample-create'),
+    path("mastersamples/<int:pk>/", MasterSampleRetrieveUpdateView.as_view(), name='mastersample-retrive')
 ]
 
 urlpatterns += router.urls
