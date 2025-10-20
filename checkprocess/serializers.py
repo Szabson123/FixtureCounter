@@ -164,6 +164,5 @@ class PlaceGroupToAppKillSerializer(serializers.ModelSerializer):
 class RetoolingSerializer(serializers.Serializer):
     place_name = serializers.CharField(required=True)
     who = serializers.CharField(required=True)
-    full_sn = serializers.CharField(required=True)
     movement_type = serializers.CharField(required=True)
     production_card = serializers.CharField(required=True)

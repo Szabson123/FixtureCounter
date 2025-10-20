@@ -52,11 +52,8 @@ class ProcessMovementValidator:
             self.validate_status_of_line()
         
         elif self.movement_type == 'retooling':
-            self.validate_object_existence_and_status()
             self.validate_process_receive_with_current_place()
             self.set_killing_flag_on_true_if_need()
-            self.validate_product_already_in_process()
-            self.validate_retooling_place()
 
         elif self.movement_type == 'move':
             self.validate_object_existence_and_status()
