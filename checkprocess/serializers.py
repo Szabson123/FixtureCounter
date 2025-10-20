@@ -109,7 +109,7 @@ class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductObjectProcessLog
-        fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit', 'full_sn', 'process_name', 'place_name',]
+        fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit', 'full_sn', 'process_name', 'place_name', 'movement_type']
 
 
 class EdgeSerializer(serializers.ModelSerializer):
@@ -159,3 +159,11 @@ class PlaceGroupToAppKillSerializer(serializers.ModelSerializer):
         if obj.last_check is None:
             return False
         return (timezone.now() - obj.last_check) <= timedelta(minutes=1)
+
+
+class RetoolingSerializer(serializers.Serializer):
+    place_name = serializers.CharField(required=True)
+    who = serializers.CharField(required=True)
+    full_sn = serializers.CharField(required=True)
+    movement_type = serializers.CharField(required=True)
+    production_card = serializers.CharField(required=True)

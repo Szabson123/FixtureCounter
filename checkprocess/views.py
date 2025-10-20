@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.filters import OrderingFilter
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
@@ -22,7 +22,7 @@ from .models import (Product, ProductProcess, ProductObject, ProductObjectProces
                     LastProductOnPlace, PlaceGroupToAppKill)
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
-                        PlaceGroupToAppKillSerializer)
+                        PlaceGroupToAppKillSerializer, RetoolingSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -511,7 +511,6 @@ class ProductStartNewProduction(APIView):
             validator.run()
             
             product_object = validator.product_object
-            
             place = validator.place
             process = validator.process
             
@@ -715,6 +714,9 @@ class BulkProductObjectCreateView(APIView):
 
                     if serial_type and serial_type == "M" and q_code == "12":
                         product_object.is_mother = True
+                    
+                    if serial_type == 'karton':
+                        serializer.validated_data['is_mother'] = True
 
                     product_object.save()
                     created_serials.append(serial_number)
@@ -859,3 +861,81 @@ class SubProductsCounter(ListAPIView):
             result[name] = row["count"]
 
         return Response(result, status=status.HTTP_200_OK)
+    
+
+class RetoolingView(GenericAPIView):
+    serializer_class = RetoolingSerializer
+
+    def post(self, request, *args, **kwargs):
+        process_uuid = self.kwargs.get('process_uuid')
+
+        ser = self.serializer_class(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+
+        full_sn = data["full_sn"]
+        place_name = data["place_name"]
+        movement_type = data["movement_type"]
+        who = data["who"]
+        production_card = data["production_card"]
+
+        if movement_type != "retooling":
+            raise ValidationError({"error": "Nieprawidłowy typ ruchu (oczekiwano 'retooling')."})
+        
+        validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
+        validator.run()
+
+        if not production_card:
+            raise ValidationError({"error": "Bez karty nie możemy pójść dalej."})
+
+        normalized_names = get_printer_info_from_card(production_card)
+
+        product_object = validator.product_object
+        place = validator.place
+        process = validator.process
+
+        if not product_object.sub_product:
+            raise ValidationError({"error": "Obiekt nie ma przypisanego subproduktu."})
+
+        if product_object.sub_product.name not in normalized_names:
+            raise ValidationError({"error": "Nie możesz użyć tego typu pasty dla tego produktu."})
+        
+        last_production = (
+            LastProductOnPlace.objects
+            .filter(product_process=process, place=place)
+            .order_by('-date')
+            .first()
+        )
+
+        if not last_production:
+            raise ValidationErrorWithCode(
+                message="Brak historii pasty na tym stanowisku.",
+                code="NO_PASTE_HISTORY"
+            )
+
+        if last_production.p_type.name != product_object.sub_product.name:
+            raise ValidationError({"error": "Nie możesz użyć tej pasty do tego produktu – ostatnia używana była inna."})
+
+        try:
+            kill_flag = AppToKill.objects.get(line_name=place)
+        except AppToKill.DoesNotExist:
+            raise ValidationErrorWithCode(
+                message="AppKill nie istnieje dla danego miejsca.",
+                code="app_kill_no_exist"
+            )
+
+        if kill_flag.killing_flag:
+            kill_flag.killing_flag = False
+            kill_flag.save()
+        
+        ProductObjectProcessLog.objects.create(
+            product_object=product_object,
+            process=process,
+            entry_time=timezone.now(),
+            who_entry=who,
+            place=place,
+            movement_type=movement_type
+        )
+
+        return Response({"success": "Objekt przezbrojony"}, status=status.HTTP_200_OK)
+        
