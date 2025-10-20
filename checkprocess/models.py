@@ -137,6 +137,7 @@ class ProductObjectProcessLog(models.Model):
     exit_time = models.DateTimeField(null=True, blank=True)
     who_exit = models.CharField(max_length=255, null=True, blank=True)
     place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
+    movement_type = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"Log for @ {self.entry_time:%Y-%m-%d %H:%M}"

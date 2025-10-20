@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
-                    ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView)
+                    ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
+                    RetoolingView)
 
 from rest_framework.routers import DefaultRouter
 
@@ -21,6 +22,8 @@ urlpatterns = [
 
     path('start-new-prod/<uuid:process_uuid>/', ProductStartNewProduction.as_view(), name='start-prouduction'),
     path('continue-prod/<uuid:process_uuid>/', ContinueProduction.as_view(), name='continue-prouduction'),
+    path('retooling/<uuid:process_uuid>/', RetoolingView.as_view(), name='continue-prouduction'),
+
     path('trash-obj/<uuid:process_uuid>/', ScrapProduct.as_view(), name='scrap-product'),
     
     path('<int:product_id>/<uuid:process_uuid>/bulk-create/', BulkProductObjectCreateView.as_view(), name='bulk-product-object-create'),

@@ -50,6 +50,13 @@ class ProcessMovementValidator:
             self.validate_edge_can_move()
             self.validate_settings_in_process()
             self.validate_status_of_line()
+        
+        elif self.movement_type == 'retooling':
+            self.validate_object_existence_and_status()
+            self.validate_process_receive_with_current_place()
+            self.set_killing_flag_on_true_if_need()
+            self.validate_product_already_in_process()
+            self.validate_retooling_place()
 
         elif self.movement_type == 'move':
             self.validate_object_existence_and_status()
@@ -100,6 +107,13 @@ class ProcessMovementValidator:
                 message="Nie możesz ruszyć tego produktu bo nie ma aktualnego miejsca w tym procesie (nigdzie się nie znajduje)",
                 code="move_without_place"
             ) 
+        
+    def validate_retooling_place(self):
+        if self.product_object.current_place != self.product_object.current_place or self.product_object.current_place == None:
+            raise ValidationErrorWithCode(
+                message="Nie możesz przezbroić tego produktu bo nie ma aktualnego miejsca w tym procesie lub miejsce jest inne niż podane",
+                code="retooling_without_place_or_diff_place"
+            ) 
             
     def validate_who_make_move(self):
         if self.who == None:
@@ -141,6 +155,15 @@ class ProcessMovementValidator:
                 message='Ten produkt już znajduje się w tym procesie.',
                 code='already_in_process'
             )
+        
+    def validate_product_already_in_process(self):
+        current_process = self.product_object.current_process
+
+        if current_process and str(current_process.id) != str(self.process.id):
+            raise ValidationErrorWithCode(
+                message='Ten produkt nie znajduje się w tym procesie.',
+                code='already_not_in_process'
+            )
     
     def validate_exists_and_not_end(self):
         try:
@@ -158,7 +181,7 @@ class ProcessMovementValidator:
             )
             
     def validate_movement_type(self):
-        if self.movement_type not in ['move', 'receive', 'trash', 'check']:
+        if self.movement_type not in ['move', 'receive', 'trash', 'check', 'retooling']:
             raise ValidationErrorWithCode(
                 message=f'Typ ruchu "{self.movement_type}" nie jest obsługiwany.',
                 code='movement_type_does_not_exist'
