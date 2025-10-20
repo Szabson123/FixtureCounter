@@ -873,7 +873,6 @@ class RetoolingView(GenericAPIView):
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
 
-        full_sn = data["full_sn"]
         place_name = data["place_name"]
         movement_type = data["movement_type"]
         who = data["who"]
@@ -881,18 +880,25 @@ class RetoolingView(GenericAPIView):
 
         if movement_type != "retooling":
             raise ValidationError({"error": "Nieprawidłowy typ ruchu (oczekiwano 'retooling')."})
-        
-        validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
-        validator.run()
 
         if not production_card:
             raise ValidationError({"error": "Bez karty nie możemy pójść dalej."})
 
         normalized_names = get_printer_info_from_card(production_card)
 
-        product_object = validator.product_object
-        place = validator.place
-        process = validator.process
+        process = ProductProcess.objects.get(id=process_uuid)
+        place = Place.objects.filter(name=place_name, process=process).first()
+
+        try:
+            product_object = ProductObject.objects.get(current_process=process, current_place=place)
+        except:
+            raise ValidationError({"error": "Nie można przezbroic bo w środku nie ma pasty"})
+        
+        today = timezone.localdate()
+        expiry = product_object.exp_date_in_process or product_object.expire_date
+
+        if expiry and expiry < today:
+            raise ValidationError({"error": "Obiekt jest przeterminowany"})
 
         if not product_object.sub_product:
             raise ValidationError({"error": "Obiekt nie ma przypisanego subproduktu."})
