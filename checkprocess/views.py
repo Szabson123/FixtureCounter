@@ -541,8 +541,8 @@ class ProductStartNewProduction(APIView):
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-                
+
+
 class AppKillStatusView(APIView):
     def get(self, request):
         group_name = request.query_params.get("group")
@@ -716,7 +716,7 @@ class BulkProductObjectCreateView(APIView):
                         product_object.is_mother = True
                     
                     if serial_type == 'karton':
-                        serializer.validated_data['is_mother'] = True
+                        product_object.is_mother = True
 
                     product_object.save()
                     created_serials.append(serial_number)
