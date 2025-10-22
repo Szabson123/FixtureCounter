@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.db import connection
 from django.db.models import F, Count
 from django.db.models.functions import Coalesce
 

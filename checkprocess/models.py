@@ -148,7 +148,7 @@ class AppToKill(models.Model):
     killing_flag = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.line_name.name} -- {self.line_name.process.product.name} (Group: {self.line_name.group.name})"
+        return f"{self.line_name.name} -- {self.line_name.process.product.name} (Group: {self.line_name.group.name}) {self.killing_flag}"
     
 
 class Edge(models.Model):
