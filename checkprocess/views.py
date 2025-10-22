@@ -84,7 +84,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         'exp_date_in_process',
         'expire_date',
         'expire_date_final',
-        'product__name',
+        'sub_product__name',
         'current_place',
     ]
 
