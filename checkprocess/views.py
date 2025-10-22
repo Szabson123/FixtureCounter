@@ -4,7 +4,7 @@ from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db import connection
-from django.db.models import F, Count
+from django.db.models import F, Count, Q
 from django.db.models.functions import Coalesce
 
 from rest_framework import viewsets, status
@@ -97,6 +97,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
 
         return (
             ProductObject.objects.filter(
+                Q(is_mother=True) | Q(mother_object__isnull=True),
                 product_id=product_id,
                 current_process_id=process_uuid
             )
