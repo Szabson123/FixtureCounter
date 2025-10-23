@@ -517,16 +517,15 @@ class ProductStartNewProduction(APIView):
             process = validator.process
             
             if not hasattr(process, 'defaults') or not process.defaults.production_process_type:
-                raise ValidationError("Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint.")
+                raise ValidationError({"error": "Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint."})
             
             normalized_names = get_printer_info_from_card(production_card)
             
             if not product_object.sub_product:
-                raise ValidationError("Obiekt nie ma przypisanego subproduktu.")
-
+                raise ValidationError({"error": "Obiekt nie ma przypisanego subproduktu."})
 
             if product_object.sub_product.name not in normalized_names:
-                raise ValidationError(f"Nie możesz użyć tego typu pasty dla tego produktu")
+                raise ValidationError({"error": "Nie możesz użyć tego typu pasty dla tego produktu"})
             
             handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
             handler.execute()

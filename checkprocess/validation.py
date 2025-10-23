@@ -277,7 +277,6 @@ class ProcessMovementValidator:
                 message='AppKill nie istnieje',
                 code='app_kill_no_exist'
             )
-
         kill_flag.killing_flag = True
         kill_flag.save()
     

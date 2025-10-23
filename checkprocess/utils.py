@@ -38,10 +38,10 @@ def get_printer_info_from_card(production_card):
         conn.close()
         
     except Exception as e:
-        raise ValidationError(f"Błąd podczas łączenia z bazą zewnętrzną: {str(e)}")
+        raise ValidationError({"detail": f"Błąd podczas łączenia z bazą zewnętrzną: {str(e)}"})
 
     if not result:
-        raise ValidationError(f"Brak danych drukarki dla production_card: {production_card}")
+        raise ValidationError({"detail": f"Brak danych drukarki dla karty produktu: {production_card}"})
 
     printer_name = result[3]   # '15007535'
     raw_model_name = result[4]  # np. 'LF(AIM-H10-SAC305); LF(OM-338-PT)'
