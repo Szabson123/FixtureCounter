@@ -300,9 +300,16 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], url_path='all-logs')
     def all_logs(self, request):
-        logs = ProductObjectProcessLog.objects.all().order_by('-entry_time')
+        logs = (
+            ProductObjectProcessLog.objects
+            .select_related('product_object', 'process', 'place')
+            .order_by('-entry_time')
+        )
+
         serializer = self.get_serializer(logs, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+
+        return Response(data)
 
 
 class ProductMoveView(APIView):
