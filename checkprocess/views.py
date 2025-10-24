@@ -297,6 +297,12 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
             raise ValidationError({"sn": "Musisz podać jaki kolwiek sn"})
 
         return queryset
+    
+    @action(detail=False, methods=['get'], url_path='all-logs')
+    def all_logs(self, request):
+        logs = ProductObjectProcessLog.objects.all().order_by('-entry_time')
+        serializer = self.get_serializer(logs, many=True)
+        return Response(serializer.data)
 
 
 class ProductMoveView(APIView):
