@@ -288,3 +288,10 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
             instance.endcodes.set(end_objs)
 
         return instance
+
+
+class MachineTimeStampSerializer(serializers.Serializer):
+    machine_name = serializers.CharField(required=True, error_messages={
+        "required": "You need to provide machine_name",
+        "blank": "You need provide machine_name"
+    })

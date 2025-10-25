@@ -1,11 +1,10 @@
 from .models import *
 from .serializers import *
-from .utils import gen_code
 from .filters import MasterSampleFilter
 from rest_framework.generics import ListAPIView, CreateAPIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
-from rest_framework import viewsets, status, filters, generics
+from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
@@ -13,78 +12,10 @@ from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils.timezone import now
-from datetime import date, datetime
+from django.utils import timezone
+from datetime import date
+from datetime import timedelta
 
-import json
-
-
-class GoldenSampleCreateView(APIView):
-    def post(self, request):
-        serializer = GoldenSampleCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        sn = data['sn']
-        type_golden = data['type_golden']
-        variant_code = data['variant_code']
-        variant_name = data.get('variant_name')
-        expire_date = data.get('expire_date')
-
-        if len(sn) < 13:
-            return Response({"error": "SN za krótki"}, status=status.HTTP_400_BAD_REQUEST)
-
-        golden_code = sn
-        group_code = str(sn[12:]).strip()
-
-        variant = VariantCode.objects.filter(code=variant_code).first()
-
-        if variant:
-            if not variant.group:
-                group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
-                variant.group = group
-                variant.save()
-            elif variant.group.name.strip().lower() != group_code.lower():
-                return Response({
-                    "error": "Kod SN nie pasuje do grupy przypisanej do tego wariantu.",
-                    "expected_group": variant.group.name,
-                    "sn_group": group_code
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-        else:
-            group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
-            variant = VariantCode.objects.create(
-                code=variant_code,
-                group=group,
-                name=variant_name
-            )
-
-        existing = GoldenSample.objects.filter(golden_code=golden_code, variant=variant).first()
-        if existing:
-            return Response({
-                "message": "GoldenSample już istnieje",
-                "id": existing.id
-            }, status=status.HTTP_200_OK)
-
-        golden_sample = GoldenSample.objects.create(
-            variant=variant,
-            golden_code=golden_code,
-            type_golden=type_golden,
-            expire_date=expire_date or None
-        )
-
-        counter = CounterOnGolden.objects.create(
-            golden_sample=golden_sample,
-            counter=0
-        )
-
-        return Response({
-            "message": "GoldenSample utworzony",
-            "id": golden_sample.id,
-            "golden_code": golden_sample.golden_code,
-            "type": golden_sample.type_golden,
-            "counter": counter.counter
-        }, status=status.HTTP_201_CREATED)
-        
         
 class GoldenSampleCheckView(APIView):
     def post(self, request):
@@ -158,143 +89,7 @@ class GoldenSampleTypeCheckView(APIView):
                 results[sn] = None
 
         return Response({"result": results}, status=status.HTTP_200_OK)
-    
-
-STATUS_TO_TYPE = {
-    "WZORZEC ZGODNY": "good",
-    "WZORZEC NIEZGODNY": "bad",
-    "WZORZEC KALIBARCYJNY": "calib"
-}
-
-class GoldenSampleBulkUploadView(APIView):
-    def post(self, request):
-        file = request.FILES.get('file')
-        if not file:
-            return Response({"error": "Brak pliku."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            data = json.load(file)
-        except Exception as e:
-            return Response({"error": f"Błąd przy odczycie pliku JSON: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-        created_samples = []
-        errors = []
-
-        for row in data:
-            firma = str(row.get('firma', '')).strip()
-            model = str(row.get('model', '')).strip()
-            numer = str(row.get('numer', '')).strip()
-            variant_code = numer
-            variant_name = f"{firma}-{model}"
-            kody = row.get('kody', [])
-            status_str = row.get('status', '').strip().upper()
-            expire_str = row.get('data', '').strip()
-
-            type_golden = STATUS_TO_TYPE.get(status_str)
-            if not type_golden:
-                errors.append(f"Nieznany status: {status_str}")
-                continue
-
-            try:
-                expire_date = datetime.strptime(expire_str, "%Y-%m-%d").date()
-            except ValueError:
-                errors.append(f"Nieprawidłowa data: {expire_str}")
-                continue
-
-            for sn in kody:
-                sn = sn.strip()
-                if len(sn) < 13:
-                    errors.append(f"SN za krótki: {sn}")
-                    continue
-
-                group_code = sn[12:].strip()
-                variant = VariantCode.objects.filter(code=variant_code).first()
-
-                if variant:
-                    if not variant.group:
-                        group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
-                        variant.group = group
-                        variant.save()
-                    elif variant.group.name.strip().lower() != group_code.lower():
-                        errors.append(f"Grupa SN ({group_code}) nie pasuje do wariantu ({variant.group.name})")
-                        continue
-                else:
-                    group, _ = GroupVariantCode.objects.get_or_create(name=group_code)
-                    variant = VariantCode.objects.create(
-                        code=variant_code,
-                        name=variant_name,
-                        group=group
-                    )
-
-                if GoldenSample.objects.filter(golden_code=sn, variant=variant).exists():
-                    continue
-
-                golden_sample = GoldenSample.objects.create(
-                    variant=variant,
-                    golden_code=sn,
-                    type_golden=type_golden,
-                    expire_date=expire_date
-                )
-
-                CounterOnGolden.objects.create(
-                    golden_sample=golden_sample,
-                    counter=0
-                )
-
-                created_samples.append(golden_sample.id)
-
-        return Response({
-            "utworzono": len(created_samples),
-            "błędy": errors
-        }, status=status.HTTP_201_CREATED if created_samples else status.HTTP_400_BAD_REQUEST)
-        
-
-class GoldenSampleVariantList(viewsets.ModelViewSet):
-    serializer_class = GoldenSampleSimpleSerializer
-    queryset = GoldenSample.objects.all()
-    
-    def get_queryset(self):
-        variant = self.kwargs.get('variant_id')
-        queryset = GoldenSample.objects.filter(variant=variant)
-        return queryset
-    
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-
-
-class VariantListView(viewsets.ModelViewSet):
-    queryset = VariantCode.objects.all()
-    serializer_class = VariantShortSerializer
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = ['code']
-    ordering = ['code']
-    search_fields = ['code', 'name']
-
-
-class GoldenSamplePagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-    
-
-class GoldenSampleAdminView(viewsets.ModelViewSet):
-    queryset = GoldenSample.objects.all().select_related('counterongolden')
-    serializer_class = GoldenSampleDetailedSerializer
-    pagination_class = GoldenSamplePagination
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    ordering_fields = ['expire_date']
-    ordering = ['expire_date']
-    search_fields = ['golden_code']
-
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"error": "Tworzenie GoldenSample nie jest dozwolone w tym widoku."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-        
+     
 
 class GoldenSampleBinChecker(APIView):
     def post(self, request, *args, **kwargs):
@@ -375,12 +170,7 @@ class MasterSamplePagination(PageNumberPagination):
     page_size = 20
     max_page_size = 100
 
-from django.db import connection
-@extend_schema_view(
-    list=extend_schema(
-        tags=["MasterSample"]
-    )
-)
+
 class MasterSampleListView(ListAPIView):
     queryset = (MasterSample.objects.select_related("client", "process_name", "master_type", "created_by", "departament",).prefetch_related("endcodes","code_smd",))
     serializer_class = MasterSampleSerializerList
@@ -390,13 +180,6 @@ class MasterSampleListView(ListAPIView):
     search_fields = ['project_name', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name']
     ordering_fields = ['id', 'client__name', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name']
     filterset_class = MasterSampleFilter
-    
-    def list(self, request, *args, **kwargs):
-        response = super().list(request, *args, **kwargs)
-        print(f"Zapytania SQL: {len(connection.queries)}")
-        for i, q in enumerate(connection.queries, start=1):
-            print(f"{i}. {q['sql']} ({q['time']}s)")
-        return response
 
 
 class ClientNameViewSet(viewsets.ModelViewSet):
@@ -449,3 +232,40 @@ class MasterSampleRetrieveUpdateView(RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return Response(MasterSampleSerializerList(instance).data)
+    
+
+class MachineTimeStampView(GenericAPIView):
+    serializer_class = MachineTimeStampSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        machine_name = serializer.validated_data['machine_name']
+
+        machine, created = MachineGoldensTime.objects.get_or_create(
+            machine_name=machine_name,
+            defaults={'date_time': timezone.now()},
+        )
+
+        if created:
+
+            return Response(
+                {"returnCodeDescription": "Machine Valid",
+                 "returnCode": 200},
+                status=status.HTTP_200_OK
+            )
+        
+        time_diff = timezone.now() - machine.date_time
+
+        if time_diff > timedelta(hours=8):
+            return Response(
+                {"returnCodeDescription": "Machine Block",
+                 "returnCode": 123},
+                status=status.HTTP_423_LOCKED
+            )
+        
+        return Response(
+                {"returnCodeDescription": "Machine Valid",
+                 "returnCode": 200},
+                status=status.HTTP_200_OK
+            )

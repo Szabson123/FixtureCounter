@@ -139,9 +139,12 @@ class MasterSample(models.Model):
     date_created = models.DateField(auto_now_add=True)
     expire_date = models.DateField()
     pcb_rev_code = models.CharField(max_length=255)
+    counter = models.PositiveIntegerField()
 
     def __str__(self):
         return self.sn
    
 
-
+class MachineGoldensTime(models.Model):
+    machine_name = models.CharField(max_length=255, unique=True)
+    date_time = models.DateTimeField()

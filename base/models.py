@@ -10,7 +10,7 @@ class FullCounter(models.Model):
     
 
 class Fixture(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     created_date = models.DateTimeField(auto_now_add=True)
     counter_all= models.ForeignKey(FullCounter, on_delete=models.CASCADE, null=True, blank=True)
     counter_last_maint = models.ForeignKey(CounterSumFromLastMaint, on_delete=models.CASCADE, null=True, blank=True)
