@@ -16,6 +16,67 @@ from django.utils import timezone
 from datetime import date
 from datetime import timedelta
 
+
+class MasterSampleCheckView(GenericAPIView):
+    serializer_class = MasterSampleCheckSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        machine_name = serializer.validated_data['machine_name']
+        goldens = serializer.validated_data['goldens']
+
+        machine = MachineGoldensTime.objects.filter(machine_name=machine_name).first()
+
+        if not machine:
+            return Response(
+                {"returnCodeDescription": "Machine doesn't exist",
+                 "returnCode": 400},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        today = date.today()
+        results = {}
+
+        for golden in goldens:
+            sample = MasterSample.objects.filter(sn=golden).first()
+
+            if sample and sample.expire_date and sample.expire_date > today:
+                results[golden] = True
+            else:
+                results[golden] = False
+        
+        if all(results.values()):
+            machine.date_time = timezone.now()
+            machine.save()
+        
+        return Response({"result": results}, status=status.HTTP_200_OK)
+    
+
+class MasterSampleTypeCheck(GenericAPIView):
+    serializer_class = MasterSampleTypeSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        goldens = serializer.validated_data['goldens']
+        results = {}
+
+        for golden in goldens:
+            sample = MasterSample.objects.filter(sn=golden).first()
+
+            if sample:
+                sample.counter += 1
+                sample.save()
+
+                results[golden] = sample.master_type.name
+            else:
+                results[golden] = False
+        
+        return Response({"result": results}, status=status.HTTP_200_OK)
+
         
 class GoldenSampleCheckView(APIView):
     def post(self, request):
@@ -172,12 +233,15 @@ class MasterSamplePagination(PageNumberPagination):
 
 
 class MasterSampleListView(ListAPIView):
-    queryset = (MasterSample.objects.select_related("client", "process_name", "master_type", "created_by", "departament",).prefetch_related("endcodes","code_smd",))
+    queryset = (MasterSample.objects
+                .select_related("client", "process_name", "master_type", "created_by", "departament",)
+                .prefetch_related("endcodes","code_smd",)
+                .order_by('-id'))
     serializer_class = MasterSampleSerializerList
     pagination_class = MasterSamplePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sn', 'pcb_rev_code', 'client', 'process_name', 'departament']
-    search_fields = ['project_name', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name']
+    search_fields = ['project_name', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name', 'endcodes__code', 'code_smd__code']
     ordering_fields = ['id', 'client__name', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name']
     filterset_class = MasterSampleFilter
 

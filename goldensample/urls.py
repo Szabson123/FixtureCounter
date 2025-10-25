@@ -25,7 +25,9 @@ urlpatterns = [
     path("mastersamples/create/", MasterSampleCreateView.as_view(), name='mastersample-create'),
     path("mastersamples/<int:pk>/", MasterSampleRetrieveUpdateView.as_view(), name='mastersample-retrive'),
 
-    path("machine_validation/", MachineTimeStampView.as_view(), name='machine_validation')
+    path("machine_validation/", MachineTimeStampView.as_view(), name='machine_validation'),
+    path("mastersample-check/", MasterSampleCheckView.as_view(), name='master-check'),
+    path("mastersample-type/", MasterSampleTypeCheck.as_view(), name="master-type")
 
 ]
 

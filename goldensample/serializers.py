@@ -295,3 +295,19 @@ class MachineTimeStampSerializer(serializers.Serializer):
         "required": "You need to provide machine_name",
         "blank": "You need provide machine_name"
     })
+
+
+class MasterSampleCheckSerializer(serializers.Serializer):
+    machine_name = serializers.CharField(required=True, error_messages={
+        "required": "You need to provide machine_name",
+        "blank": "You need provide machine_name"
+    })
+    goldens = serializers.ListField(
+        child=serializers.CharField(), allow_empty=False
+    )
+
+
+class MasterSampleTypeSerializer(serializers.Serializer):
+        goldens = serializers.ListField(
+        child=serializers.CharField(), allow_empty=False
+    )
