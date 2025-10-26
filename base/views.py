@@ -9,46 +9,29 @@ from django.conf import settings
 from django.core.cache import cache
 from django_eventstream import send_event
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import viewsets, status, generics
+from rest_framework.generics import GenericAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view, authentication_classes
+from rest_framework.authentication import SessionAuthentication
 
 from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine, MachineCondition
-from .serializers import FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
-from django.views.decorators.csrf import csrf_exempt
+from .serializers import UpdateCreateCounter, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 
 from goldensample.models import GroupVariantCode, VariantCode, MapSample, GoldenSample
-from rest_framework.authentication import SessionAuthentication
 
 from datetime import timedelta
 from django.db import models
 
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        return
-
-def home_view(request):
-    return redirect('/all_counters/')
-
 from django.http import JsonResponse
-
-
-@api_view(['POST'])
-@authentication_classes([CsrfExemptSessionAuthentication])
-@permission_classes([AllowAny])
-def test_clear_counter(request, fixture_id):
-    return Response({'status': f'Fixture {fixture_id} zresetowany'}, status=status.HTTP_200_OK)
-
-def test_cors(request):
-    return JsonResponse({"message": "CORS działa poprawnie"})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ClearCounterAPIView(APIView):
-    authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [AllowAny]
 
     def post(self, request, fixture_id):
@@ -127,11 +110,57 @@ class CreateMultiCounter(generics.CreateAPIView):
         )
 
 
+class UpdateCounter(GenericAPIView):
+    serializer_class = UpdateCreateCounter
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fixture_name = serializer.validated_data['fixture_name']
+
+        cache_key = f"fixture_request_{fixture_name}"
+        last_request_time = cache.get(cache_key)
+
+        if last_request_time and (timezone.now() - last_request_time).seconds < 10:
+            return Response(
+                {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
+                 "returnCode": 429},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        cache.set(cache_key, timezone.now(), timeout=10)
+
+        fixture, created = Fixture.objects.get_or_create(name=fixture_name)
+        if created:
+            counter = CounterSumFromLastMaint.objects.create(counter=1)
+            all_counter = FullCounter.objects.create(counter=1)
+            fixture.counter_last_maint = counter
+            fixture.counter_all = all_counter
+            fixture.save()
+            message = "Fixture created in FixtureCycleCounter"
+        else:
+            fixture.counter_last_maint.counter += 1
+            fixture.counter_all.counter += 1
+            fixture.counter_last_maint.save()
+            fixture.counter_all.save()
+            message = "Fixture counter updated in FixtureCycleCounter"
+
+        send_event('fixture-updates', 'message', {
+            "fixture_name": fixture.name,
+            "message": message,
+            "timestamp": timezone.now().isoformat(),
+        })
+
+        return Response(
+                {"returnCodeDescription": message,
+                 "returnCode": 200},
+                status=status.HTTP_200_OK
+            )
+
+
 class CreateUpdateCounter(generics.CreateAPIView):
     queryset = Fixture.objects.all()
     serializer_class = FixtureSerializer
-    
-    authentication_classes = [CsrfExemptSessionAuthentication]
 
     def create(self, request, *args, **kwargs):
         fixture_name = request.data.get('name')
@@ -154,6 +183,7 @@ class CreateUpdateCounter(generics.CreateAPIView):
                 "message": "Too soon – request ignored",
                 "timestamp": timezone.now().isoformat(),
             })
+
             return Response(
                 {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
                  "returnCode": 429},
@@ -259,6 +289,14 @@ class CreateUpdateCounter(generics.CreateAPIView):
 
 class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FullInfoFixtureSerializer
+    ordering_fields = [
+        'name',
+        'counter_all_value',
+        'counter_last_maint_value',
+        'last_maint_date',
+        'limit_procent',
+    ]
+    search_fields = ['name']
 
     def get_queryset(self):
         last_maint_date_subquery = CounterHistory.objects.filter(
@@ -275,20 +313,10 @@ class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
             ),
         )
 
-    ordering_fields = [
-        'name',
-        'counter_all_value',
-        'counter_last_maint_value',
-        'last_maint_date',
-        'limit_procent',
-    ]
-    search_fields = ['name']
-    
     
 class MachineViewSet(viewsets.ModelViewSet):
     serializer_class = MachineSerializer
     queryset = Machine.objects.all()
-
 
 
 class ReturnServerStatus(APIView):
