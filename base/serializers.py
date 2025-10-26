@@ -45,3 +45,10 @@ class FullInfoFixtureSerializer(serializers.ModelSerializer):
         if obj.limit_procent is not None:
             return round(obj.limit_procent, 2)
         return None
+    
+
+class UpdateCreateCounter(serializers.Serializer):
+    fixture_name = serializers.CharField(required=True, error_messages={
+        "required": "You need provide fixture_name",
+        "blank": "You need provide fixture_name"
+    })
