@@ -333,3 +333,79 @@ class MachineTimeStampView(GenericAPIView):
                  "returnCode": 200},
                 status=status.HTTP_200_OK
             )
+    
+
+class FromGoldensToMasters(APIView):
+    def post(self, request, *args, **kwargs):
+        goldens = GoldenSample.objects.all()
+
+        # przygotuj stałe wartości (żeby nie tworzyć w kółko)
+        process, _ = ProcessName.objects.get_or_create(name="SMT")
+        dep, _ = Department.objects.get_or_create(name="SMD")
+
+        # mapowanie typu goldena -> typu mastera
+        type_map = {
+            "good": "Dobry",
+            "bad": "Zły",
+            "calib": "Kalibracyjny",
+        }
+
+        created = []
+        for golden in goldens:
+            variant = golden.variant
+            variant_name = variant.name or ""
+            variant_code = variant.code or ""
+
+            master_type_name = type_map.get(golden.type_golden, "Nieznany")
+            master_type, _ = TypeName.objects.get_or_create(name=master_type_name)
+
+            endcode_list = []
+            if "/" in variant_code:
+                base, suffix = variant_code.split("/")
+                base = base.strip()
+                suffix = suffix.strip()
+                if len(base) >= 8:
+                    prefix = base[:-2]
+                    start = base[-2:]
+                    end = suffix
+                    try:
+                        first_num = int(start)
+                        second_num = int(end)
+                        endcode_list = [f"{prefix}{first_num:02d}", f"{prefix}{second_num:02d}"]
+                    except ValueError:
+                        endcode_list = [base, suffix]
+                else:
+                    endcode_list = [base, suffix]
+            else:
+                endcode_list = [variant_code.strip()]
+
+            endcodes = [EndCode.objects.get_or_create(code=code)[0] for code in endcode_list if code]
+
+            code_smd_value = golden.golden_code[-8:] if golden.golden_code else None
+            code_smd_obj = None
+            if code_smd_value:
+                code_smd_obj, _ = CodeSmd.objects.get_or_create(code=code_smd_value)
+
+            master = MasterSample.objects.create(
+                sn=golden.golden_code,
+                date_created=golden.expire_date - timedelta(days=365),
+                expire_date=golden.expire_date,
+                project_name=variant_name,
+                process_name=process,
+                departament=dep,
+                master_type=master_type,
+                pcb_rev_code="",
+                counter=0,
+            )
+
+            if code_smd_obj:
+                master.code_smd.add(code_smd_obj)
+            if endcodes:
+                master.endcodes.add(*endcodes)
+
+            created.append(master.sn)
+
+        return Response(
+            {"created_masters": created, "count": len(created)},
+            status=status.HTTP_201_CREATED
+        )
