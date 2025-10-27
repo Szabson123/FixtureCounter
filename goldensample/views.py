@@ -332,7 +332,7 @@ class MachineTimeStampView(GenericAPIView):
             return Response(
                 {"returnCodeDescription": "Machine Block",
                  "returnCode": 123},
-                status=status.HTTP_423_LOCKED
+                status=status.HTTP_200_OK
             )
         
         return Response(
