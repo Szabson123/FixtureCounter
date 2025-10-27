@@ -27,10 +27,16 @@ def get_printer_info_from_card(production_card):
             """
             SELECT TOP 1 *
             FROM printers
-            WHERE name IN (?, ?)
-            ORDER BY CASE WHEN name = ? THEN 0 ELSE 1 END
+            WHERE name IN (?, ?, ?)
+            ORDER BY
+                CASE
+                    WHEN name = ? THEN 0
+                    WHEN name = ? THEN 1
+                    ELSE 2
+                END
             """,
-            (str(production_card), f"{production_card}_str1", str(production_card))
+            (str(production_card), f"{production_card}_str1", f"{production_card}_str2",
+            str(production_card), f"{production_card}_str1")
         )
         result = cursor.fetchone()
         

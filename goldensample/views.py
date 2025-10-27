@@ -71,13 +71,20 @@ class MasterSampleTypeCheck(GenericAPIView):
                 sample.counter += 1
                 sample.save()
 
-                results[golden] = sample.master_type.name
+                eng_dic = {
+                        'Zły': 'Bad',
+                        'Dobry': 'Good',
+                        'Kalibracyjny': 'Calib'
+                    }
+                res = eng_dic.get(sample.master_type.name, 'Unknown')
+
+                results[golden] = res
             else:
                 results[golden] = False
         
         return Response({"result": results}, status=status.HTTP_200_OK)
 
-        
+         
 class GoldenSampleCheckView(APIView):
     def post(self, request):
         serializer = GoldenSampleCheckSerializer(data=request.data)
