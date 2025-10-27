@@ -313,7 +313,6 @@ class ProductObjectProcessLogViewSet(viewsets.ModelViewSet):
 
 
 class ProductMoveView(APIView):
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         
         process_uuid = self.kwargs.get('process_uuid')
@@ -352,7 +351,6 @@ class ProductMoveView(APIView):
 
         
 class ProductMoveListView(APIView):
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         
         process_uuid = self.kwargs.get('process_uuid')
@@ -454,7 +452,6 @@ class ScrapProduct(APIView):
     
 
 class ContinueProduction(APIView):
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         process_uuid = self.kwargs.get('process_uuid')
         place_name = request.data.get('place_name')
@@ -504,7 +501,6 @@ class ContinueProduction(APIView):
             
 
 class ProductStartNewProduction(APIView):
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         
         process_uuid = self.kwargs.get('process_uuid')
@@ -514,7 +510,6 @@ class ProductStartNewProduction(APIView):
         who = request.data.get('who')
         full_sn = request.data.get('full_sn')
         
-        # For logic its always receive but we are using class ProcessMovementValidator and class requires it.
         if movement_type != 'receive':
             raise ValidationError("Tylko przyjmowanie dla tego enpointu")
         
@@ -524,7 +519,6 @@ class ProductStartNewProduction(APIView):
         try:
             validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
             validator.run()
-            
             product_object = validator.product_object
             place = validator.place
             process = validator.process
@@ -533,10 +527,9 @@ class ProductStartNewProduction(APIView):
                 raise ValidationError({"error": "Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint."})
             
             normalized_names = get_printer_info_from_card(production_card)
-            
+
             if not product_object.sub_product:
                 raise ValidationError({"error": "Obiekt nie ma przypisanego subproduktu."})
-
             if product_object.sub_product.name not in normalized_names:
                 raise ValidationError({"error": "Nie możesz użyć tego typu pasty dla tego produktu"})
             
@@ -892,6 +885,24 @@ class RetoolingView(GenericAPIView):
         who = data["who"]
         production_card = data["production_card"]
 
+        
+        process = ProductProcess.objects.get(id=process_uuid)
+        place = Place.objects.filter(name=place_name, process=process).first()
+
+        if not place:
+            raise ValidationError({"error": "Nie znaleziono miejsca dla danego procesu."})
+
+        try:
+            kill_flag = AppToKill.objects.get(line_name=place)
+        except AppToKill.DoesNotExist:
+            raise ValidationErrorWithCode(
+                message="AppKill nie istnieje dla danego miejsca.",
+                code="app_kill_no_exist"
+            )
+
+        kill_flag.killing_flag = True
+        kill_flag.save()
+
         if movement_type != "retooling":
             raise ValidationError({"error": "Nieprawidłowy typ ruchu (oczekiwano 'retooling')."})
 
@@ -899,9 +910,6 @@ class RetoolingView(GenericAPIView):
             raise ValidationError({"error": "Bez karty nie możemy pójść dalej."})
 
         normalized_names = get_printer_info_from_card(production_card)
-
-        process = ProductProcess.objects.get(id=process_uuid)
-        place = Place.objects.filter(name=place_name, process=process).first()
 
         try:
             product_object = ProductObject.objects.get(current_process=process, current_place=place)
@@ -935,14 +943,6 @@ class RetoolingView(GenericAPIView):
 
         if last_production.p_type.name != product_object.sub_product.name:
             raise ValidationError({"error": "Nie możesz użyć tej pasty do tego produktu – ostatnia używana była inna."})
-
-        try:
-            kill_flag = AppToKill.objects.get(line_name=place)
-        except AppToKill.DoesNotExist:
-            raise ValidationErrorWithCode(
-                message="AppKill nie istnieje dla danego miejsca.",
-                code="app_kill_no_exist"
-            )
 
         if kill_flag.killing_flag:
             kill_flag.killing_flag = False

@@ -18,3 +18,5 @@ admin.site.register(TypeName)
 admin.site.register(Department)
 admin.site.register(MasterSample)
 admin.site.register(EndCode)
+
+admin.site.register(MachineGoldensTime)

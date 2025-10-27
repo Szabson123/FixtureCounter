@@ -266,7 +266,7 @@ class ProcessMovementValidator:
     def set_killing_flag_on_true_if_need(self):
         if not self.process or not self.process.killing_app:
             return
-        
+
         if not self.place:
             return
         

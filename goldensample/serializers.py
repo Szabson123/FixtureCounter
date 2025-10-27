@@ -311,3 +311,4 @@ class MasterSampleTypeSerializer(serializers.Serializer):
         goldens = serializers.ListField(
         child=serializers.CharField(), allow_empty=False
     )
+        
