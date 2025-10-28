@@ -59,7 +59,6 @@ class BaseMovementHandler:
     
 
 class MoveHandler(BaseMovementHandler):
-    @transaction.atomic
     def execute(self):
         self._move_product_object(self.product_object)
 
@@ -111,7 +110,6 @@ class MoveHandler(BaseMovementHandler):
             
 
 class ReceiveHandler(BaseMovementHandler):
-    @transaction.atomic
     def execute(self):
         # Matka
         self._receive_product_object(self.product_object)
@@ -159,7 +157,6 @@ class ReceiveHandler(BaseMovementHandler):
 
 
 class CheckHandler(BaseMovementHandler):
-    @transaction.atomic
     def execute(self):
         self.create_log()
         self.set_current_place_and_process()

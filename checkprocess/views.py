@@ -343,7 +343,6 @@ class ProductMoveView(APIView):
             )
         
         except ValidationErrorWithCode as e:
-            transaction.set_rollback(True)
             return Response(
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
@@ -405,7 +404,6 @@ class ProductMoveListView(APIView):
             return Response(responses, status=status.HTTP_200_OK)
 
         except ValidationErrorWithCode as e:
-            transaction.set_rollback(True)
             return Response(
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
