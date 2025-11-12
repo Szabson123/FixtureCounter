@@ -22,8 +22,6 @@ from rest_framework.authentication import SessionAuthentication
 from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine, MachineCondition
 from .serializers import UpdateCreateCounter, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 
-from goldensample.models import GroupVariantCode, VariantCode, MapSample, GoldenSample
-
 from datetime import timedelta
 from django.db import models
 
@@ -51,63 +49,6 @@ class ClearCounterAPIView(APIView):
             return Response({'status': 'Licznik wyczyszczony'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Brak licznika do wyzerowania'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CreateMultiCounter(generics.CreateAPIView):
-    queryset = Fixture.objects.all()
-    serializer_class = FixtureSerializer
-    
-    def create(self, request, *args, **kwargs):
-        fixture_name = request.data.get('name')
-        how_much_counter = int(request.data.get('number', 0))
-        
-        if not fixture_name:
-            return Response(
-                {"returnCodeDescription": "Fixture name is required",
-                 "returnCode": "MISSING_NAME"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if how_much_counter <= 0:
-            return Response(
-                {"returnCodeDescription": "Number must be positive",
-                 "returnCode": "INVALID_NUMBER"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        cache_key = f"fixture_request_{fixture_name}"
-        last_request_time = cache.get(cache_key)
-        
-        if last_request_time and (timezone.now() - last_request_time).seconds < 10:
-            return Response(
-                {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
-                 "returnCode": "429"},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
-        
-        cache.set(cache_key, timezone.now(), timeout=10)
-        
-        try:
-            fixture = Fixture.objects.get(name=fixture_name)
-        except Fixture.DoesNotExist:
-            return Response(
-                {"returnCodeDescription": "Fixture not found",
-                 "returnCode": "NOT_FOUND"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        fixture.counter_last_maint.counter += how_much_counter
-        fixture.counter_all.counter += how_much_counter
-        fixture.counter_last_maint.save()
-        fixture.counter_all.save()
-        
-        return Response(
-            {
-                "returnCodeDescription": f"Counters updated successfully. Added {how_much_counter}",
-                "returnCode": 200,
-            },
-            status=status.HTTP_200_OK
-        )
 
 
 class UpdateCounter(GenericAPIView):
@@ -154,136 +95,6 @@ class UpdateCounter(GenericAPIView):
         return Response(
                 {"returnCodeDescription": message,
                  "returnCode": 200},
-                status=status.HTTP_200_OK
-            )
-
-
-class CreateUpdateCounter(generics.CreateAPIView):
-    queryset = Fixture.objects.all()
-    serializer_class = FixtureSerializer
-
-    def create(self, request, *args, **kwargs):
-        fixture_name = request.data.get('name')
-        
-        sn = request.data.get('serial_number')
-
-        if not fixture_name:
-            return Response(
-                {"returnCodeDescription": "You didn't pass the name",
-                 "returnCode": 1488},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        cache_key = f"fixture_request_{fixture_name}"
-        last_request_time = cache.get(cache_key)
-
-        if last_request_time and (timezone.now() - last_request_time).seconds < 10:
-            send_event('fixture-updates', 'message', {
-                "fixture_name": fixture_name,
-                "message": "Too soon – request ignored",
-                "timestamp": timezone.now().isoformat(),
-            })
-
-            return Response(
-                {"returnCodeDescription": "Request for this fixture was sent too recently. Please wait.",
-                 "returnCode": 429},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
-
-        cache.set(cache_key, timezone.now(), timeout=10)
-
-        fixture, created = Fixture.objects.get_or_create(name=fixture_name)
-        if created:
-            counter = CounterSumFromLastMaint.objects.create(counter=1)
-            all_counter = FullCounter.objects.create(counter=1)
-            fixture.counter_last_maint = counter
-            fixture.counter_all = all_counter
-            fixture.save()
-            message = "Fixture created in FixtureCycleCounter"
-        else:
-            fixture.counter_last_maint.counter += 1
-            fixture.counter_all.counter += 1
-            fixture.counter_last_maint.save()
-            fixture.counter_all.save()
-            message = "Fixture counter updated in FixtureCycleCounter"
-
-        send_event('fixture-updates', 'message', {
-            "fixture_name": fixture.name,
-            "message": message,
-            "timestamp": timezone.now().isoformat(),
-        })
-        
-        
-        if sn and len(sn) >= 13:
-            group_code = str(sn[12:]).strip()
-            reason_8 = "Minęło więcej niż 8 godzin od ostatniego testu wzorców"
-            reason_map = "Nie ma mapowania"
-            reason_group = "Nie znaleziono żadnej grupy"
-            reason = None
-            machine_block = False
-
-            try:
-                check_sn = GoldenSample.objects.get(golden_code=sn)
-                return Response({
-                    "returnCodeDescription": message,
-                    "returnCode": 200,
-                    "machineBlock": False,
-                    "reason": None,
-                }, status=status.HTTP_200_OK)
-
-            except GoldenSample.DoesNotExist:
-                inner_variant = group_code
-                group = GroupVariantCode.objects.filter(name=group_code).first()
-
-                if not group:
-                    map_entry = MapSample.objects.filter(
-                        models.Q(i_output=group_code) | models.Q(i_input=group_code)
-                    ).first()
-
-                    if not map_entry:
-                        machine_block = True
-                        reason = reason_map
-                        return Response({
-                            "returnCodeDescription": message,
-                            "returnCode": 403,
-                            "machineBlock": machine_block,
-                            "reason": reason,
-                        }, status=status.HTTP_200_OK)
-
-                    alt_code = (
-                        map_entry.i_input if map_entry.i_output == group_code else map_entry.i_output
-                    )
-                    group = GroupVariantCode.objects.filter(name=alt_code).first()
-
-                    if group:
-                        inner_variant = alt_code
-                    else:
-                        machine_block = True
-                        reason = reason_group
-                        return Response({
-                            "returnCodeDescription": message,
-                            "returnCode": 403,
-                            "machineBlock": machine_block,
-                            "reason": reason,
-                        }, status=status.HTTP_200_OK)
-
-                if group.last_time_tested:
-                    time_diff = timezone.now() - group.last_time_tested
-                    if time_diff > timedelta(hours=8):
-                        machine_block = True
-                        reason = reason_8
-
-            return Response({
-                "returnCodeDescription": message,
-                "returnCode": 200,
-                "machineBlock": machine_block,
-                "reason": reason,
-            }, status=status.HTTP_200_OK)
-
-        else:
-            return Response(
-                {"returnCodeDescription": message,
-                "returnCode": 200},
                 status=status.HTTP_200_OK
             )
 
