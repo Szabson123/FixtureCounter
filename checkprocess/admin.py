@@ -3,7 +3,12 @@ from .models import *
 
 
 admin.site.register(Product)
-admin.site.register(ProductObject)
+
+@admin.register(ProductObject)
+class ProductObjectAdmin(admin.ModelAdmin):
+    list_display = ('serial_number', 'full_sn', 'product', 'current_process', 'current_place', 'created_at')
+    search_fields = ('serial_number', 'full_sn')
+    
 admin.site.register(ProductProcess)
 admin.site.register(ProductObjectProcess)
 admin.site.register(ProductObjectProcessLog)

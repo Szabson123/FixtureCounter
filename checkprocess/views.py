@@ -753,7 +753,6 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
 
         product = get_object_or_404(Product, pk=product_id)
         process = get_object_or_404(ProductProcess, pk=process_uuid)
-
         mother = get_object_or_404(ProductObject, full_sn=mother_sn, is_mother=True)
 
         place_name = mother.current_place.name if mother.current_place else None
