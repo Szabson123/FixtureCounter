@@ -11,3 +11,7 @@ admin.site.register(MasterSample)
 admin.site.register(EndCode)
 
 admin.site.register(MachineGoldensTime)
+admin.site.register(EndCodeTimeFWK)
+admin.site.register(LastResultFWK)
+admin.site.register(TempCheckMasterFWK)
+admin.site.register(TempMasterShow)

@@ -191,4 +191,94 @@ class MachineTimeStampView(GenericAPIView):
                  "returnCode": 200},
                 status=status.HTTP_200_OK
             )
-    
+
+
+class CheckGoldensFWK(GenericAPIView):
+    serializer_class = CheckMasterSampleFWK
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        sn = data['sn']
+        result = data['result']
+        machine = data['machine_id']
+        site = data['site']
+        internal_code = data['internal_code']
+
+        timer_obj, _ = EndCodeTimeFWK.objects.get_or_create(machine_id=machine, site=site)
+
+        try:
+            temp_set = TempMasterShow.objects.get(machine_id=machine, site=site, if_set=True)
+            master = MasterSample.objects.select_related('master_type').filter(sn=temp_set.sn).first()
+            last = LastResultFWK.objects.filter(machine_id=machine, site=site).order_by('-date_time_tested').first()
+
+            # Backtaking logic:
+            # Master verifies previous test -> compare current master result type with previous test result
+            if master and last and master.master_type.compute_name.lower() == result:
+                check, _ = TempCheckMasterFWK.objects.get_or_create(machine_id=machine, site=site)
+                mt = master.master_type.compute_name.lower()
+                if mt == 'pass':
+                    check.pass_res = True
+                elif mt == 'fail':
+                    check.fail_res = True
+                check.save()
+
+                if check.pass_res and check.fail_res:
+                    timer_obj.last_good_tested = timezone.now()
+                    timer_obj.save()
+
+                    check.pass_res = False
+                    check.fail_res = False
+                    check.save()
+                    temp_set.if_set = False
+                    temp_set.save()
+
+        except TempMasterShow.DoesNotExist:
+            pass
+        
+        master_for_sn = MasterSample.objects.filter(sn=sn).first()
+        if master_for_sn:
+            has_code = master_for_sn.endcodes.filter(code=internal_code).exists()
+
+            if has_code:
+                temp_obj, _ = TempMasterShow.objects.get_or_create(machine_id=machine, site=site)
+                temp_obj.if_set = True
+                temp_obj.sn = sn
+                temp_obj.save()
+        if not master_for_sn:
+            try:
+                temp_obj_non = TempMasterShow.objects.get(machine_id=machine, site=site)
+                temp_obj_non.if_set = False
+                temp_obj_non.save()
+            except:
+                ...
+
+        LastResultFWK.objects.create(
+            sn=sn,
+            result=result.lower() if result else None,
+            machine_id=machine,
+            site=site
+        )
+
+        if master_for_sn:
+            return Response("Testujesz Wzorca")
+
+        last_good = getattr(timer_obj, 'last_good_tested', None)
+        print(last_good)
+        if not last_good:
+            return Response("Nalezy przetestować wzorce", status=status.HTTP_200_OK)
+
+        time_diff = timezone.now() - last_good
+        print(time_diff)
+        if time_diff > timedelta(hours=8):
+            return Response("Nalezy przetestować wzorce", status=status.HTTP_200_OK)
+
+        return Response("Pass", status=status.HTTP_200_OK)
+
+
+
+        
+        
+
