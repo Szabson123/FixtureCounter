@@ -207,7 +207,7 @@ class CheckGoldensFWK(GenericAPIView):
         site = data['site']
         internal_code = data['internal_code']
 
-        timer_obj, _ = EndCodeTimeFWK.objects.get_or_create(machine_id=machine, site=site)
+        timer_obj, _ = EndCodeTimeFWK.objects.get_or_create(machine_id=machine, site=site, endcode=internal_code)
 
         try:
             temp_set = TempMasterShow.objects.get(machine_id=machine, site=site, if_set=True)
@@ -263,19 +263,27 @@ class CheckGoldensFWK(GenericAPIView):
         )
 
         if master_for_sn:
-            return Response("Testujesz Wzorca")
+            return Response({"comment": "Testujesz Wzorca",
+                             "result": True}, status=status.HTTP_200_OK)
 
         last_good = getattr(timer_obj, 'last_good_tested', None)
-        print(last_good)
+        last_endcode = getattr(timer_obj, 'endcode', None)
+
         if not last_good:
-            return Response("Nalezy przetestować wzorce", status=status.HTTP_200_OK)
+            return Response({"comment": "Nalezy przetestować wzorce [minelo wiecej niz 8godzin]",
+                             "result": False}, status=status.HTTP_200_OK)
+        
+        if not last_endcode or last_endcode != internal_code:
+            return Response({"comment": "Nalezy przetestować wzorce [zmiana 'internal code']",
+                    "result": False}, status=status.HTTP_200_OK)
 
         time_diff = timezone.now() - last_good
-        print(time_diff)
         if time_diff > timedelta(hours=8):
-            return Response("Nalezy przetestować wzorce", status=status.HTTP_200_OK)
-
-        return Response("Pass", status=status.HTTP_200_OK)
+            return Response({"comment": "Nalezy przetestować wzorce [minelo wiecej niz 8godzin]",
+                             "result": False}, status=status.HTTP_200_OK)
+        
+        return Response({"comment": "Pass",
+                        "result": True}, status=status.HTTP_200_OK)
 
 
 

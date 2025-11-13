@@ -86,6 +86,7 @@ class EndCodeTimeFWK(models.Model):
     machine_id = models.CharField(max_length=255)
     site = models.PositiveIntegerField()
     last_good_tested = models.DateTimeField(null=True, blank=True)
+    endcode = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.machine_id
