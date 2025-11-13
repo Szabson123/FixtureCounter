@@ -207,4 +207,19 @@ class MasterSampleTypeSerializer(serializers.Serializer):
         goldens = serializers.ListField(
         child=serializers.CharField(), allow_empty=False
     )
-        
+
+
+class CheckMasterSampleFWK(serializers.Serializer):
+    sn = serializers.CharField(required=True)
+    site = serializers.IntegerField(required=True)
+    machine_id = serializers.CharField(required=True)
+    result = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
+    internal_code = serializers.CharField(required=True)
+
+    def validate_result(self, value):
+        if value in (None, ""):
+            return None
+        v = str(value).lower()
+        if v in ("pass", "fail"):
+            return v
+        raise serializers.ValidationError("result must be 'pass' or 'fail' (or omitted).")

@@ -18,8 +18,10 @@ urlpatterns = [
 
     path("machine_validation/", MachineTimeStampView.as_view(), name='machine_validation'),
     
-    path("mastersample-check/", MasterSampleCheckView.as_view(), name='master-check'),
-    path("mastersample-type/", MasterSampleTypeCheck.as_view(), name="master-type"),
+    path("mastersample-check/", MasterSampleCheckView.as_view(), name='master-check-SPEA'),
+    path("mastersample-type/", MasterSampleTypeCheck.as_view(), name="master-type-SPEA"),
+
+    path('mastersample/fwk/check/', CheckGoldensFWK.as_view(), name="master-type-FWK"),
 
 ]
 
