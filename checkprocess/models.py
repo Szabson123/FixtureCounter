@@ -204,3 +204,13 @@ NODE_TYPE_MAP = {
     'end': ProductProcessEnding,
     'condition': ProductProcessCondition,
 }
+
+# //////////////////////////////////////////////////////////////////////////////////
+
+
+class DataBasesSpiMap(models.Model):
+    data_base_name = models.CharField(max_length=255)
+    ip = models.CharField(max_length=255)
+    line_name = models.CharField(max_length=255)
+    identyficator = models.CharField(max_length=255, null=True, blank=True)
+    active = models.BooleanField(default=True)
