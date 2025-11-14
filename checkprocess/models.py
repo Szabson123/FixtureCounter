@@ -139,6 +139,8 @@ class ProductObjectProcessLog(models.Model):
     place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
     movement_type = models.CharField(max_length=255, null=True, blank=True)
 
+    name_of_productig_product = models.CharField(max_length=255, null=True, blank=True)
+
     def __str__(self):
         return f"Log for @ {self.entry_time:%Y-%m-%d %H:%M}"
 
@@ -185,6 +187,7 @@ class LastProductOnPlace(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     p_type = models.ForeignKey(SubProduct, on_delete=models.CASCADE, blank=True, null=True)
+    name_of_productig_product = models.CharField(max_length=255, null=True, blank=True)
     
     
 class ConditionLog(models.Model):
@@ -214,3 +217,11 @@ class DataBasesSpiMap(models.Model):
     line_name = models.CharField(max_length=255)
     identyficator = models.CharField(max_length=255, null=True, blank=True)
     active = models.BooleanField(default=True)
+
+
+class LogFromSpi(models.Model):
+    fixed_id = models.IntegerField()
+    pcb_name = models.CharField(max_length=255)
+    time_date = models.DateTimeField()
+    machine_name = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    result = models.CharField(max_length=255)

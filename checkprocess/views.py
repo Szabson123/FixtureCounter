@@ -524,17 +524,17 @@ class ProductStartNewProduction(APIView):
             if not hasattr(process, 'defaults') or not process.defaults.production_process_type:
                 raise ValidationError({"error": "Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint."})
             
-            normalized_names = get_printer_info_from_card(production_card)
+            normalized_names, printer_name = get_printer_info_from_card(production_card)
 
             if not product_object.sub_product:
                 raise ValidationError({"error": "Obiekt nie ma przypisanego subproduktu."})
             if product_object.sub_product.name not in normalized_names:
                 raise ValidationError({"error": "Nie możesz użyć tego typu pasty dla tego produktu"})
             
-            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
+            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who, printer_name=printer_name)
             handler.execute()
             
-            LastProductOnPlace.objects.create(product_process=process, place=place, p_type=product_object.sub_product)
+            LastProductOnPlace.objects.create(product_process=process, place=place, p_type=product_object.sub_product, name_of_productig_product=printer_name)
             
             return Response(
                 {"detail": "Ruch został wykonany pomyślnie."},
@@ -906,7 +906,7 @@ class RetoolingView(GenericAPIView):
         if not production_card:
             raise ValidationError({"error": "Bez karty nie możemy pójść dalej."})
 
-        normalized_names = get_printer_info_from_card(production_card)
+        normalized_names, printer_name = get_printer_info_from_card(production_card)
 
         try:
             product_object = ProductObject.objects.get(current_process=process, current_place=place)
