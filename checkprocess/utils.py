@@ -62,7 +62,7 @@ def get_printer_info_from_card(production_card):
         except OneToOneMap.DoesNotExist:
             raise ValidationError(f"Nie znaleziono mapowania dla modelu: {name}")
 
-    return mapped_names
+    return mapped_names, printer_name
 
 
 def check_fifo_violation(current_object):

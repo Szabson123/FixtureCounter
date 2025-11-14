@@ -9,11 +9,11 @@ from django.utils import timezone
 
 class MovementHandler:
     @staticmethod
-    def get_handler(movement_type, product_object, place, process, who, result=None):
+    def get_handler(movement_type, product_object, place, process, who, result=None, printer_name=None):
         if movement_type == 'move':
             return MoveHandler(product_object, place, process, who)
         elif movement_type == 'receive':
-            return ReceiveHandler(product_object, place, process, who)
+            return ReceiveHandler(product_object, place, process, who, printer_name=printer_name)
         elif movement_type == 'check':
             return CheckHandler(product_object, place, process, who, result)
         else:
@@ -24,13 +24,14 @@ class MovementHandler:
         
 
 class BaseMovementHandler:
-    def __init__(self, product_object, place, process, who, result=None):
+    def __init__(self, product_object, place, process, who, *, printer_name=None, result=None):
         self.product_object = product_object
         self.place = place
         self.process = process
         self.who = who
         self.result = result
-    
+        self.printer_name = printer_name
+
     def execute(self):
         raise NotImplementedError
     
@@ -131,7 +132,8 @@ class ReceiveHandler(BaseMovementHandler):
             process=self.process,
             entry_time=timezone.now(),
             who_entry=self.who,
-            place=self.place
+            place=self.place,
+            name_of_productig_product=self.printer_name, 
         )
 
     def set_current_place_and_process(self, product_obj):
