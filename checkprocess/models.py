@@ -53,6 +53,10 @@ class ProductProcessFields(models.Model):
     sito_cycles_count = models.BooleanField(default=False)
     end = models.BooleanField(default=False)
     is_full = models.BooleanField(default=False)
+    last_move = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.product_process.label} - {self.product_process.product.name}"
 
 
 class ProductProcessDefault(models.Model):
@@ -123,6 +127,8 @@ class ProductObject(models.Model):
     sub_product = models.ForeignKey(SubProduct, on_delete=models.SET_NULL, related_name='product_objects', null=True, blank=True)
     
     is_mother = models.BooleanField(default=False)
+
+    last_move = models.DateTimeField(null=True, blank=True)
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     

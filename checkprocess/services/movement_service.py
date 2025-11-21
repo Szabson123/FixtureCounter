@@ -91,6 +91,7 @@ class MoveHandler(BaseMovementHandler):
 
     def delete_current_place(self, product_object):
         product_object.current_place = None
+        product_object.last_move = timezone.now()
         product_object.save()
 
     def set_quarantin_if_needed(self, product_object):
@@ -146,6 +147,7 @@ class ReceiveHandler(BaseMovementHandler):
     def set_current_place_and_process(self, product_obj):
         product_obj.current_place = self.place
         product_obj.current_process = self.process
+        product_obj.last_move = timezone.now()
         product_obj.save()
 
     def set_killing_flag_on_false_if_need(self):
