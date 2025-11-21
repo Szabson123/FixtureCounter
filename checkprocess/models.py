@@ -31,11 +31,34 @@ class ProductProcess(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"
-    
+
+class ProductProcessFields(models.Model):
+    product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='fields')
+    product = models.BooleanField(default=False)
+    mother_object = models.BooleanField(default=False)
+    sub_product = models.BooleanField(default=False)
+    is_mother = models.BooleanField(default=False)
+    current_process = models.BooleanField(default=False)
+    current_place = models.BooleanField(default=False)
+    serial_number = models.BooleanField(default=False)
+    full_sn = models.BooleanField(default=False)
+    created_at = models.BooleanField(default=False)
+    expire_date = models.BooleanField(default=False)
+    production_date = models.BooleanField(default=False)
+    exp_date_in_process = models.BooleanField(default=False)
+    quranteen_time = models.BooleanField(default=False)
+    max_in_process = models.BooleanField(default=False)
+    ex_mother = models.BooleanField(default=False)
+    sito_cycle_limit = models.BooleanField(default=False)
+    sito_cycles_count = models.BooleanField(default=False)
+    end = models.BooleanField(default=False)
+    is_full = models.BooleanField(default=False)
+
 
 class ProductProcessDefault(models.Model):
     product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='defaults')
     how_much_days_exp_date = models.IntegerField(default=None, blank=True, null=True)
+    how_much_hours_max_working = models.IntegerField(default=None, blank=True, null=True)
     quranteen_time = models.IntegerField(default=None, blank=True, null=True)
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
@@ -43,7 +66,10 @@ class ProductProcessDefault(models.Model):
     show_the_couter = models.BooleanField(default=False) # FrontEnd settings to know when use endpoint
     use_list_endpoint = models.BooleanField(default=False) # From last process -> 3 in 3 out
     production_process_type = models.BooleanField(default=False) # place when we can set -> possible or continue production
+    stencil_production_process_type = models.BooleanField(default=False) # stencil prod
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
+    use_poke = models.BooleanField(default=False) # Place when we set poking to microservice we start production [In future add endpoint not hardcoded]
+    working_only_if_obj_on_machine = models.BooleanField(default=False) # setting log to check if producing without reetoling
 
     def __str__(self):
         return f'{self.product_process.label} -- {self.product_process.product.name}'
@@ -100,7 +126,7 @@ class ProductObject(models.Model):
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     
-    serial_number = models.CharField(max_length=255, db_index=True)
+    serial_number = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     full_sn = models.CharField(max_length=255, unique=True, db_index=True, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -108,11 +134,20 @@ class ProductObject(models.Model):
     production_date = models.DateField(null=True, blank=True, default=None)
     exp_date_in_process = models.DateField(null=True, blank=True, default=None)
     quranteen_time = models.DateTimeField(null=True, blank=True, default=None)
-    
+    max_in_process = models.DateTimeField(null=True, blank=True, default=None)
+
     ex_mother = models.CharField(max_length=255, null=True, blank=True)
+
+    sito_cycle_limit = models.PositiveIntegerField(default=300000)
+    sito_cycles_count = models.PositiveIntegerField(default=0)
     
     end = models.BooleanField(default=False)
     is_full = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["current_place", "end"], name="idx_place_end"),
+        ]
 
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
@@ -214,14 +249,37 @@ NODE_TYPE_MAP = {
 class DataBasesSpiMap(models.Model):
     data_base_name = models.CharField(max_length=255)
     ip = models.CharField(max_length=255)
-    line_name = models.CharField(max_length=255)
+    line_name = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     identyficator = models.CharField(max_length=255, null=True, blank=True)
     active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name.name}({self.line_name.process.product.name})"
+    
+
+class DataBasesASMMap(models.Model):
+    data_base_name = models.CharField(max_length=255)
+    ip = models.CharField(max_length=255)
+    line_name = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    identyficator = models.CharField(max_length=255, null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name.name}({self.line_name.process.product.name})"
 
 
 class LogFromSpi(models.Model):
     fixed_id = models.IntegerField()
     pcb_name = models.CharField(max_length=255)
-    time_date = models.DateTimeField()
+    time_date = models.DateTimeField(auto_now_add=True)
     machine_name = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
     result = models.CharField(max_length=255)
+
+
+class MessageToApp(models.Model):
+    line = models.ForeignKey(Place, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    message = models.CharField(max_length=255)
+    send = models.BooleanField(default=False)
+    when_trigger = models.DateTimeField()
+

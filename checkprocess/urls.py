@@ -3,7 +3,7 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
-                    RetoolingView)
+                    RetoolingView, StencilStartNewProd)
 
 from rest_framework.routers import DefaultRouter
 
@@ -23,6 +23,7 @@ urlpatterns = [
     path('start-new-prod/<uuid:process_uuid>/', ProductStartNewProduction.as_view(), name='start-prouduction'),
     path('continue-prod/<uuid:process_uuid>/', ContinueProduction.as_view(), name='continue-prouduction'),
     path('retooling/<uuid:process_uuid>/', RetoolingView.as_view(), name='continue-prouduction'),
+    path('start-new-prod-stencil/<uuid:process_uuid>/', StencilStartNewProd.as_view(), name='stencil-start-prod'),
 
     path('trash-obj/<uuid:process_uuid>/', ScrapProduct.as_view(), name='scrap-product'),
     

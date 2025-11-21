@@ -9,6 +9,8 @@ from rest_framework.exceptions import ValidationError
 from .models import OneToOneMap
 import pyodbc
 
+import requests
+from requests.exceptions import RequestException
 
 def get_printer_info_from_card(production_card):
     conn_str = (
@@ -149,7 +151,20 @@ def detect_parser_type(full_sn: str) -> str:
     if '[)>' in full_sn:
         return 'alpha_parser'
 
-    if full_sn.startswith('TX'):
-        return 'tecnolab_parser'
+    if full_sn.startswith('S'):
+        return 'sito_default'
 
     return 'undefined'
+
+def poke_process(process_id):
+    try:
+        response = requests.get(f"http://127.0.0.1:8001/api/new-product-poke/{process_id}/", timeout=30)
+
+        if response.status_code >= 200 and response.status_code < 1000:
+            return True
+        
+        raise ValidationError({"error": "Błąd podczas wykonywania poke – endpoint zwrócił błąd."})
+
+    except requests.exceptions.RequestException as e:
+        print("POKE ERROR:", e)
+        raise ValidationError({"error": "Nie udało się skontaktować z endpointem poke."})
