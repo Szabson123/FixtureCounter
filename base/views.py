@@ -128,3 +128,22 @@ class MachineViewSet(viewsets.ModelViewSet):
 class ReturnServerStatus(APIView):
     def get(self, request):
         return Response("Server is working", status=status.HTTP_200_OK)
+    
+
+class CheckExceedCyclesLimit(GenericAPIView):
+    serializer_class = UpdateCreateCounter
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fixture_name = serializer.validated_data['fixture_name']
+
+        try:
+            machine = Fixture.objects.get(name=fixture_name)
+        except:
+            return Response({"error": "Fixture doesnt exist"})
+
+        if machine.counter_last_maint.counter >= machine.cycles_limit:
+            return Response({"fail": "Limit exceeded stop machine"})
+        else:
+            return Response({"pass": "Can produce"})
