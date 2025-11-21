@@ -158,7 +158,7 @@ def detect_parser_type(full_sn: str) -> str:
 
 def poke_process(process_id):
     try:
-        response = requests.get(f"http://127.0.0.1:8001/api/new-product-poke/{process_id}/", timeout=30)
+        response = requests.get(f"http://127.0.0.1:8001/micro/new-product-poke/{process_id}/", timeout=30)
 
         if response.status_code >= 200 and response.status_code < 1000:
             return True

@@ -13,5 +13,7 @@ urlpatterns = [
     path('api/events/', include(eventstream_urls)),
 
     path('api/check-status/', ReturnServerStatus.as_view(), name='check-status'),
-    path('api/new-upd-counter/', UpdateCounter.as_view(), name='new-upd')
+    path('api/new-upd-counter/', UpdateCounter.as_view(), name='new-upd'),
+    path('api/machine-cycles-limit-exceeded/', CheckExceedCyclesLimit.as_view(), name='limit-exceeded')
+
 ]

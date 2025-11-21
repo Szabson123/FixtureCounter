@@ -3,6 +3,9 @@ from django.db import models
 
 class CounterSumFromLastMaint(models.Model):
     counter = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.counter}"
     
 
 class FullCounter(models.Model):
