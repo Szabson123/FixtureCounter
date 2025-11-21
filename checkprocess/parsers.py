@@ -104,14 +104,8 @@ class HerausSnParser(BaseSNParser):
 
 class TecnoLabSNParser(BaseSNParser):
     def parse(self, full_sn: str):
-        sub_product = 'Tecno lab'
-        match = re.search(r'(TX\d{5})', full_sn)
-        if not match:
-            raise ValueError("Nie znaleziono numeru rozpoczynającego się od TX i 5 cyfr.")
-        
-        serial_number = match.group(1)
-
-        return sub_product, serial_number, None, None, None, None
+        sub_product = 'default'
+        return sub_product, None, None, None, None, None
     
 
 def get_parser(parser_type: str):
@@ -119,7 +113,7 @@ def get_parser(parser_type: str):
         return AlphaSNParser()
     elif parser_type == 'aim_parser':
         return AimSnParser()
-    elif parser_type == 'tecnolab_parser':
+    elif parser_type == 'sito_default':
         return TecnoLabSNParser()
     elif parser_type == 'heraus_parser':
         return HerausSnParser()

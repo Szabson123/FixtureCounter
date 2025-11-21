@@ -22,11 +22,6 @@ from rest_framework.authentication import SessionAuthentication
 from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine, MachineCondition
 from .serializers import UpdateCreateCounter, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
 
-from datetime import timedelta
-from django.db import models
-
-from django.http import JsonResponse
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ClearCounterAPIView(APIView):

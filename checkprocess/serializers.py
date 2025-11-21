@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge,
-                     ProductProcessDefault, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog, PlaceGroupToAppKill)
+                     ProductProcessDefault, ProductProcessFields, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog, PlaceGroupToAppKill)
 
 from datetime import timedelta
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 class ProductProcessDefaultsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,16 +43,23 @@ class PlaceSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'process_name']
 
 
+class ProductProcessFieldsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcessFields
+        fields = '__all__'
+        
+
 class ProductProcessSerializer(serializers.ModelSerializer):
     defaults = ProductProcessDefaultsSerializer(read_only=True)
     conditions = ProductProcessConditionsSerializer(read_only=True)
     starts = ProductProcessStartsSerializer(read_only=True)
     endings = ProductProcessEndingsSerializer(read_only=True)
+    fields = ProductProcessFieldsSerializer(read_only=True)
 
     class Meta:
         model = ProductProcess
         fields = ['id', 'product', 'type', 'label', 'pos_x', 'pos_y', 'is_required',
-                  'defaults', 'conditions', 'starts', 'endings']
+                  'defaults', 'conditions', 'starts', 'endings', 'fields',]
 
     def to_internal_value(self, data):
         return {
@@ -79,6 +87,7 @@ class ProductObjectSerializer(serializers.ModelSerializer):
                 'production_date', 'expire_date',
                 'place_name', 'who_entry', 'current_place_name', 'mother_object',
                 'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name',
+                'sito_cycles_count', 'sito_cycle_limit', 'max_in_process'
             ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',
@@ -166,3 +175,15 @@ class RetoolingSerializer(serializers.Serializer):
     who = serializers.CharField(required=True)
     movement_type = serializers.CharField(required=True)
     production_card = serializers.CharField(required=True)
+
+
+class StencilStartProdSerializer(serializers.Serializer):
+    place_name = serializers.CharField(required=True)
+    movement_type = serializers.CharField(required=True)
+    who = serializers.CharField(required=True)
+    full_sn = serializers.CharField(required=True)
+
+    def validate_movement_type(self, value):
+        if value != 'receive':
+            raise ValidationError("Tylko przyjmowanie dla tego enpointu")
+        return value

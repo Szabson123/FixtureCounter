@@ -50,6 +50,7 @@ class ProcessMovementValidator:
             self.validate_edge_can_move()
             self.validate_settings_in_process()
             self.validate_status_of_line()
+            self.check_cycles_limit()
         
         elif self.movement_type == 'retooling':
             self.validate_process_receive_with_current_place()
@@ -315,4 +316,11 @@ class ProcessMovementValidator:
             raise ValidationErrorWithCode(
                 message="Próbujesz przenieść obiekt niezgodnie z wynikiem poprzedniej fazy.",
                 code="wrong_condition"
+            )
+    
+    def check_cycles_limit(self):
+        if self.product_object.sito_cycle_limit <= self.product_object.sito_cycles_count:
+            raise ValidationErrorWithCode(
+                message="Obiekt osiągnął maksymalna ilość cykli nie można już nim produkować",
+                code="limit_cycles_exceeded"
             )

@@ -1,4 +1,6 @@
 
+import requests
+
 from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
@@ -17,13 +19,13 @@ from rest_framework.filters import OrderingFilter
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
-from .utils import check_fifo_violation, detect_parser_type, get_printer_info_from_card
+from .utils import detect_parser_type, get_printer_info_from_card, poke_process
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct,
-                    LastProductOnPlace, PlaceGroupToAppKill)
+                    LastProductOnPlace, PlaceGroupToAppKill, MessageToApp)
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
-                        PlaceGroupToAppKillSerializer, RetoolingSerializer)
+                        PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -255,7 +257,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         except IntegrityError as e:
             if "unique" in str(e).lower():
                 raise ValidationError({"error": "Taki obiekt już istnieje"})
-            raise ValidationError("Błąd podczas zapisu")
+            raise ValidationError(f"Błąd podczas zapisu {e}")
 
 
 class ProductObjectProcessViewSet(viewsets.ModelViewSet):
@@ -329,7 +331,8 @@ class ProductMoveView(APIView):
             product_object = validator.product_object
             place = validator.place
             process = validator.process
-            
+            new_place = product_object.current_place
+            MessageToApp.objects.filter(line=new_place, send=False).update(send=True)
             handler = MovementHandler.get_handler(movement_type, product_object, place, process, who, result)
             handler.execute()
 
@@ -496,7 +499,73 @@ class ContinueProduction(APIView):
                 {"detail": e.message, "code": e.code},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class StencilStartNewProd(GenericAPIView):
+    serializer_class = StencilStartProdSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        process_uuid = self.kwargs.get('process_uuid')
+
+        place_name = data['place_name']
+        movement_type = data['movement_type']
+        who = data['who']
+        full_sn = data['full_sn']
+
+        try:
+            validator = ProcessMovementValidator(process_uuid, full_sn, place_name, movement_type, who)
+            validator.run()
+            product_object = validator.product_object
+            place = validator.place
+            process = validator.process
+
+            defaults = getattr(process, "defaults", None)
+            if not defaults or not defaults.stencil_production_process_type:
+                raise ValidationError({"error": "Ten proces nie pozwala na rozpoczęcie produkcji przez ten endpoint."})
+            if not defaults.use_poke:
+                raise ValidationError({"error": "Ten proces wymaga poke do aplikacji."})
+            if defaults.use_poke:
+                poke_process(7)
             
+            handler = MovementHandler.get_handler(movement_type, product_object, place, process, who)
+            handler.execute()
+            
+            message_one = 'Produkcja tym sitem trwa ponad 7.5 godziny za 30 min aplikacja zostanie wyłączona'
+            message_two = 'Produkcja trwa już 8 godzin wyłączam aplikacje do czasu przezbrojenia'
+
+            MessageToApp.objects.create(
+                line=place,
+                message=message_one,
+                send = False,
+                when_trigger = timezone.now() + timedelta(hours=7, minutes=30),
+                product = product_object.product
+            )
+
+            MessageToApp.objects.create(
+                line=place,
+                message=message_two,
+                send = False,
+                when_trigger = timezone.now() + timedelta(hours=8),
+                product = product_object.product
+            )
+
+            LastProductOnPlace.objects.create(product_process=process, place=place, )
+            
+            return Response(
+                {"detail": "Ruch został wykonany pomyślnie."},
+                status=status.HTTP_200_OK
+            )
+        
+        except ValidationErrorWithCode as e:
+            return Response(
+                {"detail": e.message, "code": e.code},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class ProductStartNewProduction(APIView):
     def post(self, request, *args, **kwargs):
@@ -575,17 +644,37 @@ class AppKillStatusView(APIView):
                 "kill": False,
                 "per_place": {}
             }, status=200)
+        
+        current_time = timezone.now()
+        today = date.today()
 
+        expired_conditions = Q(
+            exp_date_in_process__lt=today
+        ) | Q(
+            max_in_process__isnull=False,
+            max_in_process__lt=current_time 
+        )
         expired_ids = list(
             ProductObject.objects.filter(
-                current_place_id__in=place_ids,
-                exp_date_in_process__lt=date.today()
+                expired_conditions,
+                current_place_id__in=place_ids
             ).values_list("current_place_id", flat=True).distinct()
         )
         places_with_expired = list(
             Place.objects.filter(id__in=expired_ids).values_list("name", flat=True)
         )
         expired_any = bool(expired_ids)
+
+        msg_obj = MessageToApp.objects.filter(
+            line__in=place_ids,
+            send=False,
+            when_trigger__lte=timezone.now()
+        ).order_by("when_trigger").first()
+
+        message_to_send = msg_obj.message if msg_obj else ""
+        if msg_obj:
+            msg_obj.send = True
+            msg_obj.save()
 
         per_place_flags = dict(
             AppToKill.objects.filter(line_name_id__in=place_ids)
@@ -602,7 +691,8 @@ class AppKillStatusView(APIView):
             "expired": expired_any,
             "places_with_expired": places_with_expired,
             "kill": kill_any,
-            "per_place": per_place_flags
+            "per_place": per_place_flags,
+            "message": message_to_send
         }, status=200)
         
 

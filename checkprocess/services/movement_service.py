@@ -1,5 +1,5 @@
 from checkprocess.validation import ValidationErrorWithCode
-from checkprocess.models import ProductObjectProcessLog, AppToKill, ConditionLog
+from checkprocess.models import ProductObjectProcessLog, AppToKill, ConditionLog, MessageToApp
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
 from django.utils.timezone import now
@@ -15,7 +15,7 @@ class MovementHandler:
         elif movement_type == 'receive':
             return ReceiveHandler(product_object, place, process, who, printer_name=printer_name)
         elif movement_type == 'check':
-            return CheckHandler(product_object, place, process, who, result)
+            return CheckHandler(product_object, place, process, who, result=result)
         else:
             raise ValidationErrorWithCode(
                 message='Brak obsługi dla tego typu ruchu',
@@ -125,6 +125,13 @@ class ReceiveHandler(BaseMovementHandler):
         self.set_current_place_and_process(product_obj)
         self.create_log(product_obj)
         self._handle_orphaning(product_obj)
+        self.set_max_hours_on_product(product_obj)
+
+    def set_max_hours_on_product(self, product_object):
+        conf = getattr(self.process, 'defaults', None)
+        if conf and conf.how_much_hours_max_working:
+            product_object.max_in_process = now() + timedelta(hours=conf.how_much_hours_max_working)
+            product_object.save()
 
     def create_log(self, product_obj):
         ProductObjectProcessLog.objects.create(
