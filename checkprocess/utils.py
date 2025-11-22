@@ -151,7 +151,7 @@ def detect_parser_type(full_sn: str) -> str:
     if '[)>' in full_sn:
         return 'alpha_parser'
 
-    if full_sn.startswith('S'):
+    if full_sn.startswith('S') or full_sn.startswith('T') or full_sn.startswith('#'):
         return 'sito_default'
 
     return 'undefined'

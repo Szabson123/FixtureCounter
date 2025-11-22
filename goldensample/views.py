@@ -270,16 +270,16 @@ class CheckGoldensFWK(GenericAPIView):
         last_endcode = getattr(timer_obj, 'endcode', None)
 
         if not last_good:
-            return Response({"comment": "Nalezy przetestować wzorce [minelo wiecej niz 8godzin]",
+            return Response({"comment": "Nalezy przetestowac wzorce [minelo wiecej niz 8godzin]",
                              "result": False}, status=status.HTTP_200_OK)
         
         if not last_endcode or last_endcode != internal_code:
-            return Response({"comment": "Nalezy przetestować wzorce [zmiana 'internal code']",
+            return Response({"comment": "Nalezy przetestowac wzorce [zmiana 'internal code']",
                     "result": False}, status=status.HTTP_200_OK)
 
         time_diff = timezone.now() - last_good
         if time_diff > timedelta(hours=8):
-            return Response({"comment": "Nalezy przetestować wzorce [minelo wiecej niz 8godzin]",
+            return Response({"comment": "Nalezy przetestowac wzorce [minelo wiecej niz 8godzin]",
                              "result": False}, status=status.HTTP_200_OK)
         
         return Response({"comment": "Pass",
