@@ -1086,7 +1086,7 @@ class StencilBulkCreate(APIView):
             ))
 
         with transaction.atomic():
-            ProductObject.objects.bulk_create(objects)
+            ProductObject.objects.bulk_create(objects, ignore_conflicts=True)
 
             created_qs = ProductObject.objects.filter(full_sn__in=[o.full_sn for o in objects])
 
