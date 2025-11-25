@@ -13,8 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils.timezone import now
 from django.utils import timezone
-from datetime import date
-from datetime import timedelta
+from datetime import date, timedelta, datetime
 
 
 class MasterSampleCheckView(GenericAPIView):
@@ -191,6 +190,59 @@ class MachineTimeStampView(GenericAPIView):
                  "returnCode": 200},
                 status=status.HTTP_200_OK
             )
+    
+
+class SetGoldensTrue(GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        site = None
+        site = request.query_params.get('site', None)
+        machine_id = request.query_params.get('machine_id')
+        internal_code = request.query_params.get('internal_code', None)
+
+        if not machine_id:
+            return Response({"error": "You need to provide machine_id"})
+
+        EndCodeTimeFWK.objects.get_or_create(machine_id=machine_id, site=site, endcode=internal_code)
+
+        if internal_code:
+            EndCodeTimeFWK.objects.filter(machine_id=machine_id, endcode=internal_code).update(
+                last_good_tested=timezone.now()
+            )
+        
+        if site and site != -1:
+            EndCodeTimeFWK.objects.filter(machine_id=machine_id, site=site).update(
+                last_good_tested=timezone.now()
+            )
+            
+        else:
+            EndCodeTimeFWK.objects.filter(machine_id=machine_id).update(
+                last_good_tested=timezone.now()
+            )
+
+        return Response({"status": "ok"})
+        
+
+class ClearSamplesResult(GenericAPIView):
+    serializer_class = ClearSamplesResultSer
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        machine = data['machine_id']
+
+        site = data.get('site', None)
+
+        if site and site != -1:
+            EndCodeTimeFWK.objects.filter(machine_id=machine, site=site).update(
+                last_good_tested=datetime(1999, 1, 1)
+            )
+        else:
+            EndCodeTimeFWK.objects.filter(machine_id=machine).update(
+                last_good_tested=datetime(1999, 1, 1)
+            )
+
+        return Response({"status": "ok"})
 
 
 class CheckGoldensFWK(GenericAPIView):
@@ -206,6 +258,13 @@ class CheckGoldensFWK(GenericAPIView):
         machine = data['machine_id']
         site = data['site']
         internal_code = data['internal_code']
+        
+        valid_results = ("pass", "fail", None, "")
+        if result not in valid_results:
+            return Response(
+                {"comment": "result must be 'pass' or 'fail' (or omitted).", "result": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         timer_obj, _ = EndCodeTimeFWK.objects.get_or_create(machine_id=machine, site=site, endcode=internal_code)
 
@@ -269,13 +328,17 @@ class CheckGoldensFWK(GenericAPIView):
         last_good = getattr(timer_obj, 'last_good_tested', None)
         last_endcode = getattr(timer_obj, 'endcode', None)
 
+        if not result:
+            return Response({"comment": "To pierwszy cykl testowy i nalezy przetestowac wzorce",
+                            "result": False}, status=status.HTTP_200_OK)
+
         if not last_good:
             return Response({"comment": "Nalezy przetestowac wzorce [minelo wiecej niz 8godzin]",
                              "result": False}, status=status.HTTP_200_OK)
         
         if not last_endcode or last_endcode != internal_code:
             return Response({"comment": "Nalezy przetestowac wzorce [zmiana 'internal code']",
-                    "result": False}, status=status.HTTP_200_OK)
+                            "result": False}, status=status.HTTP_200_OK)
 
         time_diff = timezone.now() - last_good
         if time_diff > timedelta(hours=8):

@@ -84,12 +84,12 @@ class MachineGoldensTime(models.Model):
 
 class EndCodeTimeFWK(models.Model):
     machine_id = models.CharField(max_length=255)
-    site = models.PositiveIntegerField()
+    site = models.PositiveIntegerField(null=True, blank=True)
     last_good_tested = models.DateTimeField(null=True, blank=True)
     endcode = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return self.machine_id
+        return f"{self.machine_id} - {self.site} - {self.endcode}, date: {self.last_good_tested}"
 
 
 class LastResultFWK(models.Model): #remember its not sn to its result 
