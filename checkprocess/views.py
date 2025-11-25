@@ -1065,12 +1065,13 @@ class StencilBulkCreate(APIView):
 'S28780'), ('X2X01', '15024975_00', 1, 'S30305'), ('X2X01', '15024977_00_TOP', 1, 'S30307'), ('X2X01', '15025592_00', 1, 'S30313'), ('X2X01', '15025591_00', 1, 'S30312'), ('X2X01', '15025590_00', 1, 'S30311')]
     
     def post(self, request):
-        objects = []
         now = timezone.now()
         product = Product.objects.get(id=2)
         sub_product = SubProduct.objects.get(id=6)
         process = ProductProcess.objects.get(pk='cfc2113a-d95a-4de3-a89a-13c667942c93')
         place = Place.objects.get(id=28)
+
+        objects = []
 
         for sito, text, _, full_sn in self.DATA:
             objects.append(ProductObject(
@@ -1082,24 +1083,27 @@ class StencilBulkCreate(APIView):
                 last_move=now,
                 current_process=process,
                 current_place=place,
-                sito_cycle_limit=200_000,
-            ))
-        with transaction.atomic():
-            ProductObject.objects.bulk_create(objects, ignore_conflicts=False, batch_size=1000, return_ids=True)
-        
-        logs = []
-        for obj in objects:
-            logs.append(ProductObjectProcessLog(
-                product_object=obj,
-                process=process,
-                entry_time=now,
-                who_entry="11111",
-                place=place
             ))
 
-        ProductObjectProcessLog.objects.bulk_create(logs)
+        with transaction.atomic():
+            ProductObject.objects.bulk_create(objects)
+
+            created_qs = ProductObject.objects.filter(full_sn__in=[o.full_sn for o in objects])
+
+            logs = []
+            for po in created_qs:
+                logs.append(ProductObjectProcessLog(
+                    product_object=po,
+                    process=process,
+                    entry_time=now,
+                    who_entry="11111",
+                    place=place,
+                ))
+
+            ProductObjectProcessLog.objects.bulk_create(logs)
 
         return Response({
             "inserted": len(objects),
-            "status": "done (ONE-TIME IMPORT)"
+            "logs": len(logs),
+            "status": "done"
         })
