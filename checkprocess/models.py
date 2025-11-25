@@ -131,6 +131,8 @@ class ProductObject(models.Model):
     last_move = models.DateTimeField(null=True, blank=True)
     current_process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     current_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    sito_basic_unnamed_place = models.CharField(max_length=255, null=True, blank=True) # Place in cabin with no Model PLace to help production easier find stencil
+    free_plain_text = models.CharField(max_length=255, null=True, blank=True)# Stencil to searching in cabin
     
     serial_number = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     full_sn = models.CharField(max_length=255, unique=True, db_index=True, null=True, blank=True)
