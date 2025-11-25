@@ -145,7 +145,7 @@ def detect_parser_type(full_sn: str) -> str:
             return 'aim_parser'
         elif 'MACDERMID' in full_sn:
             return 'alpha_parser'
-        elif 'HERAEUS' in full_sn:
+        elif 'heraeus' in full_sn.lower():
             return 'heraus_parser'
 
     if '[)>' in full_sn:
