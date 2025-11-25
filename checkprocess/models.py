@@ -55,6 +55,7 @@ class ProductProcessFields(models.Model):
     is_full = models.BooleanField(default=False)
     last_move = models.BooleanField(default=False)
     free_plain_text = models.BooleanField(default=False)
+    sito_basic_unnamed_place = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product_process.label} - {self.product_process.product.name}"
