@@ -87,7 +87,7 @@ class ProductObjectSerializer(serializers.ModelSerializer):
                 'production_date', 'expire_date',
                 'place_name', 'who_entry', 'current_place_name', 'mother_object',
                 'exp_date_in_process', 'quranteen_time', 'mother_sn', 'is_mother', 'sub_product', 'sub_product_name',
-                'sito_cycles_count', 'sito_cycle_limit', 'max_in_process', 'last_move'
+                'sito_cycles_count', 'sito_cycle_limit', 'max_in_process', 'last_move', 'sito_basic_unnamed_place', 'free_plain_text'
             ]
         read_only_fields = [
             'serial_number', 'production_date', 'expire_date',
