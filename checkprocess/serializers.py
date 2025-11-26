@@ -58,7 +58,7 @@ class ProductProcessSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductProcess
-        fields = ['id', 'product', 'type', 'label', 'pos_x', 'pos_y', 'is_required',
+        fields = ['id', 'product', 'type', 'label', 'pos_x', 'pos_y', 'is_required', 'search',
                   'defaults', 'conditions', 'starts', 'endings', 'fields',]
 
     def to_internal_value(self, data):
