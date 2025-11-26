@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, GenericAPIView
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
@@ -75,7 +75,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectSerializer
     queryset = ProductObject.objects.all()
 
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_class = ProductObjectFilter
 
     ordering_fields = [
@@ -89,6 +89,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         'sub_product__name',
         'current_place',
     ]
+
+    search_fields = ['free_plain_text', 'sito_basic_unnamed_place']
 
     ordering = ['-created_at']
     pagination_class = BasicProcessPagination
