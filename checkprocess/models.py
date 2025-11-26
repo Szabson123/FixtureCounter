@@ -28,6 +28,7 @@ class ProductProcess(models.Model):
     cond_path = models.BooleanField(null=True, blank=True) # -> checking condition path True: Pass Path False: Fail Path None: Dont check
     killing_app = models.BooleanField(default=False)
     respect_fifo_rules = models.BooleanField(default=True)
+    search = models.BooleanField(default=False) # _ Forntend settings to show searching field
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"
