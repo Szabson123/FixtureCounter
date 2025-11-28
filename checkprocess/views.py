@@ -682,17 +682,17 @@ class AppKillStatusView(APIView):
             AppToKill.objects.filter(line_name_id__in=place_ids)
             .values_list("line_name_id", "killing_flag")
         )
-        kill_any = any(per_place_flags.values()) if per_place_flags else False
+        manual_kill_any = any(per_place_flags.values()) if per_place_flags else False
+        effective_kill = manual_kill_any or expired_any
         
-        group_obj = PlaceGroupToAppKill.objects.get(name=group_name)
-        group_obj.last_check = timezone.now()
-        group_obj.save()
+        group.last_check = timezone.now()
+        group.save()
 
         return Response({
             "group": group_name,
             "expired": expired_any,
             "places_with_expired": places_with_expired,
-            "kill": kill_any,
+            "kill": effective_kill,
             "per_place": per_place_flags,
             "message": message_to_send
         }, status=200)
