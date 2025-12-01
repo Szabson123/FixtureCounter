@@ -68,6 +68,35 @@ class AimSnParser(BaseSNParser):
         return sub_product, serial_number, production_date, expire_date, serial_type, q_code
 
 
+class KlejSnParser(BaseSNParser):
+    def parse(self, full_sn: str):
+        sub_product = 'Klej'
+
+        sn_match = re.search(r'\(S\)([^\(]+)', full_sn)
+        if not sn_match:
+            raise ValueError("Brak numeru seryjnego (S).")
+        serial_number = sn_match.group(1).strip()
+
+        prod_date_match = re.search(r'\(D\)(\d{8})', full_sn)
+        exp_date_match = re.search(r'\(E\)(\d{8})', full_sn)
+        q_match = re.search(r'\(Q\)([^\(]+)', full_sn)
+
+        production_date = (
+            datetime.strptime(prod_date_match.group(1), "%Y%m%d").date()
+            if prod_date_match else None
+        )
+        expire_date = (
+            datetime.strptime(exp_date_match.group(1), "%Y%m%d").date()
+            if exp_date_match else None
+        )
+
+        q_code = q_match.group(1).strip() if q_match else None
+
+        serial_type = None
+
+        return sub_product, serial_number, production_date, expire_date, serial_type, q_code
+    
+
 class HerausSnParser(BaseSNParser):
     def parse(self, full_sn: str):
         sub_product = 'HERAEUS'
@@ -117,6 +146,8 @@ def get_parser(parser_type: str):
         return TecnoLabSNParser()
     elif parser_type == 'heraus_parser':
         return HerausSnParser()
+    elif parser_type == 'klej_parser':
+        return KlejSnParser()
     raise ValidationError(f"Nieobsługiwany typ parsera: '{parser_type}'")
 
 

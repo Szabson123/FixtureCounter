@@ -147,6 +147,8 @@ def detect_parser_type(full_sn: str) -> str:
             return 'alpha_parser'
         elif 'heraeus' in full_sn.lower():
             return 'heraus_parser'
+        elif 'SE4420' in full_sn:
+            return 'klej_parser'
 
     if '[)>' in full_sn:
         return 'alpha_parser'
