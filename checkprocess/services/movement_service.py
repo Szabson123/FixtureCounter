@@ -81,10 +81,11 @@ class MoveHandler(BaseMovementHandler):
         ).order_by('-entry_time').first()
 
         if not log:
-            raise ValidationErrorWithCode(
-                message=f'Taki log nie istnieje dla obiektu {product_object}, co oznacza że produkt nie powinien być w tym procesie',
-                code='log_no_exist'
-            )
+            log = ProductObjectProcessLog.objects.create(
+            product_object=product_object,
+            process=self.process,
+        )
+            
         log.exit_time = datetime.now()
         log.who_exit = self.who
         log.save()
