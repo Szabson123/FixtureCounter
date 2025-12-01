@@ -90,7 +90,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         'current_place',
     ]
 
-    search_fields = ['free_plain_text', 'sito_basic_unnamed_place']
+    search_fields = ['free_plain_text', 'sito_basic_unnamed_place', 'serial_number', 'full_sn']
 
     ordering = ['-created_at']
     pagination_class = BasicProcessPagination
