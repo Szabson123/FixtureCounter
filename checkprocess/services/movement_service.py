@@ -128,6 +128,7 @@ class ReceiveHandler(BaseMovementHandler):
         self.create_log(product_obj)
         self._handle_orphaning(product_obj)
         self.set_max_hours_on_product(product_obj)
+        self.set_quarantin_if_needed(product_obj)
 
     def set_max_hours_on_product(self, product_object):
         conf = getattr(self.process, 'defaults', None)
@@ -150,6 +151,14 @@ class ReceiveHandler(BaseMovementHandler):
         product_obj.current_process = self.process
         product_obj.last_move = timezone.now()
         product_obj.save()
+    
+    def set_quarantin_if_needed(self, product_obj):
+        for attr in ['defaults', 'starts', 'conditions']:
+            conf = getattr(self.process, attr, None)
+            if conf and conf.quranteen_time:
+                product_obj.quranteen_time = now() + timedelta(minutes=conf.quranteen_time) # !!!!!!! FOR MOMENT IN RECEIVE MINUTES NOT HOURS LIKE IN MOVE !!!!!!
+                product_obj.save()
+                return
 
     def set_killing_flag_on_false_if_need(self):
         if not self.process or not self.process.killing_app:
@@ -163,7 +172,7 @@ class ReceiveHandler(BaseMovementHandler):
                 code='app_kill_no_exist'
             )
 
-        if kill_flag.killing_flag:
+        if kill_flag:
             kill_flag.killing_flag = False
             kill_flag.save()
 
