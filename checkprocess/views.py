@@ -629,6 +629,15 @@ class AppKillStatusView(APIView):
             group = PlaceGroupToAppKill.objects.get(name=group_name)
         except PlaceGroupToAppKill.DoesNotExist:
             return Response({"error": f"Grupa '{group_name}' nie istnieje."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if group.checking == False:
+            return Response({
+                "group": group_name,
+                "expired": False,
+                "places_with_expired": [],
+                "kill": False,
+                "per_place": {}
+            }, status=200)
 
         places_qs = (
             Place.objects
