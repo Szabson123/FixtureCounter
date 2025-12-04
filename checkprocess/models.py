@@ -77,6 +77,7 @@ class ProductProcessDefault(models.Model):
     check_outside_database = models.CharField(max_length=255, default=None, null=True, blank=True) # place when we can connect to databaset to check for production out
     use_poke = models.BooleanField(default=False) # Place when we set poking to microservice we start production [In future add endpoint not hardcoded]
     working_only_if_obj_on_machine = models.BooleanField(default=False) # setting log to check if producing without reetoling
+    quranteen_time_receive = models.IntegerField(default=None, blank=True, null=True)
 
     def __str__(self):
         return f'{self.product_process.label} -- {self.product_process.product.name}'
@@ -103,12 +104,13 @@ class ProductProcessEnding(models.Model):
 class PlaceGroupToAppKill(models.Model):
     name = models.CharField(max_length=255, unique=True)
     last_check = models.DateTimeField()
+    checking = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.checking}"
 
 
 class Place(models.Model):

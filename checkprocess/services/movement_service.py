@@ -155,7 +155,7 @@ class ReceiveHandler(BaseMovementHandler):
     def set_quarantin_if_needed(self, product_obj):
         for attr in ['defaults', 'starts', 'conditions']:
             conf = getattr(self.process, attr, None)
-            if conf and conf.quranteen_time:
+            if conf and conf.quranteen_time_receive:
                 product_obj.quranteen_time = now() + timedelta(minutes=conf.quranteen_time) # !!!!!!! FOR MOMENT IN RECEIVE MINUTES NOT HOURS LIKE IN MOVE !!!!!!
                 product_obj.save()
                 return

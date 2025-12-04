@@ -30,6 +30,7 @@ class ProcessMovementValidator:
         self.try_load_object()
         self.validate_movement_type()
         self.validate_who_make_move()
+        self.validate_only_one_place()
 
         if self.movement_type == 'receive' or self.movement_type == 'check':
             self.resolve_target_process()
@@ -44,9 +45,6 @@ class ProcessMovementValidator:
             if not self.check_current_process_condition():
                 self.validate_receive_without_move()
                 
-            if self.movement_type == 'receive':
-                self.validate_only_one_place()
-
             self.validate_edge_can_move()
             self.validate_settings_in_process()
             self.validate_status_of_line()
