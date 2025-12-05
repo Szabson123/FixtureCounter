@@ -187,7 +187,7 @@ class MachineTimeStampView(GenericAPIView):
         
         return Response(
                 {"returnCodeDescription": "Machine Valid",
-                 "returnCode": 128},
+                 "returnCode": 200},
                 status=status.HTTP_200_OK
             )
     
