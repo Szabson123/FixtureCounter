@@ -1,4 +1,4 @@
-from .models import ProductObject
+from .models import ProductObject, LogFromMistake
 from django.db.models import Count, Case, When, Value, DateField, F
 
 from django.utils.timezone import now
@@ -11,6 +11,8 @@ import pyodbc
 
 import requests
 from requests.exceptions import RequestException
+from .custom_validators import ValidationErrorWithCode
+
 
 def get_printer_info_from_card(production_card):
     conn_str = (
@@ -46,10 +48,17 @@ def get_printer_info_from_card(production_card):
         conn.close()
         
     except Exception as e:
-        raise ValidationError({"detail": f"Błąd podczas łączenia z bazą zewnętrzną: {str(e)}"})
+        # Zmieniamy na ValidationErrorWithCode
+        raise ValidationErrorWithCode(
+            message=f"Błąd SQL: {str(e)}", 
+            code="external_db_error"
+        )
 
     if not result:
-        raise ValidationError({"detail": f"Brak danych drukarki dla karty produktu: {production_card}"})
+        raise ValidationErrorWithCode(
+            message=f"Brak danych drukarki dla karty: {production_card}", 
+            code="printer_data_not_found"
+        )
 
     printer_name = result[3]   # '15007535'
     raw_model_name = result[4]  # np. 'LF(AIM-H10-SAC305); LF(OM-338-PT)'
@@ -62,7 +71,10 @@ def get_printer_info_from_card(production_card):
             map_entry = OneToOneMap.objects.get(s_input=name)
             mapped_names.append(map_entry.s_output)
         except OneToOneMap.DoesNotExist:
-            raise ValidationError(f"Nie znaleziono mapowania dla modelu: {name}")
+            raise ValidationErrorWithCode(
+                message=f"Brak mapowania dla modelu: {name}", 
+                code="mapping_missing"
+            )
 
     return mapped_names, printer_name
 
@@ -170,3 +182,4 @@ def poke_process(process_id):
     except requests.exceptions.RequestException as e:
         print("POKE ERROR:", e)
         raise ValidationError({"error": "Nie udało się skontaktować z endpointem poke."})
+    

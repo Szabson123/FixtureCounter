@@ -1,18 +1,11 @@
-from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place, ProductProcessCondition, ConditionLog
+from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place, ProductProcessCondition, ConditionLog, LogFromMistake
 from django.shortcuts import get_list_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import check_fifo_violation
 from django.utils.timezone import now
 from datetime import timedelta
 from django.utils import timezone
-
-
-class ValidationErrorWithCode(Exception):
-    def __init__(self, message, code=None):
-        self.message = message
-        self.code = code
-        super().__init__(message)
-
+from .custom_validators import ValidationErrorWithCode
 
 class ProcessMovementValidator:
     def __init__(self, process_uuid, full_sn, place_name, movement_type, who):
@@ -27,47 +20,55 @@ class ProcessMovementValidator:
         self.place = None
         
     def run(self):
-        self.try_load_object()
-        self.validate_movement_type()
-        self.validate_who_make_move()
+        try:
+            self.validate_movement_type()
+            self.validate_who_make_move()
 
-        if self.movement_type == 'receive' or self.movement_type == 'check':
-            self.resolve_target_process()
-            self.validate_process_receive_with_current_place()
-            self.set_killing_flag_on_true_if_need()
-            if self.check_current_process_condition():
-                self.check_cond_path()
-
-            self.validate_object_existence_and_status()
-            self.validate_product_not_already_in_process()
-            
-            if not self.check_current_process_condition():
-                self.validate_receive_without_move()
-
-            if self.movement_type == 'receive':
+            if self.movement_type == 'receive' or self.movement_type == 'check':
+                self.resolve_target_process()
+                self.validate_process_receive_with_current_place()
                 self.validate_only_one_place()
-                
-            self.validate_edge_can_move()
-            self.validate_settings_in_process()
-            self.validate_status_of_line()
-            self.check_cycles_limit()
-        
-        elif self.movement_type == 'retooling':
-            self.validate_process_receive_with_current_place()
-            self.set_killing_flag_on_true_if_need()
+                self.set_killing_flag_on_true_if_need()
+                if self.check_current_process_condition():
+                    self.check_cond_path()
 
-        elif self.movement_type == 'move':
-            self.validate_object_existence_and_status()
-            self.validate_process_and_current_process()
-            self.validate_settings_in_process()
-            self.validate_no_current_place_in_move()
-            self.validate_fifo_rules()
-            self.validate_object_quranteen_time()
+                self.validate_object_existence_and_status()
+                self.validate_product_not_already_in_process()
+                
+                if not self.check_current_process_condition():
+                    self.validate_receive_without_move()
+                    
+                self.validate_edge_can_move()
+                self.validate_settings_in_process()
+                self.validate_status_of_line()
+                self.check_cycles_limit()
             
-        elif self.movement_type == 'trash':
-            self.validate_process_receive_with_current_place()
-            self.validate_object_existence_and_status()
-            self.validate_is_trash_process()
+            elif self.movement_type == 'retooling':
+                self.validate_process_receive_with_current_place()
+                self.set_killing_flag_on_true_if_need()
+
+            elif self.movement_type == 'move':
+                self.validate_object_existence_and_status()
+                self.validate_process_and_current_process()
+                self.validate_settings_in_process()
+                self.validate_no_current_place_in_move()
+                self.validate_fifo_rules()
+                self.validate_object_quranteen_time()
+                
+            elif self.movement_type == 'trash':
+                self.validate_process_receive_with_current_place()
+                self.validate_object_existence_and_status()
+                self.validate_is_trash_process()
+
+        except ValidationErrorWithCode as e:
+            # Łapiemy błąd, zapisujemy do bazy i rzucamy dalej
+            self.save_error_log(e)
+            raise e
+        
+        except Exception as e:
+            # Opcjonalnie: łapanie krytycznych błędów (np. błąd kodu)
+            self.save_error_log(ValidationErrorWithCode(str(e), code="internal_error"))
+            raise e
 
 
     def validate_status_of_line(self):
@@ -82,6 +83,11 @@ class ProcessMovementValidator:
             return
     
     def validate_object_existence_and_status(self):
+        try:
+            self.product_object = ProductObject.objects.get(full_sn=self.full_sn)
+        except ProductObject.DoesNotExist:
+            self.product_object = None
+
         if not self.product_object:
             raise ValidationErrorWithCode(
                 message=f'Taki objekt nie istnieje: {self.full_sn}',
@@ -162,22 +168,7 @@ class ProcessMovementValidator:
                 message='Ten produkt nie znajduje się w tym procesie.',
                 code='already_not_in_process'
             )
-    
-    def validate_exists_and_not_end(self):
-        try:
-            self.product_object = ProductObject.objects.get(full_sn=self.full_sn)
-        except ObjectDoesNotExist:
-            raise ValidationErrorWithCode(
-                message=f'Taki objekt nie istnieje {self.full_sn}',
-                code = 'object_does_not_exist'
-            )
-        
-        if self.product_object.end:
-            raise ValidationErrorWithCode(
-                message=f'Obiekt Został oznaczony jako skończony {self.full_sn}',
-                code = 'object_already_ended'
-            )
-            
+
     def validate_movement_type(self):
         if self.movement_type not in ['move', 'receive', 'trash', 'check', 'retooling']:
             raise ValidationErrorWithCode(
@@ -324,3 +315,23 @@ class ProcessMovementValidator:
                 message="Obiekt osiągnął maksymalna ilość cykli nie można już nim produkować",
                 code="limit_cycles_exceeded"
             )
+    
+    def save_error_log(self, exception_obj):
+        """
+        Pomocnicza metoda do zapisu logu. 
+        Bezpiecznie obsługuje brakujące obiekty self.process czy self.place.
+        """
+        LogFromMistake.objects.create(
+            process=self.process, 
+            place=self.place,
+            
+            process_uuid_raw=str(self.process_uuid),
+            place_name_raw=str(self.place_name),
+            
+            product_sn=self.full_sn,
+            who=self.who,
+            
+            error_message=exception_obj.message,
+            error_code=exception_obj.code,
+            movement_type=self.movement_type,
+        )
