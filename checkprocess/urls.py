@@ -3,7 +3,7 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
-                    RetoolingView, StencilStartNewProd, StencilBulkCreate)
+                    RetoolingView, StencilStartNewProd)
 
 from rest_framework.routers import DefaultRouter
 
@@ -36,7 +36,6 @@ urlpatterns = [
     path('get-statuses-groups/', ListGroupsStatuses.as_view(), name='list-group-statuses'),
     path('counter-products/', SubProductsCounter.as_view(), name='couter-products'),
 
-    path('one-time/stencil/', StencilBulkCreate.as_view(), name='aaa-stencil')
 ]
 
 urlpatterns += router.urls
