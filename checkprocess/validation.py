@@ -27,7 +27,8 @@ class ProcessMovementValidator:
             if self.movement_type == 'receive' or self.movement_type == 'check':
                 self.resolve_target_process()
                 self.validate_process_receive_with_current_place()
-                self.validate_only_one_place()
+                if self.movement_type == 'receive':
+                    self.validate_only_one_place()
                 self.set_killing_flag_on_true_if_need()
                 if self.check_current_process_condition():
                     self.check_cond_path()
