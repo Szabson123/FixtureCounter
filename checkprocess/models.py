@@ -296,3 +296,23 @@ class MessageToApp(models.Model):
     send = models.BooleanField(default=False)
     when_trigger = models.DateTimeField()
 
+
+class LogFromMistake(models.Model):
+    process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
+    place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Pola tekstowe (zawsze dostępne z requestu)
+    process_uuid_raw = models.CharField(max_length=255, null=True, blank=True) # ID przesłane w żądaniu
+    place_name_raw = models.CharField(max_length=255, null=True, blank=True)   # Nazwa miejsca z żądania
+    
+    product_sn = models.CharField(max_length=255)
+    who = models.CharField(max_length=255, null=True)
+    
+    error_message = models.TextField()
+    error_code = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    movement_type = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"Error {self.error_code} for {self.product_sn}"
