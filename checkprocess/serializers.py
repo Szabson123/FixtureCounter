@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge, LogFromMistake,
+from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge, LogFromMistake, AppToKill,
                      ProductProcessDefault, ProductProcessFields, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog, PlaceGroupToAppKill)
 
 from datetime import timedelta
@@ -193,3 +193,43 @@ class LogFromMistakeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LogFromMistake
         fields = '__all__'
+
+
+class ProductProcessSimpleSerializer(serializers.ModelSerializer):
+    product_name = serializers.StringRelatedField(source='product.name', read_only=True)
+    class Meta:
+        model = ProductProcess
+        fields = ['id', 'product_name', 'label']
+
+
+class AppToKillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppToKill
+        fields = ['killing_flag']
+
+
+class PlaceSerializerAdmin(serializers.ModelSerializer):
+    apptokill = AppToKillSerializer()
+
+    class Meta:
+        model = Place
+        fields = ['id', 'name', 'apptokill']
+
+    def update(self, instance, validated_data):
+        apptokill_data = validated_data.pop("apptokill", None)
+
+        instance = super().update(instance, validated_data)
+
+        if apptokill_data is not None:
+            apptokill_instance = getattr(instance, 'apptokill', None)
+
+            if apptokill_instance:
+                serializer = AppToKillSerializer(
+                    instance=apptokill_instance,
+                    data=apptokill_data,
+                    partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+        return instance
