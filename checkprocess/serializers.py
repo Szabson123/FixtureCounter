@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge,
+from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, Edge, LogFromMistake,
                      ProductProcessDefault, ProductProcessFields, ProductProcessStart, ProductProcessCondition, ProductProcessEnding, ConditionLog, PlaceGroupToAppKill)
 
 from datetime import timedelta
@@ -187,3 +187,9 @@ class StencilStartProdSerializer(serializers.Serializer):
         if value != 'receive':
             raise ValidationError("Tylko przyjmowanie dla tego enpointu")
         return value
+    
+
+class LogFromMistakeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LogFromMistake
+        fields = '__all__'
