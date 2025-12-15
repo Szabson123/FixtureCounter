@@ -30,6 +30,7 @@ admin.site.register(LogFromSpi)
 admin.site.register(MessageToApp)
 admin.site.register(ProductProcessFields)
 admin.site.register(DataBasesASMMap)
+
 @admin.register(LogFromMistake)
 class LogFromMistakeAdmin(admin.ModelAdmin):
     readonly_fields = ("date_time",)

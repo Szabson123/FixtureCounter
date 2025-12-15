@@ -9,7 +9,7 @@ from django.db import connection
 from django.db.models import F, Count, Q
 from django.db.models.functions import Coalesce
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -22,10 +22,10 @@ from .parsers import get_parser
 from .utils import detect_parser_type, get_printer_info_from_card, poke_process
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct,
-                    LastProductOnPlace, PlaceGroupToAppKill, MessageToApp)
+                    LastProductOnPlace, PlaceGroupToAppKill, MessageToApp, LogFromMistake)
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
-                        PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer)
+                        PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -1094,3 +1094,11 @@ class RetoolingView(GenericAPIView):
 
         return Response({"success": "Objekt przezbrojony"}, status=status.HTTP_200_OK)
         
+
+class LogFromMistakeData(ListAPIView):
+    serializer_class = LogFromMistakeSerializer
+    queryset = LogFromMistake.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['process__label', 'place__name']
+    search_fields = []
+    ordering_fields = []
