@@ -9,7 +9,7 @@ from django.db import connection
 from django.db.models import F, Count, Q
 from django.db.models.functions import Coalesce
 
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, mixins
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -25,7 +25,8 @@ from .models import (Product, ProductProcess, ProductObject, ProductObjectProces
                     LastProductOnPlace, PlaceGroupToAppKill, MessageToApp, LogFromMistake)
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
-                        PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer)
+                        PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer, ProductProcessSimpleSerializer,
+                        AppToKillSerializer, PlaceSerializerAdmin)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -56,7 +57,12 @@ class ProductProcessViewSet(viewsets.ModelViewSet):
         product_id = self.kwargs.get('product_id')
         product = get_object_or_404(Product, pk=product_id)
         serializer.save(product=product)
-        
+
+
+class ProductProcessList(ListAPIView):
+    serializer_class = ProductProcessSimpleSerializer
+    queryset = ProductProcess.objects.all()
+
 
 class PlaceViewSet(viewsets.ModelViewSet):
     serializer_class = PlaceSerializer
@@ -69,6 +75,18 @@ class PlaceViewSet(viewsets.ModelViewSet):
         process_id = self.kwargs.get('process_id')
         process = get_object_or_404(ProductProcess, pk=process_id)
         serializer.save(process=process)
+
+
+class PlaceInGroupAdmin(viewsets.ModelViewSet):
+    #permission_classes=[AllowAny], 
+    serializer_class=PlaceSerializerAdmin
+    queryset = Place.objects.all()
+
+    http_method_names = ['get', 'patch']
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_id')
+        return Place.objects.filter(group_id=group_id)
 
 
 class ProductObjectViewSet(viewsets.ModelViewSet):
@@ -1095,10 +1113,12 @@ class RetoolingView(GenericAPIView):
         return Response({"success": "Objekt przezbrojony"}, status=status.HTTP_200_OK)
         
 
-class LogFromMistakeData(ListAPIView):
+class LogFromMistakeData(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = LogFromMistakeSerializer
     queryset = LogFromMistake.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['process__label', 'place__name']
     search_fields = []
     ordering_fields = []
+
+
