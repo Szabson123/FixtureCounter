@@ -1134,6 +1134,7 @@ class UnifyLogsPagination(PageNumberPagination):
 class UnifiedLogsViewSet(viewsets.GenericViewSet):
     serializer_class = UnifyLogsSerializer
     pagination_class = UnifyLogsPagination
+    queryset = LogFromMistake.objects.none() 
 
     def list(self, request, *args, **kwargs):
         process_uuid = self.kwargs.get('process_id')
