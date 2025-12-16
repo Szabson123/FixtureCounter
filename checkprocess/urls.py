@@ -3,7 +3,7 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
-                    RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin)
+                    RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin, UnifiedLogsViewSet)
 
 from rest_framework.routers import DefaultRouter
 
@@ -41,6 +41,9 @@ urlpatterns = [
 
     # admin fetaures
     path('admin-process/process-list/', ProductProcessList.as_view(), name='process-list-admin'),
+
+    path('process/<uuid:process_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
+    path('place/<int:place_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
 
 ]
 
