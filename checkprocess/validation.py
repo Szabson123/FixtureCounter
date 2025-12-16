@@ -20,6 +20,10 @@ class ProcessMovementValidator:
         self.place = None
         
     def run(self):
+        # Loading function to put sth in Bad Logs -> in the future put them inside class but now I have no test to provide this
+        self.load_process()
+        self.load_place()
+
         try:
             self.validate_movement_type()
             self.validate_who_make_move()
@@ -336,3 +340,21 @@ class ProcessMovementValidator:
             error_code=exception_obj.code,
             movement_type=self.movement_type,
         )
+
+    # LOAD FUNCTIONS
+
+    def load_process(self):
+        try:
+            self.process = ProductProcess.objects.get(id=self.process_uuid)
+        except (ObjectDoesNotExist, ValueError, TypeError):
+            self.process = None
+
+    def load_place(self):
+        if not self.process:
+            self.place = None
+            return
+
+        try:
+            self.place = Place.objects.get(name=self.place_name, process=self.process)
+        except (ObjectDoesNotExist, ValueError, TypeError):
+            self.place = None
