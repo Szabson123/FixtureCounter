@@ -272,7 +272,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
                 
                 product_object.save()
                 
-                ProductObjectProcessLog.objects.create(product_object=product_object, process=process, entry_time=timezone.now(), who_entry=who_entry, place=place_obj)
+                ProductObjectProcessLog.objects.create(product_object=product_object, process=process, entry_time=timezone.now(), who_entry=who_entry, place=place_obj, movement_type='create')
 
         except IntegrityError as e:
             if "unique" in str(e).lower():
@@ -453,7 +453,7 @@ class ScrapProduct(APIView):
             place = validator.place
             process = validator.process
             
-            ProductObjectProcessLog.objects.create(product_object=product_object, process=process, who_entry=who, place=place)
+            ProductObjectProcessLog.objects.create(product_object=product_object, process=process, who_entry=who, place=place, movement_type=movement_type)
             
             product_object.end = True
             product_object.current_process = process
@@ -888,7 +888,8 @@ class BulkProductObjectCreateView(APIView):
                         process=process,
                         entry_time=timezone.now(),
                         who_entry=who_entry,
-                        place=place_obj
+                        place=place_obj,
+                        movement_type='create'
                     )
 
         except IntegrityError as e:
@@ -977,7 +978,8 @@ class BulkProductObjectCreateAndAddMotherView(APIView):
                         process=process,
                         entry_time=timezone.now(),
                         who_entry=who_entry,
-                        place=place_obj
+                        place=place_obj,
+                        movement_type='create'
                     )
 
         except IntegrityError as e:

@@ -118,7 +118,7 @@ class ProductObjectProcessLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductObjectProcessLog
-        fields = ['id', 'entry_time', 'who_entry', 'exit_time', 'who_exit', 'full_sn', 'process_name', 'place_name', 'movement_type']
+        fields = ['id', 'entry_time', 'who_entry', 'full_sn', 'process_name', 'place_name', 'movement_type']
 
 
 class EdgeSerializer(serializers.ModelSerializer):

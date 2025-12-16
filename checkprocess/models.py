@@ -180,13 +180,11 @@ class ProductObjectProcess(models.Model):
 class ProductObjectProcessLog(models.Model):
     product_object = models.ForeignKey(ProductObject, on_delete=models.CASCADE, related_name='logs')
     process = models.ForeignKey(ProductProcess, on_delete=models.CASCADE, null=True, blank=True)
+    place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
+
     entry_time = models.DateTimeField(auto_now_add=True)
     who_entry = models.CharField(max_length=255, null=True, blank=True)
-    exit_time = models.DateTimeField(null=True, blank=True)
-    who_exit = models.CharField(max_length=255, null=True, blank=True)
-    place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name="process_logs")
     movement_type = models.CharField(max_length=255, null=True, blank=True)
-
     name_of_productig_product = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
