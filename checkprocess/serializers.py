@@ -233,3 +233,18 @@ class PlaceSerializerAdmin(serializers.ModelSerializer):
                 serializer.save()
 
         return instance
+    
+
+class UnifyLogsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    log_type = serializers.CharField()
+    date = serializers.DateTimeField()
+
+    who = serializers.CharField(allow_null=True)
+    movement_type = serializers.CharField(allow_null=True)
+    error_message = serializers.CharField(allow_null=True)
+
+    process_id = serializers.UUIDField(allow_null=True)
+    process_label = serializers.CharField(allow_null=True)
+    place_id = serializers.IntegerField(allow_null=True)
+    place_name = serializers.CharField(allow_null=True)

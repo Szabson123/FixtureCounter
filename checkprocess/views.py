@@ -6,7 +6,7 @@ from django.db import transaction, IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db import connection
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Value, CharField, DateTimeField, TextField, UUIDField
 from django.db.models.functions import Coalesce
 
 from rest_framework import viewsets, status, filters, mixins
@@ -23,10 +23,11 @@ from .utils import detect_parser_type, get_printer_info_from_card, poke_process
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct,
                     LastProductOnPlace, PlaceGroupToAppKill, MessageToApp, LogFromMistake)
+
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
                         PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer, ProductProcessSimpleSerializer,
-                        AppToKillSerializer, PlaceSerializerAdmin)
+                        AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -1124,3 +1125,86 @@ class LogFromMistakeData(mixins.ListModelMixin, viewsets.GenericViewSet):
     ordering_fields = []
 
 
+class UnifyLogsPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class UnifiedLogsViewSet(viewsets.GenericViewSet):
+    serializer_class = UnifyLogsSerializer
+    pagination_class = UnifyLogsPagination
+
+    def list(self, request, *args, **kwargs):
+        process_uuid = self.kwargs.get('process_id')
+        place_id = self.kwargs.get('place_id')
+
+        mistakes_qs = LogFromMistake.objects.all()
+        process_qs = ProductObjectProcessLog.objects.all()
+
+        if process_uuid:
+            mistakes_qs = mistakes_qs.filter(process_id=process_uuid)
+            process_qs = process_qs.filter(process_id=process_uuid)
+
+        elif place_id:
+            mistakes_qs = mistakes_qs.filter(place_id=place_id)
+            process_qs = process_qs.filter(place_id=place_id)
+
+        else:
+            return Response({"error": "Missing process_id or place_id"}, status=400)
+        
+        mistakes_qs = mistakes_qs.annotate(
+            log_type=Value('MISTAKE', output_field=CharField()),
+            date=F('created_at'),
+            who_value=F('who'),
+            movement=F('movement_type'),
+            proc_label=F('process__label'),
+            pl_name=F('place__name'),
+            proc_id=F('process_id'),
+            pl_id=F('place_id'),
+            info=F('error_message'),
+        ).values(
+            'id', 'log_type', 'date', 'who_value', 'movement_type',
+            'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
+        )
+
+        process_qs = process_qs.annotate(
+            log_type=Value('PROCESS', output_field=CharField()),
+            date=F('entry_time'),
+            who_value=F('who_entry'),
+            movement=F('movement_type'),
+            proc_label=F('process__label'),
+            pl_name=F('place__name'),
+            proc_id=F('process_id'),
+            pl_id=F('place_id'),
+            info=Value(None, output_field=TextField()),
+        ).values(
+            'id', 'log_type', 'date', 'who_value', 'movement_type',
+            'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
+        )
+
+        union_qs = mistakes_qs.union(process_qs, all=True)
+        union_qs = union_qs.order_by('-date')
+
+        page = self.paginate_queryset(union_qs)
+        if page is not None:
+            mapped_data = [
+                {
+                    'id': item['id'],
+                    'log_type': item['log_type'],
+                    'date': item['date'],
+                    'who': item['who_value'],
+                    'movement_type': item['movement'],
+                    'error_message': item['info'],
+                    'process_id': item['proc_id'],
+                    'process_label': item['proc_label'],
+                    'place_id': item['pl_id'],
+                    'place_name': item['pl_name'],
+                }
+                for item in page
+            ]
+
+            serializer = self.get_serializer(mapped_data, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response(serializer.data)
