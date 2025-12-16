@@ -1164,7 +1164,7 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             pl_id=F('place_id'),
             info=F('error_message'),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement_type',
+            'id', 'log_type', 'date', 'who_value', 'movement',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
@@ -1179,7 +1179,7 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             pl_id=F('place_id'),
             info=Value(None, output_field=TextField()),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement_type',
+            'id', 'log_type', 'date', 'who_value', 'movement',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
