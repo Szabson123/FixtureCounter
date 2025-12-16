@@ -1,4 +1,4 @@
-from .models import ProductObject, ProductProcess, AppToKill, ProductObjectProcessLog, ProductObjectProcess, Edge, Place, ProductProcessCondition, ConditionLog, LogFromMistake
+from .models import ProductObject, ProductProcess, AppToKill, Edge, Place, ProductProcessCondition, ConditionLog, LogFromMistake
 from django.shortcuts import get_list_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from .utils import check_fifo_violation

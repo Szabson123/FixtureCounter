@@ -11,9 +11,9 @@ class MovementHandler:
     @staticmethod
     def get_handler(movement_type, product_object, place, process, who, result=None, printer_name=None):
         if movement_type == 'move':
-            return MoveHandler(product_object, place, process, who)
+            return MoveHandler(product_object, place, process, who, movement_type=movement_type)
         elif movement_type == 'receive':
-            return ReceiveHandler(product_object, place, process, who, printer_name=printer_name)
+            return ReceiveHandler(product_object, place, process, who, printer_name=printer_name, movement_type=movement_type)
         elif movement_type == 'check':
             return CheckHandler(product_object, place, process, who, result=result)
         else:
@@ -24,13 +24,14 @@ class MovementHandler:
         
 
 class BaseMovementHandler:
-    def __init__(self, product_object, place, process, who, *, printer_name=None, result=None):
+    def __init__(self, product_object, place, process, who, *, printer_name=None, result=None, movement_type):
         self.product_object = product_object
         self.place = place
         self.process = process
         self.who = who
         self.result = result
         self.printer_name = printer_name
+        self.movement_type = movement_type
 
     def execute(self):
         raise NotImplementedError
@@ -67,28 +68,21 @@ class MoveHandler(BaseMovementHandler):
             self._move_product_object(child)
 
     def _move_product_object(self, product_object):
+        self.create_move_log(product_object) # I know it should be the last one but I need 'current_place' for admins
         self.delete_current_place(product_object)
         self.set_quarantin_if_needed(product_object)
         self.set_expire_if_needed(product_object)
-        self.create_move_log(product_object)
         self._handle_orphaning(product_object)
 
     def create_move_log(self, product_object):
-        log = ProductObjectProcessLog.objects.filter(
+        ProductObjectProcessLog.objects.create(
             product_object=product_object,
             process=self.process,
-            exit_time__isnull=True,
-        ).order_by('-entry_time').first()
-
-        if not log:
-            log = ProductObjectProcessLog.objects.create(
-            product_object=product_object,
-            process=self.process,
+            entry_time=timezone.now(),
+            who_entry=self.who,
+            place=product_object.current_place,
+            movement_type=self.movement_type
         )
-            
-        log.exit_time = datetime.now()
-        log.who_exit = self.who
-        log.save()
 
     def delete_current_place(self, product_object):
         product_object.current_place = None
@@ -144,6 +138,7 @@ class ReceiveHandler(BaseMovementHandler):
             who_entry=self.who,
             place=self.place,
             name_of_productig_product=self.printer_name, 
+            movement_type=self.movement_type
         )
 
     def set_current_place_and_process(self, product_obj):
