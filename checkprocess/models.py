@@ -95,6 +95,7 @@ class ProductProcessStart(models.Model):
     respect_quranteen_time = models.BooleanField(default=False)
     expecting_child = models.BooleanField(default=False)
     add_multi = models.BooleanField(default=False)
+    quranteen_time_receive = models.IntegerField(default=None, blank=True, null=True)
 
 
 class ProductProcessEnding(models.Model):
