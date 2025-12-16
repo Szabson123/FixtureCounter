@@ -24,7 +24,7 @@ class MovementHandler:
         
 
 class BaseMovementHandler:
-    def __init__(self, product_object, place, process, who, *, printer_name=None, result=None, movement_type):
+    def __init__(self, product_object, place, process, who, *, printer_name=None, result=None, movement_type=None):
         self.product_object = product_object
         self.place = place
         self.process = process
