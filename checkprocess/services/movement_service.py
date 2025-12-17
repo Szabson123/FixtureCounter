@@ -15,7 +15,7 @@ class MovementHandler:
         elif movement_type == 'receive':
             return ReceiveHandler(product_object, place, process, who, printer_name=printer_name, movement_type=movement_type)
         elif movement_type == 'check':
-            return CheckHandler(product_object, place, process, who, result=result)
+            return CheckHandler(product_object, place, process, who, result=result, movement_type=movement_type)
         else:
             raise ValidationErrorWithCode(
                 message='Brak obsługi dla tego typu ruchu',
@@ -174,11 +174,19 @@ class ReceiveHandler(BaseMovementHandler):
 
 class CheckHandler(BaseMovementHandler):
     def execute(self):
-        self.create_log()
         self.set_current_place_and_process()
+        self.create_log()
 
     def create_log(self):
         ConditionLog.objects.create(process=self.process, product=self.product_object, result=self.result, who=self.who)
+        ProductObjectProcessLog.objects.create(
+            product_object=self.product_object,
+            process=self.process,
+            entry_time=timezone.now(),
+            who_entry=self.who,
+            place=None,
+            movement_type=self.movement_type
+        )
         
     def set_current_place_and_process(self):
         product_object = self.product_object
