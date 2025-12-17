@@ -1196,13 +1196,13 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
                     'id': item['id'],
                     'log_type': item['log_type'],
                     'date': item['date'],
-                    'who': item['who_value'],
-                    'movement_type': item['movement'],
-                    'error_message': item['info'],
-                    'process_id': item['proc_id'],
-                    'process_label': item['proc_label'],
-                    'place_id': item['pl_id'],
-                    'place_name': item['pl_name'],
+                    'who_value': item['who_value'],
+                    'movement': item['movement'],
+                    'info': item['info'],
+                    'proc_id': item['proc_id'],
+                    'proc_label': item['proc_label'],
+                    'pl_id': item['pl_id'],
+                    'pl_name': item['pl_name'],
                 }
                 for item in page
             ]
