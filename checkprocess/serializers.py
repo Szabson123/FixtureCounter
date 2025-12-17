@@ -240,11 +240,55 @@ class UnifyLogsSerializer(serializers.Serializer):
     log_type = serializers.CharField()
     date = serializers.DateTimeField()
 
-    who = serializers.CharField(allow_null=True)
-    movement_type = serializers.CharField(allow_null=True)
-    error_message = serializers.CharField(allow_null=True)
+    who_value = serializers.CharField(allow_null=True)
+    movement = serializers.CharField(allow_null=True)
+    info = serializers.CharField(allow_null=True)
 
-    process_id = serializers.UUIDField(allow_null=True)
-    process_label = serializers.CharField(allow_null=True)
-    place_id = serializers.IntegerField(allow_null=True)
-    place_name = serializers.CharField(allow_null=True)
+    proc_id = serializers.UUIDField(allow_null=True)
+    proc_label = serializers.CharField(allow_null=True)
+    pl_id = serializers.IntegerField(allow_null=True)
+    pl_name = serializers.CharField(allow_null=True)
+
+
+class ProductObjectAdminSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    sub_product_name = serializers.CharField(source='sub_product.name', read_only=True)
+    current_place_name = serializers.CharField(source='current_place.name', read_only=True)
+    current_process_name = serializers.CharField(source='current_process.label', read_only=True)
+
+    current_place_id = serializers.PrimaryKeyRelatedField(
+        queryset=Place.objects.all(),
+        source='current_place',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    current_process_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductProcess.objects.all(),
+        source='current_process',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = ProductObject
+        fields = ['id', 'is_mother',
+                  'last_move', 'current_process_id', 'current_place_id', 'sito_basic_unnamed_place',
+                  'free_plain_text', 'serial_number', 'full_sn', 'created_at', 'expire_date',
+                  'production_date', 'exp_date_in_process', 'quranteen_time', 'max_in_process',
+                  'ex_mother', 'sito_cycle_limit', 'sito_cycles_count', 'end', 'is_full',
+                  'current_process_name', 'current_place_name', 'product_name', 'sub_product_name']
+
+
+class ProductObjectAdminSerializerProcessHelper(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcess
+        fields = ['id', 'label']
+
+    
+class ProductObjectAdminSerializerPlaceHelper(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProcess
+        fields = ['id', 'name']

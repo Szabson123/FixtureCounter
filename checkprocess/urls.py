@@ -3,7 +3,8 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     ProductObjectProcessViewSet, BulkProductObjectCreateAndAddMotherView, ProductObjectProcessLogViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
-                    RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin, UnifiedLogsViewSet)
+                    RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin, UnifiedLogsViewSet, ProductObjectAdminViewSet,
+                    ProductObjectAdminViewSetProcessHelper, ProductObjectAdminViewSetPlaceHelper)
 
 from rest_framework.routers import DefaultRouter
 
@@ -15,6 +16,7 @@ router.register(r'(?P<process_id>[^/]+)/place', PlaceViewSet, basename='place')
 router.register(r'(?P<product_object_id>\d+)/product-object-processes', ProductObjectProcessViewSet, basename='product-object-processes')
 router.register(r'product-object-process-logs', ProductObjectProcessLogViewSet, basename='product-object-process-logs')
 router.register(r'(?P<group_id>\d+)/admin-process/places-in-groups', PlaceInGroupAdmin, basename='places-in-groups-admin')
+router.register(r'(?P<product_id>\d+)/admin-objects', ProductObjectAdminViewSet)
 
 router.register(r'bad-logs', LogFromMistakeData, basename='bad_logs'),
 
@@ -44,6 +46,9 @@ urlpatterns = [
 
     path('process/<uuid:process_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
     path('place/<int:place_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
+
+    path('process/helper/<int:product_id>/', ProductObjectAdminViewSetProcessHelper.as_view(), name='helper-process'),
+    path('place/helper/<uuid:process_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process')
 
 ]
 

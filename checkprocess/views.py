@@ -27,7 +27,7 @@ from .models import (Product, ProductProcess, ProductObject, ProductObjectProces
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
                         PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer, ProductProcessSimpleSerializer,
-                        AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer)
+                        AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer, ProductObjectAdminSerializer, ProductObjectAdminSerializerProcessHelper)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -63,6 +63,8 @@ class ProductProcessViewSet(viewsets.ModelViewSet):
 class ProductProcessList(ListAPIView):
     serializer_class = ProductProcessSimpleSerializer
     queryset = ProductProcess.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['label']
 
 
 class PlaceViewSet(viewsets.ModelViewSet):
@@ -1209,3 +1211,39 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             return self.get_paginated_response(serializer.data)
 
         return Response(serializer.data)
+    
+
+class ProductObjectAdminViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductObjectAdminSerializer
+    queryset = ProductObject.objects.all()
+    pagination_class = UnifyLogsPagination
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('product_id')
+        objects = (
+            ProductObject.objects
+            .select_related('product', 'current_process', 'current_place', 'sub_product')
+            .filter(product=product_id)
+            .order_by(F('last_move').desc(nulls_last=True)) #Tylko dla postgresql
+        )
+        return objects
+
+
+class ProductObjectAdminViewSetProcessHelper(ListAPIView):
+    serializer_class = ProductObjectAdminSerializerProcessHelper
+    pagination_class = UnifyLogsPagination
+    queryset = ProductProcess.objects.none()
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('product_id')
+        return ProductProcess.objects.filter(product_id=product_id)
+    
+
+class ProductObjectAdminViewSetPlaceHelper(ListAPIView):
+    serializer_class = ProductObjectAdminSerializerProcessHelper
+    pagination_class = UnifyLogsPagination
+    queryset = Place.objects.none()
+
+    def get_queryset(self):
+        process_id = self.kwargs.get('process_id')
+        return Place.objects.filter(process=process_id)
