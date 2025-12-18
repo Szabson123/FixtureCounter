@@ -1166,8 +1166,9 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             proc_id=F('process_id'),
             pl_id=F('place_id'),
             info=F('error_message'),
+            info_code=F('error_code'),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement',
+            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
@@ -1181,8 +1182,9 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             proc_id=F('process_id'),
             pl_id=F('place_id'),
             info=Value(None, output_field=TextField()),
+            info_code=Value(None, output_field=TextField()),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement',
+            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
@@ -1203,6 +1205,7 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
                     'proc_label': item['proc_label'],
                     'pl_id': item['pl_id'],
                     'pl_name': item['pl_name'],
+                    'info_code': item['info_code'],
                 }
                 for item in page
             ]

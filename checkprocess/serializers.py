@@ -248,6 +248,7 @@ class UnifyLogsSerializer(serializers.Serializer):
     proc_label = serializers.CharField(allow_null=True)
     pl_id = serializers.IntegerField(allow_null=True)
     pl_name = serializers.CharField(allow_null=True)
+    info_code = serializers.CharField(allow_null=True)
 
 
 class ProductObjectAdminSerializer(serializers.ModelSerializer):
