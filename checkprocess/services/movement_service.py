@@ -1,5 +1,5 @@
 from checkprocess.validation import ValidationErrorWithCode
-from checkprocess.models import ProductObjectProcessLog, AppToKill, ConditionLog, MessageToApp
+from checkprocess.models import ProductObjectProcessLog, AppToKill, ConditionLog, MessageToApp, ProductObject
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
 from django.utils.timezone import now
@@ -39,21 +39,19 @@ class BaseMovementHandler:
     def _handle_orphaning(self, product_obj):
         mother = product_obj.mother_object
 
-        # Jeśli to nie dziecko lub matka jest też przenoszona razem z nim — nie ruszamy
-        if not mother:
+        if not mother or mother == self.product_object:
             return
 
-        if mother == self.product_object:
-            # Matka też bierze udział w operacji – nie odłączamy dziecka
-            return
+        if not mother.full_sn:
+            raise ValueError(f"Mother object {mother.id} has no full_sn")
 
-        # Jeśli dziecko jest przenoszone samodzielnie → odłączamy
         product_obj.ex_mother = mother.full_sn
         product_obj.mother_object = None
         product_obj.save()
 
-        # Sprawdzamy, czy matce zostały dzieci
-        if not mother.child_object.exists():
+        mother.refresh_from_db()
+
+        if not ProductObject.objects.filter(mother_object=mother).exists():
             mother.end = True
             mother.current_place = None
             mother.current_process = None
