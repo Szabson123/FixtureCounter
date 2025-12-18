@@ -141,7 +141,7 @@ class ProductObject(models.Model):
     free_plain_text = models.CharField(max_length=255, null=True, blank=True)# Stencil to searching in cabin
     
     serial_number = models.CharField(max_length=255, db_index=True, null=True, blank=True)
-    full_sn = models.CharField(max_length=255, unique=True, db_index=True, null=True, blank=True)
+    full_sn = models.CharField(max_length=255, unique=True, db_index=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     expire_date = models.DateField(null=True, blank=True, default=None)
