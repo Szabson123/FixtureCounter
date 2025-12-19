@@ -1,4 +1,4 @@
-from .models import ProductObject, LogFromMistake
+from .models import ProductObject
 from django.db.models import Count, Case, When, Value, DateField, F
 
 from django.utils.timezone import now

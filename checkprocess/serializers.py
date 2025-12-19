@@ -162,12 +162,18 @@ class PlaceGroupToAppKillSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlaceGroupToAppKill
-        fields = ['id', 'name', 'last_check', 'status']
+        fields = ['id', 'name', 'last_check', 'status', 'checking']
 
     def get_status(self, obj):
         if obj.last_check is None:
             return False
         return (timezone.now() - obj.last_check) <= timedelta(minutes=1)
+    
+
+class PlaceGroupToAppKillUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlaceGroupToAppKill
+        fields = ['checking']
 
 
 class RetoolingSerializer(serializers.Serializer):
@@ -210,10 +216,14 @@ class AppToKillSerializer(serializers.ModelSerializer):
 
 class PlaceSerializerAdmin(serializers.ModelSerializer):
     apptokill = AppToKillSerializer()
+    label = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
-        fields = ['id', 'name', 'apptokill']
+        fields = ['id', 'name', 'label', 'apptokill']
+
+    def get_label(self, obj):
+        return obj.process.product.name if obj.process else None
 
     def update(self, instance, validated_data):
         apptokill_data = validated_data.pop("apptokill", None)
@@ -248,6 +258,7 @@ class UnifyLogsSerializer(serializers.Serializer):
     proc_label = serializers.CharField(allow_null=True)
     pl_id = serializers.IntegerField(allow_null=True)
     pl_name = serializers.CharField(allow_null=True)
+    product_object_name = serializers.CharField(allow_null=True)
     info_code = serializers.CharField(allow_null=True)
 
 

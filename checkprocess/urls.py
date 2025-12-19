@@ -4,7 +4,7 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
                     RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin, UnifiedLogsViewSet, ProductObjectAdminViewSet,
-                    ProductObjectAdminViewSetProcessHelper, ProductObjectAdminViewSetPlaceHelper)
+                    ProductObjectAdminViewSetProcessHelper, ProductObjectAdminViewSetPlaceHelper, GroupUpdateStatus)
 
 from rest_framework.routers import DefaultRouter
 
@@ -48,7 +48,8 @@ urlpatterns = [
     path('place/<int:place_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
 
     path('process/helper/<int:product_id>/', ProductObjectAdminViewSetProcessHelper.as_view(), name='helper-process'),
-    path('place/helper/<uuid:process_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process')
+    path('place/helper/<uuid:process_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process'),
+    path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking')
 
 ]
 
