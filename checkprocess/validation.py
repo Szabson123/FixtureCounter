@@ -329,6 +329,7 @@ class ProcessMovementValidator:
         LogFromMistake.objects.create(
             process=self.process, 
             place=self.place,
+            product_object=self.product_object,
             
             process_uuid_raw=str(self.process_uuid),
             place_name_raw=str(self.place_name),

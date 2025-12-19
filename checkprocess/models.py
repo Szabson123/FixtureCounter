@@ -299,6 +299,7 @@ class MessageToApp(models.Model):
 class LogFromMistake(models.Model):
     process = models.ForeignKey(ProductProcess, on_delete=models.SET_NULL, null=True, blank=True)
     place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    product_object = models.ForeignKey(ProductObject, on_delete=models.SET_NULL, null=True, blank=True)
     
     # Pola tekstowe (zawsze dostępne z requestu)
     process_uuid_raw = models.CharField(max_length=255, null=True, blank=True) # ID przesłane w żądaniu

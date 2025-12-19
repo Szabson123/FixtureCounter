@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, GenericAPIView
+from rest_framework.generics import ListAPIView, GenericAPIView, UpdateAPIView
 from rest_framework.filters import OrderingFilter, SearchFilter
 
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
@@ -27,7 +27,8 @@ from .models import (Product, ProductProcess, ProductObject, ProductObjectProces
 from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObjectSerializer, ProductObjectProcessSerializer,
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
                         PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer, ProductProcessSimpleSerializer,
-                        AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer, ProductObjectAdminSerializer, ProductObjectAdminSerializerProcessHelper)
+                        AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer, ProductObjectAdminSerializer, ProductObjectAdminSerializerProcessHelper,
+                        PlaceGroupToAppKillUpdateSerializer)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -999,6 +1000,11 @@ class ListGroupsStatuses(ListAPIView):
     ordering = ["name"]
 
 
+class GroupUpdateStatus(UpdateAPIView):
+    queryset = PlaceGroupToAppKill.objects.all()
+    serializer_class = PlaceGroupToAppKillUpdateSerializer
+
+
 class SubProductsCounter(ListAPIView):
     def get(self, request, *args, **kwargs):
         product_id = request.query_params.get("product_id")
@@ -1167,8 +1173,9 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             pl_id=F('place_id'),
             info=F('error_message'),
             info_code=F('error_code'),
+            product_object_name=F('product_object__full_sn'),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code',
+            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code', 'product_object_name',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
@@ -1183,8 +1190,9 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
             pl_id=F('place_id'),
             info=Value(None, output_field=TextField()),
             info_code=Value(None, output_field=TextField()),
+            product_object_name=F('product_object__full_sn'),
         ).values(
-            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code',
+            'id', 'log_type', 'date', 'who_value', 'movement', 'info_code', 'product_object_name',
             'proc_id', 'proc_label', 'pl_id', 'pl_name', 'info'
         )
 
@@ -1206,6 +1214,7 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
                     'pl_id': item['pl_id'],
                     'pl_name': item['pl_name'],
                     'info_code': item['info_code'],
+                    'product_object_name': item['product_object_name'],
                 }
                 for item in page
             ]
