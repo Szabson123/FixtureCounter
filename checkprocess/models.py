@@ -7,7 +7,8 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
-    
+
+
 class SubProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='subproduct')
     name = models.CharField(max_length=255)
@@ -32,6 +33,7 @@ class ProductProcess(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.product.name})"
+
 
 class ProductProcessFields(models.Model):
     product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='fields')
