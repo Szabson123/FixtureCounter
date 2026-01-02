@@ -1147,6 +1147,7 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         process_uuid = self.kwargs.get('process_id')
         place_id = self.kwargs.get('place_id')
+        product_id = self.kwargs.get('product_id')
 
         mistakes_qs = LogFromMistake.objects.all()
         process_qs = ProductObjectProcessLog.objects.all()
@@ -1158,6 +1159,10 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
         elif place_id:
             mistakes_qs = mistakes_qs.filter(place_id=place_id)
             process_qs = process_qs.filter(place_id=place_id)
+        
+        elif product_id:
+            mistakes_qs = mistakes_qs.filter(product_object=product_id)
+            process_qs = process_qs.filter(product_object=product_id)
 
         else:
             return Response({"error": "Missing process_id or place_id"}, status=400)

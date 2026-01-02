@@ -46,11 +46,11 @@ urlpatterns = [
 
     path('process/<uuid:process_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
     path('place/<int:place_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
+    path('product/<int:product_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
 
     path('process/helper/<int:product_id>/', ProductObjectAdminViewSetProcessHelper.as_view(), name='helper-process'),
     path('place/helper/<uuid:process_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process'),
     path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking')
-
 ]
 
-urlpatterns += router.urls
+urlpatterns += router.url
