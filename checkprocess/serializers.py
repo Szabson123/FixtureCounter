@@ -73,9 +73,9 @@ class ProductProcessSerializer(serializers.ModelSerializer):
 
 
 class ProductObjectSerializer(serializers.ModelSerializer):
-    place_name = serializers.CharField(write_only=True)
-    who_entry = serializers.CharField(write_only=True)
-    full_sn = serializers.CharField()
+    place_name = serializers.CharField(write_only=True, required=True)
+    who_entry = serializers.CharField(write_only=True, required=True)
+    full_sn = serializers.CharField(required=True)
     mother_sn = serializers.CharField(write_only=True, required=False, allow_blank=True)
     sub_product_name = serializers.SerializerMethodField()
     current_place_name = serializers.SerializerMethodField()

@@ -5,3 +5,6 @@ web.config
 /venv
 __pycache__/
 *.pyc
+
+/.pytest_cache
+/.vscode

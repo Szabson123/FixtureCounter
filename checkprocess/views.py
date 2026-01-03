@@ -222,8 +222,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         product = get_object_or_404(Product, pk=product_id)
         process = get_object_or_404(ProductProcess, pk=process_uuid)
 
-        place_name = serializer.validated_data.pop('place_name', None)
-        who_entry = serializer.validated_data.pop('who_entry', None)
+        place_name = serializer.validated_data.pop('place_name') 
+        who_entry = serializer.validated_data.pop('who_entry')
         full_sn = serializer.validated_data.get('full_sn')
         
         mother_sn = serializer.validated_data.pop('mother_sn', None)
@@ -231,11 +231,8 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         
         parser_type = detect_parser_type(full_sn)
         
-        if not process.starts:
+        if not hasattr(process, 'starts'):
             raise ValidationError("To nie jest process startowy")
-
-        if not place_name or not who_entry or not full_sn:
-            raise ValidationError("Brakuje 'place', 'who_entry' lub 'full_sn' w danych.")
 
         try:
             parser = get_parser(parser_type)

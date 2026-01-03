@@ -18,7 +18,7 @@ router.register(r'product-object-process-logs', ProductObjectProcessLogViewSet, 
 router.register(r'(?P<group_id>\d+)/admin-process/places-in-groups', PlaceInGroupAdmin, basename='places-in-groups-admin')
 router.register(r'(?P<product_id>\d+)/admin-objects', ProductObjectAdminViewSet)
 
-router.register(r'bad-logs', LogFromMistakeData, basename='bad_logs'),
+router.register(r'bad-logs', LogFromMistakeData, basename='bad_logs')
 
 
 urlpatterns = [
@@ -53,4 +53,4 @@ urlpatterns = [
     path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking')
 ]
 
-urlpatterns += router.url
+urlpatterns += router.urls
