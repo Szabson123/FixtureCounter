@@ -244,41 +244,40 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
             sub_product_obj = SubProduct.objects.get(product=product, name=sub_product)
         except SubProduct.DoesNotExist:
             raise ValidationError(f"SubProduct '{sub_product}' nie istnieje dla produktu '{product.name}'.")
+        
+        if ProductObject.objects.filter(full_sn=full_sn).exists():
+            raise ValidationError("Taki obiekt już istnieje")
+        
+        with transaction.atomic():
+            try:
+                place_obj = Place.objects.get(name=place_name, process=process)
+            except Place.DoesNotExist:
+                raise ValidationError(
+                    {"message": f"Takie miejsce nie istnieje: {place_name}", "code": "place_not_found"}
+                )
 
-        try:
-            with transaction.atomic():
-                try:
-                    place_obj = Place.objects.get(name=place_name, process=process)
-                except Place.DoesNotExist:
-                    raise ValidationError(
-                        {"message": f"Takie miejsce nie istnieje: {place_name}", "code": "place_not_found"}
-                    )
-    
-                serializer.validated_data['serial_number'] = serial_number
-                serializer.validated_data['production_date'] = production_date
-                serializer.validated_data['expire_date'] = expire_date
-                serializer.validated_data['product'] = product
-                serializer.validated_data['sub_product'] = sub_product_obj
-    
-                if serial_type and serial_type == "M" and q_code == "12":
-                    serializer.validated_data['is_mother'] = True
-                
-                if serial_type == 'karton':
-                    serializer.validated_data['is_mother'] = True
-                
-                product_object = serializer.save()
+            serializer.validated_data.update({
+                "serial_number": serial_number,
+                "production_date": production_date,
+                "expire_date": expire_date,
+                "product": product,
+                "sub_product": sub_product_obj,
+            })
 
-                product_object.current_place = place_obj
-                product_object.current_process = process
-                
-                product_object.save()
-                
-                ProductObjectProcessLog.objects.create(product_object=product_object, process=process, entry_time=timezone.now(), who_entry=who_entry, place=place_obj, movement_type='create')
+            if serial_type and serial_type == "M" and q_code == "12":
+                serializer.validated_data['is_mother'] = True
+            
+            if serial_type == 'karton':
+                serializer.validated_data['is_mother'] = True
+            
+            product_object = serializer.save()
 
-        except IntegrityError as e:
-            if "unique" in str(e).lower():
-                raise ValidationError({"error": "Taki obiekt już istnieje"})
-            raise ValidationError(f"Błąd podczas zapisu {e}")
+            product_object.current_place = place_obj
+            product_object.current_process = process
+            
+            product_object.save()
+            
+            ProductObjectProcessLog.objects.create(product_object=product_object, process=process, entry_time=timezone.now(), who_entry=who_entry, place=place_obj, movement_type='create')
 
 
 class ProductObjectProcessViewSet(viewsets.ModelViewSet):

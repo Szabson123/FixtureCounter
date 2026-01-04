@@ -1,6 +1,6 @@
 import factory
 from factory.django import DjangoModelFactory
-from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault
+from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault, ProductObject
 
 
 class ProductFactory(DjangoModelFactory):
@@ -94,5 +94,14 @@ class PlaceProcessFactory(DjangoModelFactory):
     name = factory.Faker('word')
     process = factory.SubFactory(ProductProcessFactory)
     only_one_product_object = False
+
+
+class ProductObjectFactory(DjangoModelFactory):
+    class Meta:
+        model = ProductObject
+    
+    product = factory.SubFactory(ProductFactory)
+    full_sn = "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D20251229@@"
+    sub_product = factory.SubFactory(ProductFactory)
 
 

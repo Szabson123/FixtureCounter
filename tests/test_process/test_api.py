@@ -1,6 +1,7 @@
 import pytest
 from django.urls import reverse
 from checkprocess.models import ProductObject, ProductObjectProcessLog
+from .factories import ProductObjectFactory
 
 @pytest.mark.django_db
 def test_create_product_endpoint(api_client):
@@ -48,18 +49,90 @@ def test_create_fails_when_process_is_not_start(api_client, product_factory, pro
 
     url = f"/api/process/{product.id}/{process.id}/product-objects/"
 
-    valid_payload = {
+    payload = {
         "full_sn": "TEST-SN-123",
         "place_name": "Stanowisko 1",
         "who_entry": "Janusz"
     }
 
-    response = api_client.post(url, valid_payload, format="json")
+    response = api_client.post(url, payload, format="json")
 
     assert response.status_code == 400
     assert "process startowy" in str(response.data)
 
 
 @pytest.mark.django_db
-def test_create_fails_when_we_d(api_client):
-    pass
+def test_create_fails_when_we_dont_have_sub_product(api_client, product_factory, product_process_factory, sub_product_factory):
+    product = product_factory()
+    process = product_process_factory(product=product, start=True)
+
+    url = f"/api/process/{product.id}/{process.id}/product-objects/"
+
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D20251229@@",
+        "place_name": "Stanowisko 1",
+        "who_entry": "Janusz"
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 400
+    assert "SubProduct" in str(response.data)
+    assert "nie istnieje dla produktu" in str(response.data)
+
+
+@pytest.mark.django_db
+def test_create_fails_when_bad_place(api_client, product_factory, product_process_factory, sub_product_factory):
+    product = product_factory()
+    process = product_process_factory(product=product, start=True)
+    sub_product = sub_product_factory(product=product)
+
+    url = f"/api/process/{product.id}/{process.id}/product-objects/"
+
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D20251229@@",
+        "place_name": "Stanowisko 1",
+        "who_entry": "Janusz"
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 400
+    assert "Takie miejsce nie istnieje" in str(response.data)
+
+
+@pytest.mark.django_db
+def test_create_fails_when_obj_already_exists(api_client, product_factory, product_process_factory, sub_product_factory, place_process_factory, product_object_factory):
+    product = product_factory()
+    process = product_process_factory(product=product, start=True)
+    place = place_process_factory(process=process)
+    sub_product = sub_product_factory(product=product)
+    product_object = product_object_factory(product=product, sub_product=sub_product)
+
+    url = f"/api/process/{product.id}/{process.id}/product-objects/"
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D20251229@@",
+        "place_name": place.name,
+        "who_entry": "53241",
+    }
+
+    response = api_client.post(url, payload, format="json")
+
+    assert response.status_code == 400
+    assert "Taki obiekt już istnieje" in str(response.data)
+
+@pytest.mark.django_db
+def test_create_fails_when_bad_parser_type(api_client, product_factory, product_process_factory, sub_product_factory, place_process_factory):
+
+    product = product_factory()
+    process = product_process_factory(product=product, start=True)
+
+    url = f"/api/process/{product.id}/{process.id}/product-objects/"
+
+    payload = {
+        "full_sn": "Bad Sn No Parser",
+        "place_name": "Stanowisko 1",
+        "who_entry": "Janusz"
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 400
+    assert "Nieobsługiwany typ parsera:" in str(response.data)
