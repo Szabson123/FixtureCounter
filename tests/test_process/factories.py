@@ -1,6 +1,6 @@
 import factory
 from factory.django import DjangoModelFactory
-from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault, ProductObject
+from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault, ProductObject, Edge
 
 
 class ProductFactory(DjangoModelFactory):
@@ -101,7 +101,13 @@ class ProductObjectFactory(DjangoModelFactory):
         model = ProductObject
     
     product = factory.SubFactory(ProductFactory)
-    full_sn = "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D20251229@@"
+    full_sn = "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@"
     sub_product = factory.SubFactory(ProductFactory)
 
 
+class EdgeFactory(DjangoModelFactory):
+    class Meta:
+        model = Edge
+    source = factory.SubFactory(ProductProcessFactory)
+    target = factory.SubFactory(ProductProcessFactory)
+        
