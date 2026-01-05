@@ -209,3 +209,7 @@ def test_receive_product_object_happy_path(api_client, product_factory, product_
     log = ProductObjectProcessLog.objects.get()
     assert log.movement_type == "receive"
     assert log.who_entry == "51123"
+
+
+def test_test():
+    pass
