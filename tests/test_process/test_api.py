@@ -213,3 +213,6 @@ def test_receive_product_object_happy_path(api_client, product_factory, product_
 
 def test_test():
     pass
+
+def test_test2():
+    pass
