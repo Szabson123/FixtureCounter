@@ -1,6 +1,7 @@
 .env
 db.sqlite3
 web.config
+db-test.py
 /static
 /venv
 __pycache__/

@@ -18,6 +18,7 @@ def test_create_product_happy_path(api_client):
 
 @pytest.mark.django_db
 def test_create_product_object_happy_path(api_client, product_factory, product_process_factory, place_process_factory, sub_product_factory):
+
     product = product_factory()
     process = product_process_factory(product=product, start=True)
     place = place_process_factory(process=process)
@@ -31,7 +32,7 @@ def test_create_product_object_happy_path(api_client, product_factory, product_p
     }
 
     response = api_client.post(url, payload, format="json")
-    assert response.status_code == 201, f"Otrzymano błąd walidacji: {response.data}"
+    assert response.status_code == 201
     obj = ProductObject.objects.get()
     assert obj.product == product
     assert obj.current_process == process
