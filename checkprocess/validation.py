@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.utils import timezone
 from .custom_validators import ValidationErrorWithCode
 
+
 class ProcessMovementValidator:
     def __init__(self, process_uuid, full_sn, place_name, movement_type, who):
         self.process_uuid = process_uuid

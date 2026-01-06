@@ -140,6 +140,29 @@ def test_create_fails_when_bad_parser_type(api_client, product_factory, product_
 
 
 @pytest.mark.django_db
+def test_move_fails_product_object_unknown_movement_type(api_client, product_factory, product_process_factory, place_process_factory, product_object_factory, sub_product_factory):
+    product = product_factory()
+    process = product_process_factory(product=product, start=True)
+    place = place_process_factory(process=process)
+    sub_product = sub_product_factory(product=product)
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process, current_place=place)
+    movement_type = "unknown"
+    
+    payload = {
+        "process_uuid": process.id,
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "place_name": place.name,
+        "movement_type": movement_type,
+        "who": "51123",
+    }
+
+    url = f"/api/process/product-object/move/{process.id}/"
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 400, f"Otrzymano błąd walidacji: {response.data}"
+    assert f'Typ ruchu "{movement_type}" nie jest obsługiwany' in str(response.data)
+
+
+@pytest.mark.django_db
 def test_move_product_object_happy_path(api_client, product_factory, product_process_factory, place_process_factory, product_object_factory, sub_product_factory):
     product = product_factory()
     process = product_process_factory(product=product, start=True)
@@ -211,8 +234,3 @@ def test_receive_product_object_happy_path(api_client, product_factory, product_
     assert log.who_entry == "51123"
 
 
-def test_test():
-    pass
-
-def test_test2():
-    pass
