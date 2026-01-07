@@ -249,6 +249,8 @@ class UnifyLogsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     log_type = serializers.CharField()
     date = serializers.DateTimeField()
+    
+    object_id = serializers.IntegerField(allow_null=True)
 
     who_value = serializers.CharField(allow_null=True)
     movement = serializers.CharField(allow_null=True)
@@ -271,7 +273,6 @@ class ProductObjectAdminSerializer(serializers.ModelSerializer):
     current_place_id = serializers.PrimaryKeyRelatedField(
         queryset=Place.objects.all(),
         source='current_place',
-        write_only=True,
         required=False,
         allow_null=True,
     )
@@ -279,14 +280,20 @@ class ProductObjectAdminSerializer(serializers.ModelSerializer):
     current_process_id = serializers.PrimaryKeyRelatedField(
         queryset=ProductProcess.objects.all(),
         source='current_process',
-        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
         required=False,
         allow_null=True,
     )
 
     class Meta:
         model = ProductObject
-        fields = ['id', 'is_mother',
+        fields = ['id', 'is_mother', 'product_id',
                   'last_move', 'current_process_id', 'current_place_id', 'sito_basic_unnamed_place',
                   'free_plain_text', 'serial_number', 'full_sn', 'created_at', 'expire_date',
                   'production_date', 'exp_date_in_process', 'quranteen_time', 'max_in_process',
@@ -295,12 +302,14 @@ class ProductObjectAdminSerializer(serializers.ModelSerializer):
 
 
 class ProductObjectAdminSerializerProcessHelper(serializers.ModelSerializer):
+    name = serializers.CharField(source='label')
+
     class Meta:
         model = ProductProcess
-        fields = ['id', 'label']
+        fields = ['id', 'name']
 
     
 class ProductObjectAdminSerializerPlaceHelper(serializers.ModelSerializer):
     class Meta:
-        model = ProductProcess
+        model = Place
         fields = ['id', 'name']

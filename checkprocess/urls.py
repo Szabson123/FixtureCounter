@@ -17,6 +17,7 @@ router.register(r'(?P<product_object_id>\d+)/product-object-processes', ProductO
 router.register(r'product-object-process-logs', ProductObjectProcessLogViewSet, basename='product-object-process-logs')
 router.register(r'(?P<group_id>\d+)/admin-process/places-in-groups', PlaceInGroupAdmin, basename='places-in-groups-admin')
 router.register(r'(?P<product_id>\d+)/admin-objects', ProductObjectAdminViewSet)
+router.register(r'admin-objects',ProductObjectAdminViewSet,basename='admin-objects')
 
 router.register(r'bad-logs', LogFromMistakeData, basename='bad_logs')
 
@@ -49,7 +50,7 @@ urlpatterns = [
     path('product/<int:product_id>/admin-logs/', UnifiedLogsViewSet.as_view({'get': 'list'})),
 
     path('process/helper/<int:product_id>/', ProductObjectAdminViewSetProcessHelper.as_view(), name='helper-process'),
-    path('place/helper/<uuid:process_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process'),
+    path('place/helper/<int:product_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process'),
     path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking')
 ]
 
