@@ -110,6 +110,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         'free_plain_text',
         'sito_cycles_count',
         'last_move',
+        'full_sn',
     ]
 
     search_fields = ['free_plain_text', 'sito_basic_unnamed_place', 'serial_number', 'full_sn']
