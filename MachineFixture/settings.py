@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'map',
     'goldensample',
     'checkprocess',
-    # 'user_auth',
+    'user_auth',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -62,7 +62,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -158,6 +158,8 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 CSRF_TRUSTED_ORIGINS = [
     'http://10.140.113.33',
+    'http://localhost:3000',
+    'http://localhost:5173'
 ]
 
 REST_FRAMEWORK = {
@@ -169,9 +171,9 @@ REST_FRAMEWORK = {
     
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
-    # "DEFAULT_AUTHENTICATION_CLASSES": [
-    #     "rest_framework.authentication.SessionAuthentication",
-    # ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
 }
 
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'

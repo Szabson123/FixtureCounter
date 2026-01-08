@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
-
+from rest_framework.permissions import IsAuthenticated
+from django.middleware.csrf import get_token
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -40,3 +41,24 @@ class LogoutAPIView(APIView):
     def post(self, request):
         logout(request)
         return Response({"detail": "Wylogowano"})
+    
+
+
+class MeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "permissions": list(user.get_all_permissions()),
+        })
+    
+
+class CsrfAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"csrfToken": get_token(request)})

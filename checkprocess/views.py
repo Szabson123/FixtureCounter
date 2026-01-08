@@ -80,7 +80,7 @@ class PlaceViewSet(viewsets.ModelViewSet):
 
 
 class PlaceInGroupAdmin(viewsets.ModelViewSet):
-    permission_classes=[HasPermCanSeeAdminPage], 
+    permission_classes=[HasPermCanSeeAdminPage]
     serializer_class=PlaceSerializerAdmin
     queryset = Place.objects.all()
 
@@ -1237,16 +1237,18 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
 
 class ProductObjectAdminViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectAdminSerializer
-    permission_classes = [HasPermCanUpdateAdminPage]
     queryset = ProductObject.objects.all()
     pagination_class = UnifyLogsPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['full_sn', 'serial_number', 'sito_basic_unnamed_place', 'free_plain_text']
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [HasPermCanSeeAdminPage()]
-        return super().get_permissions()
+        if self.action in ("list", "retrieve"):
+            permission_classes = [HasPermCanSeeAdminPage]
+        else:
+            permission_classes = [HasPermCanUpdateAdminPage]
+
+        return [permission() for permission in permission_classes]
     
     def get_queryset(self):
         queryset = (
