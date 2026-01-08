@@ -106,6 +106,10 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         'expire_date_final',
         'sub_product__name',
         'current_place',
+        'sito_basic_unnamed_place',
+        'free_plain_text',
+        'sito_cycles_count',
+        'last_move',
     ]
 
     search_fields = ['free_plain_text', 'sito_basic_unnamed_place', 'serial_number', 'full_sn']
