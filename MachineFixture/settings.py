@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'map',
     'goldensample',
     'checkprocess',
+    # 'user_auth',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -165,7 +166,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ],
+    
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    # "DEFAULT_AUTHENTICATION_CLASSES": [
+    #     "rest_framework.authentication.SessionAuthentication",
+    # ],
 }
 
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'

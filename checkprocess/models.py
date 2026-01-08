@@ -166,6 +166,11 @@ class ProductObject(models.Model):
             models.Index(fields=["current_place", "end"], name="idx_place_end"),
         ]
 
+        permissions = [
+            ("can_see_admin_page", "Może oglądać objekty w admin page (API)"),
+            ("can_update_object_admin_page", "Może modyfikować objekty w admin page (API)")
+        ]
+
     def __str__(self):
         return f"{self.serial_number} ({self.product.name})"
 

@@ -13,6 +13,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, GenericAPIView, UpdateAPIView
 from rest_framework.filters import OrderingFilter, SearchFilter
 
+from .permissions import HasPermCanSeeAdminPage, HasPermCanUpdateAdminPage
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
 from .utils import detect_parser_type, get_printer_info_from_card, poke_process
@@ -59,6 +60,7 @@ class ProductProcessViewSet(viewsets.ModelViewSet):
 
 class ProductProcessList(ListAPIView):
     serializer_class = ProductProcessSimpleSerializer
+    permission_classes = [HasPermCanSeeAdminPage]
     queryset = ProductProcess.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['label']
@@ -78,7 +80,7 @@ class PlaceViewSet(viewsets.ModelViewSet):
 
 
 class PlaceInGroupAdmin(viewsets.ModelViewSet):
-    #permission_classes=[AllowAny], 
+    permission_classes=[HasPermCanSeeAdminPage], 
     serializer_class=PlaceSerializerAdmin
     queryset = Place.objects.all()
 
@@ -1001,6 +1003,7 @@ class ListGroupsStatuses(ListAPIView):
 class GroupUpdateStatus(UpdateAPIView):
     queryset = PlaceGroupToAppKill.objects.all()
     serializer_class = PlaceGroupToAppKillUpdateSerializer
+    permission_classes = [HasPermCanUpdateAdminPage]
 
 
 class SubProductsCounter(ListAPIView):
@@ -1140,6 +1143,7 @@ class UnifyLogsPagination(PageNumberPagination):
 class UnifiedLogsViewSet(viewsets.GenericViewSet):
     serializer_class = UnifyLogsSerializer
     pagination_class = UnifyLogsPagination
+    permission_classes = [HasPermCanUpdateAdminPage]
     queryset = LogFromMistake.objects.none() 
 
     def list(self, request, *args, **kwargs):
@@ -1233,11 +1237,17 @@ class UnifiedLogsViewSet(viewsets.GenericViewSet):
 
 class ProductObjectAdminViewSet(viewsets.ModelViewSet):
     serializer_class = ProductObjectAdminSerializer
+    permission_classes = [HasPermCanUpdateAdminPage]
     queryset = ProductObject.objects.all()
     pagination_class = UnifyLogsPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['full_sn', 'serial_number', 'sito_basic_unnamed_place', 'free_plain_text']
 
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [HasPermCanSeeAdminPage()]
+        return super().get_permissions()
+    
     def get_queryset(self):
         queryset = (
             ProductObject.objects
@@ -1255,6 +1265,7 @@ class ProductObjectAdminViewSet(viewsets.ModelViewSet):
 class ProductObjectAdminViewSetProcessHelper(ListAPIView):
     serializer_class = ProductObjectAdminSerializerProcessHelper
     pagination_class = UnifyLogsPagination
+    permission_classes = [HasPermCanUpdateAdminPage]
     queryset = ProductProcess.objects.none()
 
     def get_queryset(self):
@@ -1265,6 +1276,7 @@ class ProductObjectAdminViewSetProcessHelper(ListAPIView):
 class ProductObjectAdminViewSetPlaceHelper(ListAPIView):
     serializer_class = ProductObjectAdminSerializerPlaceHelper
     pagination_class = UnifyLogsPagination
+    permission_classes = [HasPermCanUpdateAdminPage]
     queryset = Place.objects.none()
 
     def get_queryset(self):
