@@ -226,6 +226,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         place_name = serializer.validated_data.pop('place_name') 
         who_entry = serializer.validated_data.pop('who_entry')
         full_sn = serializer.validated_data.get('full_sn')
+
         
         mother_sn = serializer.validated_data.pop('mother_sn', None)
         mother_obj = None

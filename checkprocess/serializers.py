@@ -80,6 +80,9 @@ class ProductObjectSerializer(serializers.ModelSerializer):
     sub_product_name = serializers.SerializerMethodField()
     current_place_name = serializers.SerializerMethodField()
 
+    sito_basic_unnamed_place = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    free_plain_text = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = ProductObject
         fields = [
@@ -249,7 +252,7 @@ class UnifyLogsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     log_type = serializers.CharField()
     date = serializers.DateTimeField()
-    
+
     object_id = serializers.IntegerField(allow_null=True)
 
     who_value = serializers.CharField(allow_null=True)
