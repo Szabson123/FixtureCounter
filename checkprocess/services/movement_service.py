@@ -16,6 +16,8 @@ class MovementHandler:
             return ReceiveHandler(product_object, place, process, who, printer_name=printer_name, movement_type=movement_type)
         elif movement_type == 'check':
             return CheckHandler(product_object, place, process, who, result=result, movement_type=movement_type)
+        elif movement_type == 'trash':
+            return TrashHandler(product_object, place, process, who, movement_type=movement_type)
         else:
             raise ValidationErrorWithCode(
                 message='Brak obsługi dla tego typu ruchu',
@@ -191,4 +193,36 @@ class CheckHandler(BaseMovementHandler):
         product_object.current_process = self.process
         product_object.save()
     
+
+class TrashHandler(BaseMovementHandler):
+
+    def execute(self):
+        self._trash_product_object(self.product_object)
+
+    def _trash_product_object(self, product_obj):
+        self.set_current_place_and_process(product_obj)
+        self.create_log(product_obj)
+        self.set_obj_as_ended(product_obj)
+
+
+    def create_log(self, product_obj):
+        ProductObjectProcessLog.objects.create(
+            product_object=product_obj,
+            process=self.process,
+            entry_time=timezone.now(),
+            who_entry=self.who,
+            place=self.place,
+            name_of_productig_product=self.printer_name, 
+            movement_type=self.movement_type
+        )
+
+    def set_current_place_and_process(self, product_obj):
+        product_obj.current_place = self.place
+        product_obj.current_process = self.process
+        product_obj.last_move = timezone.now()
+        product_obj.save()
+    
+    def set_obj_as_ended(self, product_obj):
+        product_obj.end = True
+        product_obj.save()
 

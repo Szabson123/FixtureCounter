@@ -1,6 +1,6 @@
 import factory
 from factory.django import DjangoModelFactory
-from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault, ProductObject, Edge
+from checkprocess.models import Product, ProductProcess, Place, SubProduct, ProductProcessStart, ProductProcessDefault, ProductObject, Edge, ProductProcessCondition, ProductProcessEnding
 
 
 class ProductFactory(DjangoModelFactory):
@@ -52,6 +52,32 @@ class ProductProcessFactory(DjangoModelFactory):
         end = factory.Trait(
             type="end",
         )
+
+        condition = factory.Trait(
+            type='condition',
+            normal_config = factory.RelatedFactory(
+                'tests.test_process.factories.ProductProcessConditionFactory',
+                factory_related_name="product_process"
+            )
+        )
+
+        trash = factory.Trait(
+            type='trash',
+            normal_config = factory.RelatedFactory(
+                'tests.test_process.factories.ProductProcessEndingFactory',
+                factory_related_name="product_process"
+            )
+        )
+
+
+class ProductProcessConditionFactory(DjangoModelFactory):
+    class Meta:
+        model = ProductProcessCondition
+
+
+class ProductProcessEndingFactory(DjangoModelFactory):
+    class Meta:
+        model = ProductProcessEnding
 
 
 class ProductProcessStartFactory(DjangoModelFactory):

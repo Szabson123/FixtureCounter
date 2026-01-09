@@ -87,7 +87,7 @@ class ProductProcessDefault(models.Model):
 
 class ProductProcessCondition(models.Model):
     product_process = models.OneToOneField(ProductProcess, on_delete=models.CASCADE, related_name='conditions')
-    pass_fail = models.BooleanField(default=True)
+    pass_fail = models.BooleanField(default=True) # To check what is this doing
     
 
 class ProductProcessStart(models.Model):

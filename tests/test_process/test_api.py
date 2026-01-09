@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from checkprocess.models import ProductObject, ProductObjectProcessLog, ProductProcess
+from checkprocess.models import ProductObject, ProductObjectProcessLog, ProductProcess, ConditionLog
 from .factories import ProductObjectFactory
 
 @pytest.mark.django_db
@@ -213,7 +213,6 @@ def test_receive_product_object_happy_path(api_client, product_factory, product_
     assert obj.current_place == None
     
     payload = {
-        "process_uuid": process_target.id,
         "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
         "place_name": place.name,
         "movement_type": "receive",
@@ -234,3 +233,114 @@ def test_receive_product_object_happy_path(api_client, product_factory, product_
     assert log.who_entry == "51123"
 
 
+@pytest.mark.django_db
+def test_check_product_object_happy_path(api_client, product_factory, product_process_factory, sub_product_factory, edge_factory, product_object_factory):
+    product = product_factory()
+
+    process_source = product_process_factory(product=product, start=True)
+    process_target = product_process_factory(product=product, condition=True)
+
+    sub_product = sub_product_factory(product=product)
+
+    edge = edge_factory(source=process_source, target=process_target)
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process_source)
+
+    obj = ProductObject.objects.get()
+    assert obj.current_place == None
+
+    url = url = f"/api/process/product-object/move/{process_target.id}/"
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "movement_type": "check",
+        "who": "51123",
+        "result": True
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 200, f"Otrzymano błąd walidacji: {response.data}"
+    assert "Ruch został wykonany pomyślnie." in str(response.data)
+
+    obj.refresh_from_db()
+    assert obj.current_process == ProductProcess.objects.get(id=process_target.id)
+
+    log = ProductObjectProcessLog.objects.get()
+    assert log.movement_type == "check"
+    assert log.who_entry == "51123"
+
+    log_check = ConditionLog.objects.get()
+
+    assert log_check.who == "51123"
+    assert log_check.result == True
+    assert log_check.product == obj
+
+
+@pytest.mark.django_db
+def test_trash_product_object_happy_path(api_client, product_factory, product_process_factory, sub_product_factory, edge_factory, product_object_factory, place_process_factory):
+    product = product_factory()
+
+    process_source = product_process_factory(product=product, start=True)
+    process_target = product_process_factory(product=product, trash=True)
+
+    place = place_process_factory(process=process_target)
+    sub_product = sub_product_factory(product=product)
+
+    edge = edge_factory(source=process_source, target=process_target)
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process_source)
+
+
+    url = url = f"/api/process/trash-obj/{process_target.id}/"
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "movement_type": "trash",
+        "who": "51123",
+        "place_name": place.name
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 200, f"Otrzymano błąd walidacji: {response.data}"
+    assert "Ruch został wykonany pomyślnie." in str(response.data)
+
+    obj = ProductObject.objects.get()
+    assert obj.current_process == ProductProcess.objects.get(id=process_target.id)
+    assert obj.current_place == place
+    assert obj.end == True
+
+    log = ProductObjectProcessLog.objects.get()
+    assert log.movement_type == "trash"
+    assert log.who_entry == "51123"
+
+
+@pytest.mark.django_db
+def test_trash_test_product_object_happy_path(api_client, product_factory, product_process_factory, sub_product_factory, edge_factory, product_object_factory, place_process_factory):
+    product = product_factory()
+
+    process_source = product_process_factory(product=product, start=True)
+    process_target = product_process_factory(product=product, trash=True)
+
+    place = place_process_factory(process=process_target)
+    sub_product = sub_product_factory(product=product)
+
+    edge = edge_factory(source=process_source, target=process_target)
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process_source)
+
+    url = url = f"/api/process/product-object/move/{process_target.id}/"
+
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "movement_type": "trash",
+        "who": "51123",
+        "place_name": place.name
+    }
+
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 200, f"Otrzymano błąd walidacji: {response.data}"
+    assert "Ruch został wykonany pomyślnie." in str(response.data)
+
+    obj = ProductObject.objects.get()
+    assert obj.current_process == ProductProcess.objects.get(id=process_target.id)
+    assert obj.current_place == place
+    assert obj.end == True
+
+    log = ProductObjectProcessLog.objects.get()
+    assert log.movement_type == "trash"
+    assert log.who_entry == "51123"

@@ -30,11 +30,16 @@ class ProcessMovementValidator:
             self.validate_who_make_move()
 
             if self.movement_type == 'receive' or self.movement_type == 'check':
-                self.resolve_target_process()
                 self.validate_process_receive_with_current_place()
+
                 if self.movement_type == 'receive':
                     self.validate_only_one_place()
+                
+                if self.movement_type == 'check':
+                    self.validate_process_condition_settings()
+
                 self.set_killing_flag_on_true_if_need()
+                
                 if self.check_current_process_condition():
                     self.check_cond_path()
 
@@ -87,6 +92,13 @@ class ProcessMovementValidator:
                 )
         else:
             return
+        
+    def validate_process_condition_settings(self):
+        if not hasattr(self.process, 'conditions'):
+            raise ValidationErrorWithCode(
+                message='Ten proces nie ma ustwaień condition nie można nim sprawdzać stanu produktu',
+                code='bad_condition_settings'
+            )
     
     def validate_object_existence_and_status(self):
         try:
@@ -147,15 +159,6 @@ class ProcessMovementValidator:
             except ObjectDoesNotExist:
                 pass
         raise ValidationErrorWithCode('Proces nie ma zdefiniowanych żadnych ustawień.', 'no_process_settings')
-        
-    def resolve_target_process(self):
-        try:
-            self.process = ProductProcess.objects.get(id=self.process_uuid)
-        except ProductProcess.DoesNotExist:
-            raise ValidationErrorWithCode(
-                message='Proces docelowy nie istnieje.',
-                code='target_process_not_found'
-            )
     
     def validate_product_not_already_in_process(self):
         current_process = self.product_object.current_process
@@ -252,6 +255,7 @@ class ProcessMovementValidator:
                     message='Proces nie istnieje.',
                     code='process_not_found'
                 )
+            
         if self.movement_type != 'check':
             try:
                 self.place = Place.objects.get(name=self.place_name, process=self.process)
