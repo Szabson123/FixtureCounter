@@ -103,6 +103,8 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         samples_data = validated_data.pop("samples", [])
 
         created_objects = []
+        request = self.context.get("request")
+        user = request.user if request else None
 
         for sample in samples_data:
             sn = sample.get("sn")
@@ -116,6 +118,7 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
                 sn=sn,
                 master_type=master_type,
                 details=details_text,
+                created_by=user
             )
 
             if code_smd_data:

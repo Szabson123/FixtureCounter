@@ -70,6 +70,11 @@ class MasterSample(models.Model):
     pcb_rev_code = models.CharField(max_length=255)
     counter = models.PositiveIntegerField(default=0)
 
+    class Meta:
+        permissions = [
+            ("can_update_create_goldens", "Może dodawać i modyfikować wzorce"),
+        ]
+
     def __str__(self):
         return self.sn
    

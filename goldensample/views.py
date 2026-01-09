@@ -1,13 +1,15 @@
 from .models import *
 from .serializers import *
 from .filters import MasterSampleFilter
+from .permissions import GoldenAdminPerms
 from rest_framework.generics import ListAPIView, CreateAPIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import AllowAny
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -15,6 +17,7 @@ from django.utils.timezone import now
 from django.utils import timezone
 from datetime import date, timedelta, datetime
 
+import re
 
 class MasterSampleCheckView(GenericAPIView):
     serializer_class = MasterSampleCheckSerializer
@@ -132,6 +135,7 @@ class EndCodeViewSet(viewsets.ModelViewSet):
 class MasterSampleCreateView(CreateAPIView):
     queryset = MasterSample.objects.all()
     serializer_class = MasterSampleManyCreateSerializer
+    permission_classes = [GoldenAdminPerms]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -141,10 +145,18 @@ class MasterSampleCreateView(CreateAPIView):
         return Response(output.data, status=status.HTTP_201_CREATED)
 
 
-class MasterSampleRetrieveUpdateView(RetrieveUpdateAPIView):
+class MasterSampleRetrieveUpdateView(RetrieveUpdateDestroyAPIView):
     queryset = MasterSample.objects.all()
     serializer_class = MasterSampleUpdateSerializer
-    http_method_names = ["get", "patch", "put"]
+    http_method_names = ["get", "put", "patch", "delete"]
+
+    def get_permissions(self):
+        if self.request.method in ("PUT", "PATCH", "DELETE"):
+            permission_classes = [GoldenAdminPerms]
+        else:
+            permission_classes = [AllowAny]
+
+        return [permission() for permission in permission_classes]
 
     def update(self, request, *args, **kwargs):
         partial = request.method.lower() == "patch"
@@ -322,6 +334,19 @@ class CheckGoldensFWK(GenericAPIView):
         )
 
         if master_for_sn:
+            match = re.search(r"machine_id\s*=\s*([^\s,;]+)", master_for_sn.details or "")
+            if match:
+                machine_id = match.group(1)
+
+                if machine_id != str(machine):
+                    return Response(
+                        {
+                            "comment": f"Ten wzorzec nie moze byc testowany na tej maszynie",
+                            "result": False
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                
             return Response({"comment": "Testujesz Wzorca",
                              "result": True}, status=status.HTTP_200_OK)
 
