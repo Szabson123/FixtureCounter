@@ -421,12 +421,6 @@ class ProductMoveListView(APIView):
                 })
 
                 last_sn = sn 
-            
-            # To check if all in - in
-            if movement_type == 'recive':
-                edge_sets = EdgeSameInSameOut(process_uuid, last_sn)
-                info = edge_sets.execute()
-                responses.append(info)
 
             return Response(responses, status=status.HTTP_200_OK)
 

@@ -99,6 +99,7 @@ class ProductProcessStart(models.Model):
     add_multi = models.BooleanField(default=False)
     quranteen_time_receive = models.IntegerField(default=None, blank=True, null=True)
     use_wider_create = models.BooleanField(default=False) # For stencil but also if you need 2 additional fields -> sito_basic_unnamed_place, free_plain_text
+    move_multi = models.BooleanField(default=False)
 
 
 class ProductProcessEnding(models.Model):
