@@ -105,7 +105,7 @@ class ProductProcessDefaultFactory(DjangoModelFactory):
     show_the_couter = False
     use_list_endpoint = False
     quranteen_time_receive = 5
-    production_process_type = False
+    production_process_type = True
     stencil_production_process_type = False
     check_outside_database = False
     use_poke = False

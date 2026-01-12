@@ -1,7 +1,9 @@
 import pytest
 from django.urls import reverse
-from checkprocess.models import ProductObject, ProductObjectProcessLog, ProductProcess, ConditionLog
+from checkprocess.models import LastProductOnPlace, ProductObject, ProductObjectProcessLog, ProductProcess, ConditionLog, OneToOneMap
 from .factories import ProductObjectFactory
+from unittest.mock import patch
+
 
 @pytest.mark.django_db
 def test_create_product_happy_path(api_client):
@@ -343,4 +345,96 @@ def test_trash_test_product_object_happy_path(api_client, product_factory, produ
 
     log = ProductObjectProcessLog.objects.get()
     assert log.movement_type == "trash"
+    assert log.who_entry == "51123"
+
+
+@patch('checkprocess.views.get_printer_info_from_card')
+@pytest.mark.django_db
+def test_start_new_production_happy_path(mock_get_printer_info, api_client, product_factory, product_process_factory, place_process_factory, sub_product_factory, edge_factory, product_object_factory):
+    zm = OneToOneMap.objects.create(s_input="LF(OM-338-PT)", s_output="Alpha")
+
+    product = product_factory()
+
+    process_source = product_process_factory(product=product, start=True)
+    process_target = product_process_factory(product=product, normal=True)
+
+    place = place_process_factory(process=process_target)
+    sub_product = sub_product_factory(product=product)
+
+    edge = edge_factory(source=process_source, target=process_target)
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process_source)
+
+    fake_mapped_names = ['Alpha', 'ZmapowanaNazwa2']
+    fake_printer_name = 'Printer_15007535'
+    
+    mock_get_printer_info.return_value = (fake_mapped_names, fake_printer_name)
+
+    url = f"/api/process/start-new-prod/{process_target.id}/"
+
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "place_name": place.name,
+        "movement_type": "receive",
+        "who": "51123",
+        "production_card": "test"
+    }
+    
+    # 4. Asercje
+    response = api_client.post(url, payload, format="json")
+    assert response.status_code == 200, f"Otrzymano błąd walidacji: {response.data}"
+
+    obj = ProductObject.objects.get()
+    assert obj.current_process == ProductProcess.objects.get(id=process_target.id)
+    assert obj.current_place == place
+    assert obj.end == False
+
+    log = ProductObjectProcessLog.objects.get()
+    assert log.movement_type == "receive"
+    assert log.who_entry == "51123"
+
+    last_prod = LastProductOnPlace.objects.get()
+    assert last_prod.product_process == ProductProcess.objects.get(id=process_target.id)
+    assert last_prod.place == place
+    assert last_prod.name_of_productig_product ==  fake_printer_name
+
+
+@pytest.mark.django_db
+def test_continue_production_happy_path(api_client, edge_factory, product_factory, product_process_factory, place_process_factory, sub_product_factory, product_object_factory):
+    product = product_factory()
+
+    process_source = product_process_factory(product=product, start=True)
+    process_target = product_process_factory(product=product, normal=True)
+
+    place = place_process_factory(process=process_target)
+    sub_product = sub_product_factory(product=product)
+
+    edge = edge_factory(source=process_source, target=process_target)
+
+    product_object = product_object_factory(product=product, sub_product=sub_product, current_process=process_source)
+
+    LastProductOnPlace.objects.create(
+        product_process = process_target,
+        place = place,
+        p_type = sub_product
+    )
+
+    payload = {
+        "full_sn": "[)>@06@1P262298@1T52916365@3SM5291636522322@Q12KGM000@6D20250702@14D21251229@@",
+        "place_name": place.name,
+        "movement_type": "receive",
+        "who": "51123",
+    }
+
+    url = f"/api/process/continue-prod/{process_target.id}/"
+
+    response = api_client.post(url, payload)
+    assert response.status_code == 200, f"Otrzymano błąd walidacji: {response.data}"
+
+    obj = ProductObject.objects.get()
+    assert obj.current_process == ProductProcess.objects.get(id=process_target.id)
+    assert obj.current_place == place
+    assert obj.end == False
+
+    log = ProductObjectProcessLog.objects.get()
+    assert log.movement_type == "receive"
     assert log.who_entry == "51123"
