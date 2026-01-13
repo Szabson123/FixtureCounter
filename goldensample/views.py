@@ -114,6 +114,23 @@ class MasterSampleProjectNames(GenericAPIView):
             .distinct()
         )
         return Response(projects)
+    
+
+class MasterSampleByProjectName(GenericAPIView):
+    serializer_class = MasterSampleSimpleList
+
+    def get(self, request, *args, **kwargs):
+        project_name = self.kwargs.get('project_name')
+        qs = MasterSample.objects.filter(project_name=project_name)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+    
+
+class MasterSampleSimpleListView(ListAPIView):
+    serializer_class = MasterSampleSimpleList
+    pagination_class = MasterSamplePagination
+    queryset = MasterSample.objects.all()
 
 
 class ClientNameViewSet(viewsets.ModelViewSet):

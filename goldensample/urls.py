@@ -25,7 +25,9 @@ urlpatterns = [
     path('mastersample/fwk/set-invalid/', ClearSamplesResult.as_view(), name='fwk-invaldiate'),
     path('mastersample/fwk/set-valid/', SetGoldensTrue.as_view(), name='valid-machine'),
 
-    path('variant/', MasterSampleProjectNames.as_view(), name='engineer-view')
+    path('variant/', MasterSampleProjectNames.as_view(), name='engineer-view'),
+    path('goldens/<str:project_name>/', MasterSampleByProjectName.as_view(), name='engineer-view-by-project'),
+    path('all/', MasterSampleSimpleListView.as_view(), name='engineer-view-goldens'),
 ]
 
 urlpatterns += router.urls

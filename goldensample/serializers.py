@@ -145,6 +145,14 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         return created_objects
 
 
+class MasterSampleSimpleList(serializers.ModelSerializer):
+    master_type = TypeNameSerializer(read_only=True)
+
+    class Meta:
+        model = MasterSample
+        fields = ['id', 'sn', 'master_type', 'counter']
+
+
 class MasterSampleUpdateSerializer(serializers.ModelSerializer):
     code_smd = serializers.SerializerMethodField()
     endcodes = serializers.SerializerMethodField()
