@@ -108,12 +108,16 @@ class MasterSampleListView(ListAPIView):
 
 class MasterSampleProjectNames(GenericAPIView):
     def get(self, request, *args, **kwargs):
-        projects = (
-            MasterSample.objects
-            .values_list('project_name', flat=True)
-            .distinct()
-        )
-        return Response(projects)
+        project_name = request.query_params.get('p_name')
+
+        qs = MasterSample.objects.values_list(
+            'project_name', flat=True
+        ).distinct()
+
+        if project_name:
+            qs = qs.filter(project_name__icontains=project_name)
+
+        return Response(qs)
     
 
 class MasterSampleByProjectName(GenericAPIView):
