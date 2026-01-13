@@ -23,7 +23,9 @@ urlpatterns = [
 
     path('mastersample/fwk/check/', CheckGoldensFWK.as_view(), name="master-type-FWK"),
     path('mastersample/fwk/set-invalid/', ClearSamplesResult.as_view(), name='fwk-invaldiate'),
-    path('mastersample/fwk/set-valid/', SetGoldensTrue.as_view(), name='valid-machine')
+    path('mastersample/fwk/set-valid/', SetGoldensTrue.as_view(), name='valid-machine'),
+
+    path('variant/', MasterSampleProjectNames.as_view(), name='engineer-view')
 ]
 
 urlpatterns += router.urls

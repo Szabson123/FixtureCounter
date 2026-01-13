@@ -106,6 +106,16 @@ class MasterSampleListView(ListAPIView):
     filterset_class = MasterSampleFilter
 
 
+class MasterSampleProjectNames(GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        projects = (
+            MasterSample.objects
+            .values_list('project_name', flat=True)
+            .distinct()
+        )
+        return Response(projects)
+
+
 class ClientNameViewSet(viewsets.ModelViewSet):
     queryset = ClientName.objects.all()
     serializer_class = ClientNameSerializer
