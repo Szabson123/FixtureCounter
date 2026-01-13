@@ -115,7 +115,7 @@ class MasterSampleProjectNames(GenericAPIView):
         ).distinct()
 
         if project_name:
-            qs = qs.filter(project_name__icontains=project_name)
+            qs = qs.filter(project_name__icontains=project_name).order_by('project_name')
 
         return Response(qs)
     
