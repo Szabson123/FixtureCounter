@@ -108,7 +108,7 @@ class MasterSampleListView(ListAPIView):
 
 class MasterSampleProjectNames(GenericAPIView):
     def get(self, request, *args, **kwargs):
-        project_name = request.query_params.get('p_name')
+        project_name = request.query_params.get('search')
 
         qs = MasterSample.objects.values_list(
             'project_name', flat=True
@@ -135,6 +135,8 @@ class MasterSampleSimpleListView(ListAPIView):
     serializer_class = MasterSampleSimpleList
     pagination_class = MasterSamplePagination
     queryset = MasterSample.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['sn']
 
 
 class ClientNameViewSet(viewsets.ModelViewSet):
