@@ -1,5 +1,4 @@
 import pytest
-from django.urls import reverse
 from checkprocess.models import LastProductOnPlace, ProductObject, ProductObjectProcessLog, ProductProcess, ConditionLog, OneToOneMap
 from .factories import ProductObjectFactory
 from unittest.mock import patch

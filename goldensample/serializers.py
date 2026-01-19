@@ -62,7 +62,7 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
         model = MasterSample
         fields = [
             'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
-            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament'
+            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location'
         ]
 
 
@@ -94,7 +94,7 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         fields = [
             "client", "process_name", "created_by", "departament",
             "project_name", "expire_date", "pcb_rev_code",
-            "code_smd", "endcodes", "samples",
+            "code_smd", "endcodes", "samples", "location"
         ]
 
     def create(self, validated_data):
@@ -110,6 +110,7 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
             sn = sample.get("sn")
             master_type_id = sample.get("master_type")
             details_text = sample.get("details", "")
+            location = sample.get("location", "")
 
             master_type = get_object_or_404(TypeName, pk=master_type_id)
 
@@ -118,7 +119,8 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
                 sn=sn,
                 master_type=master_type,
                 details=details_text,
-                created_by=user
+                created_by=user,
+                location=location
             )
 
             if code_smd_data:
@@ -162,7 +164,7 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "client", "process_name", "master_type", "created_by", "departament",
-            "details", "comennt",
+            "details", "comennt", "location",
             "project_name", "sn",
             "expire_date", "pcb_rev_code",
             "code_smd", "endcodes",

@@ -69,6 +69,7 @@ class MasterSample(models.Model):
     expire_date = models.DateField()
     pcb_rev_code = models.CharField(max_length=255)
     counter = models.PositiveIntegerField(default=0)
+    location = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         permissions = [
