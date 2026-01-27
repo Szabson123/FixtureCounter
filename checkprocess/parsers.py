@@ -131,6 +131,40 @@ class HerausSnParser(BaseSNParser):
         return sub_product, serial_number, production_date, expire_date, serial_type, q_code
     
 
+class ItalgasSnParser(BaseSNParser):
+    def parse(self, full_sn: str):
+        sub_product = 'ITALGAS'
+
+        sn_match = re.search(r'\(S\)([^\(]+)', full_sn)
+        if not sn_match:
+            raise ValueError("Brak numeru seryjnego (S).")
+        serial_number = sn_match.group(1).strip()
+
+        prod_date_match = re.search(r'\(D\)(\d{8})', full_sn)
+        exp_date_match = re.search(r'\(E\)(\d{8})', full_sn)
+        q_match = re.search(r'\(Q\)([^\(]+)', full_sn)
+
+        production_date = (
+            datetime.strptime(prod_date_match.group(1), "%Y%m%d").date()
+            if prod_date_match else None
+        )
+
+        expire_date = (
+            datetime.strptime(exp_date_match.group(1), "%Y%m%d").date()
+            if exp_date_match else None
+        )
+
+        q_code = q_match.group(1).strip() if q_match else None
+
+        serial_type = None
+        if q_code:
+            q_lower = q_code.lower()
+            if "6 kg" in q_lower:
+                serial_type = "karton"
+
+        return sub_product, serial_number, production_date, expire_date, serial_type, q_code
+    
+
 class TecnoLabSNParser(BaseSNParser):
     def parse(self, full_sn: str):
         sub_product = 'default'
@@ -148,6 +182,8 @@ def get_parser(parser_type: str):
         return HerausSnParser()
     elif parser_type == 'klej_parser':
         return KlejSnParser()
+    elif parser_type == 'italgas':
+        return ItalgasSnParser()
     raise ValidationError(f"Nieobsługiwany typ parsera: '{parser_type}'")
 
 
