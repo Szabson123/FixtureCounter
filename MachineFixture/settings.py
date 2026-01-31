@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+ENV = os.getenv("ENV", "local")
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'goldensample',
     'checkprocess',
     'user_auth',
+    'spea_control',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -191,3 +192,16 @@ EMAIL_HOST_PASSWORD = ""
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = "Registrations@bitron.pl"
+
+
+if ENV == "local":
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"

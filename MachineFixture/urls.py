@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-
+from django.conf import settings             # <--- Import ustawień
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
@@ -13,5 +14,9 @@ urlpatterns = [
     path('map/', include('map.urls')),
     path('api/golden-samples/', include('goldensample.urls')),
     path('api/process/', include('checkprocess.urls')),
+    path('api/spea-card/', include('spea_control.urls')),
     path('api/user/', include('user_auth.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
