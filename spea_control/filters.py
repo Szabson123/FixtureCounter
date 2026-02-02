@@ -3,11 +3,11 @@ from .models import SpeaCard
 
 class SpeaCardFilter(django_filters.FilterSet):
     is_main_wardrobe = django_filters.BooleanFilter(method='filter_is_main_wardrobe')
-    is_out_of_company = django_filters.BooleanFilter(method='filter_is_out_of_company')
+    location_in_company = django_filters.BooleanFilter(method='filter_location_in_company')
 
     class Meta:
         model = SpeaCard
-        fields = ['category', 'is_broken', 'sn', 'is_out_of_company']
+        fields = ['category', 'is_broken', 'sn', 'location_in_company']
 
     def filter_is_main_wardrobe(self, queryset, name, value):
         if value is True:
@@ -17,10 +17,10 @@ class SpeaCardFilter(django_filters.FilterSet):
         
         return queryset
     
-    def filter_is_out_of_company(self, queryset, name, value):
+    def filter_location_in_company(self, queryset, name, value):
         if value is True:
-            return queryset.filter(out_of_company=True)
+            return queryset.filter(out_of_company=False).exclude(location__name='Szafa')
         if value is False:
-            return queryset.filter(out_of_company=False)
+            return queryset.filter(out_of_company=True)
         
         return queryset

@@ -28,7 +28,7 @@ class SpeaCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SpeaCard
-        fields = ['id', 'sn', 'category', 'location', 'is_broken', 'first_file']
+        fields = ['id', 'sn', 'category', 'location', 'is_broken', 'first_file', 'out_of_company']
 
     def get_first_file(self, obj):
         file_path = getattr(obj, 'first_file', None)

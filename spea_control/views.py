@@ -75,8 +75,9 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         location = LocationSpea.objects.get(name="Szafa")
 
         spea_card.location = location
-        spea_card.out_of_company = True
-        spea_card.save(update_fields=["location", "out_of_company"])
+        spea_card.out_of_company = False
+        spea_card.is_broken = False
+        spea_card.save(update_fields=["location", "out_of_company", "is_broken"])
 
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
     
