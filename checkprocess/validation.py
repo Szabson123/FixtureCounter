@@ -319,12 +319,12 @@ class ProcessMovementValidator:
                 code="wrong_condition"
             )
     
-    def check_cycles_limit(self):
-        if self.product_object.sito_cycle_limit <= self.product_object.sito_cycles_count:
-            raise ValidationErrorWithCode(
-                message="Obiekt osiągnął maksymalna ilość cykli nie można już nim produkować",
-                code="limit_cycles_exceeded"
-            )
+    # def check_cycles_limit(self):
+    #     if self.product_object.sito_cycle_limit <= self.product_object.sito_cycles_count:
+    #         raise ValidationErrorWithCode(
+    #             message="Obiekt osiągnął maksymalna ilość cykli nie można już nim produkować",
+    #             code="limit_cycles_exceeded"
+    #         )
     
     def save_error_log(self, exception_obj):
         """
