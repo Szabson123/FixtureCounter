@@ -52,7 +52,7 @@ class ProcessMovementValidator:
                 self.validate_edge_can_move()
                 self.validate_settings_in_process()
                 self.validate_status_of_line()
-                self.check_cycles_limit()
+                # self.check_cycles_limit()
             
             elif self.movement_type == 'retooling':
                 self.validate_process_receive_with_current_place()
