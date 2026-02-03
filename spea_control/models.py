@@ -16,12 +16,15 @@ class LocationSpea(models.Model):
 class SpeaCard(models.Model):
     sn = models.CharField(max_length=255, unique=True)
     location = models.ForeignKey(LocationSpea, null=True, blank=True, default=None, related_name='speacard', on_delete=models.SET_NULL)
-    category = models.CharField(max_length=255, null=True, blank=True)
-    is_broken = models.BooleanField(default=False)
-    out_of_company = models.BooleanField(default=False)
+    category = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    is_broken = models.BooleanField(default=False, db_index=True)
+    out_of_company = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return self.sn
+    
+    class Meta:
+        ordering = ['-id']
     
 
 def upload_to_uuid(instance, filename):
@@ -57,3 +60,17 @@ class DiagnosisFile(models.Model):
     ])
     active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['spea_card', '-created_at']),
+        ]
+
+
+class MoveLogSpea(models.Model):
+    card = models.ForeignKey(SpeaCard, on_delete=models.CASCADE)
+    movement_type = models.CharField(max_length=255, db_index=True)
+    date_time = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def __str__(self):
+        return f"{self.card.sn} -- {self.movement_type}"

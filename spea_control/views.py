@@ -4,18 +4,21 @@ from rest_framework import viewsets, status, generics
 from rest_framework.generics import GenericAPIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .serializers import SpeaCardSerializer, DiagnosisFileSerializer, SpeaCardLocationSerializer
 from .models import SpeaCard, LocationSpea, DiagnosisFile
 from .filters import SpeaCardFilter
+from .utils import create_log_to_spea
 
 
 class SpeaCardViewSet(viewsets.ModelViewSet):
     serializer_class = SpeaCardSerializer
     queryset = SpeaCard.objects.all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = SpeaCardFilter
+    search_fields = ['sn', 'location__name', 'category']
 
     def get_queryset(self):
 
@@ -40,6 +43,8 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         spea_card.is_broken = True
         spea_card.save(update_fields=["is_broken"])
 
+        create_log_to_spea(spea_card, 'Set_Bad')
+
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -51,6 +56,8 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         
         spea_card.is_broken = False
         spea_card.save(update_fields=["is_broken"])
+
+        create_log_to_spea(spea_card, 'Set_Good')
 
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
     
@@ -66,6 +73,8 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         spea_card.location = location
         spea_card.save(update_fields=["location"])
 
+        create_log_to_spea(spea_card, 'Change_Place')
+
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
@@ -79,6 +88,8 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         spea_card.is_broken = False
         spea_card.save(update_fields=["location", "out_of_company", "is_broken"])
 
+        create_log_to_spea(spea_card, 'Back_To_Wardrobe')
+
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
@@ -89,6 +100,8 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         spea_card.out_of_company = True
 
         spea_card.save(update_fields=["location", "out_of_company"])
+
+        create_log_to_spea(spea_card, 'Send_Out_Of_Company')
 
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
     
