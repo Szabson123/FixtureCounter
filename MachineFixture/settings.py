@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'checkprocess',
     'user_auth',
     'spea_control',
+    'global_app',
 ]
 
 CORS_ALLOWED_ORIGINS = [

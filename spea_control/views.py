@@ -11,6 +11,7 @@ from .serializers import SpeaCardSerializer, DiagnosisFileSerializer, SpeaCardLo
 from .models import SpeaCard, LocationSpea, DiagnosisFile
 from .filters import SpeaCardFilter
 from .utils import create_log_to_spea
+from global_app.utils import send_mass_email_threaded
 
 
 class SpeaCardViewSet(viewsets.ModelViewSet):
@@ -44,6 +45,7 @@ class SpeaCardViewSet(viewsets.ModelViewSet):
         spea_card.save(update_fields=["is_broken"])
 
         create_log_to_spea(spea_card, 'Set_Bad')
+        send_mass_email_threaded('SpeaGroup', 'Ustawienie nowej karty na uszkodzoną', f'{spea_card.sn} Została oznaczona jako uszkodzona')
 
         return Response({"success": "Success"}, status=status.HTTP_200_OK)
 
