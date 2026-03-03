@@ -27,6 +27,7 @@ urlpatterns = [
 
     path('variant/', MasterSampleProjectNames.as_view(), name='engineer-view'),
     path('goldens/<str:project_name>/', MasterSampleByProjectName.as_view(), name='engineer-view-by-project'),
+    path('statistics/', StatisticsView.as_view(), name='statistics'),
     path('all/', MasterSampleSimpleListView.as_view(), name='engineer-view-goldens'),
 ]
 

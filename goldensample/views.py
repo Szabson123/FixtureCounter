@@ -12,6 +12,7 @@ from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, Retri
 from rest_framework.permissions import AllowAny
 
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import OuterRef, Avg, Count, Subquery, IntegerField, Value, Q
 
 from django.utils.timezone import now
 from django.utils import timezone
@@ -405,9 +406,12 @@ class CheckGoldensFWK(GenericAPIView):
         
         return Response({"comment": "Pass",
                         "result": True}, status=status.HTTP_200_OK)
+    
 
+class StatisticsView(GenericAPIView):
+    serializer_class = StatisticsSerializer
 
-
-        
-        
-
+    def get(self, request, *args, **kwargs):
+        stats = MasterSample.objects.get_statistics()
+        serializer = self.get_serializer(stats)
+        return Response(serializer.data)

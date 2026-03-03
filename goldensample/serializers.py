@@ -233,3 +233,14 @@ class CheckMasterSampleFWK(serializers.Serializer):
 class ClearSamplesResultSer(serializers.Serializer):
     site = serializers.IntegerField(required=False)
     machine_id = serializers.CharField(required=True)
+
+
+class StatisticsSerializer(serializers.Serializer):
+    total_samples=serializers.IntegerField()
+    out_of_date_samples=serializers.IntegerField()
+    in_date = serializers.IntegerField()
+    pass_type = serializers.IntegerField()
+    fail_type = serializers.IntegerField()
+    calib_type = serializers.IntegerField()
+    testers = serializers.IntegerField()
+    no_testers = serializers.IntegerField()

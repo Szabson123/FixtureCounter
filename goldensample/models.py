@@ -1,7 +1,24 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
+from django.utils import timezone
 
 User = get_user_model()
+
+
+class MasterSampleQuerySet(models.QuerySet):
+    def get_statistics(self):
+        now = timezone.now()
+        return self.aggregate(
+            total_samples=Count('id'),
+            in_date=Count('id', filter=Q(expire_date__gte=now)),
+            out_of_date_samples=Count('id', filter=Q(expire_date__lte=now)),
+            pass_type = Count('id', filter=Q(master_type__name='Dobry')),
+            fail_type = Count('id', filter=Q(master_type__name='Zły')),
+            calib_type = Count('id', filter=Q(master_type__name='Kalibracyjny')),
+            testers=Count('id', filter=Q(process_name__name__in=['FVT', 'ICT', 'FCT'])),
+            no_testers=Count('id', filter=~Q(process_name__name__in=['FVT', 'ICT', 'FCT']))
+        )
 
     
 class TimerGroup(models.Model):
@@ -70,6 +87,8 @@ class MasterSample(models.Model):
     pcb_rev_code = models.CharField(max_length=255)
     counter = models.PositiveIntegerField(default=0)
     location = models.CharField(max_length=255, null=True, blank=True)
+
+    objects = MasterSampleQuerySet.as_manager()
 
     class Meta:
         permissions = [
