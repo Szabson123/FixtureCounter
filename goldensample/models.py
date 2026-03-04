@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Max
 from django.utils import timezone
 
 User = get_user_model()
@@ -17,8 +17,10 @@ class MasterSampleQuerySet(models.QuerySet):
             fail_type = Count('id', filter=Q(master_type__name='Zły')),
             calib_type = Count('id', filter=Q(master_type__name='Kalibracyjny')),
             testers=Count('id', filter=Q(process_name__name__in=['FVT', 'ICT', 'FCT'])),
-            no_testers=Count('id', filter=~Q(process_name__name__in=['FVT', 'ICT', 'FCT']))
+            no_testers=Count('id', filter=~Q(process_name__name__in=['FVT', 'ICT', 'FCT'])),
+            highest_counter=Max('counter')
         )
+    
 
     
 class TimerGroup(models.Model):

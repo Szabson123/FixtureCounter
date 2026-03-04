@@ -235,7 +235,7 @@ class ClearSamplesResultSer(serializers.Serializer):
     machine_id = serializers.CharField(required=True)
 
 
-class StatisticsSerializer(serializers.Serializer):
+class BasicStatisticsSerializer(serializers.Serializer):
     total_samples=serializers.IntegerField()
     out_of_date_samples=serializers.IntegerField()
     in_date = serializers.IntegerField()
@@ -244,3 +244,10 @@ class StatisticsSerializer(serializers.Serializer):
     calib_type = serializers.IntegerField()
     testers = serializers.IntegerField()
     no_testers = serializers.IntegerField()
+    highest_counter = serializers.IntegerField()
+
+
+class FullStatisticsSerializer(serializers.Serializer):
+    stats = BasicStatisticsSerializer()
+    top_client = ClientNameSerializer()
+    top_adding_user = UserSerializer()

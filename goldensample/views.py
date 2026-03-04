@@ -409,9 +409,24 @@ class CheckGoldensFWK(GenericAPIView):
     
 
 class StatisticsView(GenericAPIView):
-    serializer_class = StatisticsSerializer
+    serializer_class = FullStatisticsSerializer
 
     def get(self, request, *args, **kwargs):
         stats = MasterSample.objects.get_statistics()
-        serializer = self.get_serializer(stats)
+
+        top_client = ClientName.objects.annotate(
+            sample_count=Count('mastersample')
+        ).order_by('-sample_count').first()
+
+        top_adding_user = User.objects.annotate(
+            author_count=Count('mastersample')
+        ).order_by('-author_count').first()
+
+        full_data = {
+            'stats': stats,
+            'top_client': top_client,
+            'top_adding_user': top_adding_user
+        }
+
+        serializer = self.get_serializer(full_data)
         return Response(serializer.data)
