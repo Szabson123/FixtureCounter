@@ -22,7 +22,6 @@ class MasterSampleQuerySet(models.QuerySet):
         )
     
 
-    
 class TimerGroup(models.Model):
     time_date = models.DateTimeField()
 

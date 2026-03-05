@@ -158,13 +158,14 @@ class MasterSampleSimpleList(serializers.ModelSerializer):
 class MasterSampleUpdateSerializer(serializers.ModelSerializer):
     code_smd = serializers.SerializerMethodField()
     endcodes = serializers.SerializerMethodField()
+    created_by = UserSerializer(read_only=True)
 
     class Meta:
         model = MasterSample
         fields = [
             "id",
             "client", "process_name", "master_type", "created_by", "departament",
-            "details", "comennt", "location",
+            "details", "comennt", "location", 'date_created',
             "project_name", "sn",
             "expire_date", "pcb_rev_code",
             "code_smd", "endcodes",
