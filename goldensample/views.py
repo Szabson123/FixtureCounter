@@ -197,7 +197,7 @@ class MasterSampleRetrieveUpdateView(RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        instance = serializer.save(created_by=request.user)
         return Response(MasterSampleSerializerList(instance).data)
     
 
