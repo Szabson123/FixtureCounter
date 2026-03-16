@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/process/', include('checkprocess.urls')),
     path('api/spea-card/', include('spea_control.urls')),
     path('api/user/', include('user_auth.urls')),
+    path('api/user/', include('unlinker.urls')),
 ]
 
 if settings.DEBUG:
