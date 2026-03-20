@@ -26,6 +26,7 @@ class ProcessUnlinkingData(models.Model):
 
     process_unlinking = models.ForeignKey(ProcessUnlinking, on_delete=models.CASCADE, related_name='processdata')
     code = models.CharField(max_length=25) # np. 30417504
-    phases = models.CharField(max_length=1024, choices=Options) # Lista kodów np. 62006508, 62006643, 82003195, 82003196, 82003838, 82003199:
+    phases = models.JSONField(null=True, blank=True) # Json z kodami np. 62006508 : True, 62006643 : False, 82003195 : True, 82003196 : False żeby dało się sięgnac do histori pi przywrócić procesy
+    process_type = models.CharField(max_length=1024, choices=Options, null=True, blank=True)
     error_code = models.CharField(null=True, blank=True, max_length=255)
 

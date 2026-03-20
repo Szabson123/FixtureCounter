@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from django.conf import settings             # <--- Import ustawień
+from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
@@ -16,7 +16,7 @@ urlpatterns = [
     path('api/process/', include('checkprocess.urls')),
     path('api/spea-card/', include('spea_control.urls')),
     path('api/user/', include('user_auth.urls')),
-    path('api/user/', include('unlinker.urls')),
+    path('api/unlinker/', include('unlinker.urls')),
 ]
 
 if settings.DEBUG:
