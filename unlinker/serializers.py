@@ -19,3 +19,7 @@ class ProcessUnlinkingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessUnlinking
         fields = ['id', 'status', 'processdata', 'time_date']
+
+    
+class NoneSerializer(serializers.Serializer):
+    pass
