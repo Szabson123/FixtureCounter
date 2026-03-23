@@ -18,4 +18,4 @@ class ProcessUnlinkingSerializer(serializers.ModelSerializer):
     processdata = ProcessUnlinkingDataSerializer(many=True, read_only=True)
     class Meta:
         model = ProcessUnlinking
-        fields = ['id', 'status', 'processdata']
+        fields = ['id', 'status', 'processdata', 'time_date']

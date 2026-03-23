@@ -26,4 +26,4 @@ class ProcessUnlinkingListView(ListAPIView):
         user_card_val = self.kwargs.get('user_card_id')
         user = get_object_or_404(UserUnlinkerProfile, user_card=user_card_val)
 
-        return ProcessUnlinking.objects.filter(user=user)
+        return ProcessUnlinking.objects.filter(user=user).order_by('-time_date')

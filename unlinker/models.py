@@ -17,6 +17,7 @@ class ProcessUnlinking(models.Model):
 
     user = models.ForeignKey(UserUnlinkerProfile, on_delete=models.CASCADE, related_name='processunlinkings')
     status = models.CharField(max_length=2, choices=Statuses, default=Statuses.UNKNOWN)
+    time_date = models.DateTimeField(auto_now_add=True)
 
 
 class ProcessUnlinkingData(models.Model):
