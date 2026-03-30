@@ -1,6 +1,5 @@
 from .models import ProductObject
 from django.db.models import Count, Case, When, Value, DateField, F
-
 from django.utils.timezone import now
 from datetime import timedelta
 
@@ -13,6 +12,8 @@ import requests
 from requests.exceptions import RequestException
 from .custom_validators import ValidationErrorWithCode
 
+port = settings.MICRO_SERVICE_PORT
+name = settings.MICRO_SERVICE_NAME
 
 def get_printer_info_from_card(production_card):
     conn_str = (
@@ -172,7 +173,7 @@ def detect_parser_type(full_sn: str) -> str:
 
 def poke_process(process_id):
     try:
-        response = requests.get(f"http://127.0.0.1:8001/micro/new-product-poke/{process_id}/", timeout=30)
+        response = requests.get(f"http://127.0.0.1:{port}/{name}/new-product-poke/{process_id}/", timeout=30)
 
         if response.status_code >= 200 and response.status_code < 1000:
             return True

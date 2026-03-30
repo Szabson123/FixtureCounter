@@ -297,6 +297,59 @@ class LogFromSpi(models.Model):
     result = models.CharField(max_length=255)
 
 
+class LogFromSpiNew(models.Model):
+    fixed_id = models.IntegerField()
+    actual_database = models.CharField(max_length=255, default=None) # Pcb202603
+    database = models.CharField(max_length=255, default=None) #SPI_SS_SL_05650
+    line = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
+    pcb_name = models.CharField(max_length=255)
+    time_date = models.DateTimeField(auto_now_add=True)
+    result = models.CharField(max_length=255)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['database', 'fixed_id'],
+                name = 'unique_fixed_id_to_database'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['-time_date']),
+            models.Index(fields=['database']),
+            models.Index(fields=['result'])
+        ]
+
+
+class SubLogFromSpi(models.Model):
+    main_log = models.ForeignKey(LogFromSpiNew, on_delete=models.CASCADE)
+    place = models.ForeignKey(Place, on_delete=models.CASCADE)
+    product_obj = models.ForeignKey(ProductObject, on_delete=models.CASCADE)
+
+
+class DataBasesSpiMapNew(models.Model):
+    data_base_name = models.CharField(max_length=255)
+    ip = models.CharField(max_length=255)
+    line_name = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
+    place_to_kill = models.ForeignKey(Place, on_delete=models.CASCADE) #Ustawiamy kiedy chcemy żeby oprócz zliczania kiedy odpalimy produkcje bez elementu zabiło aplikacje (na potrzby 26.03.2026) potrzebne było zabijanie tylko sita w przyszłości można dodać między klase many to many aby obłsużyć np. brak pasty/rackla
+    identyficator = models.CharField(max_length=255, null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name.name}({self.line_name.process.product.name})"
+
+
+class DataBasesSpiAsmMapNew(models.Model):
+    data_base_name = models.CharField(max_length=255)
+    ip = models.CharField(max_length=255)
+    line_name = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
+    place_to_kill = models.ForeignKey(Place, on_delete=models.CASCADE) #Ustawiamy kiedy chcemy żeby oprócz zliczania kiedy odpalimy produkcje bez elementu zabiło aplikacje (na potrzby 26.03.2026) potrzebne było zabijanie tylko sita w przyszłości można dodać między klase many to many aby obłsużyć np. brak pasty/rackla
+    identyficator = models.CharField(max_length=255, null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name.name}({self.line_name.process.product.name})"
+
+
 class MessageToApp(models.Model):
     line = models.ForeignKey(Place, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, default=None)
