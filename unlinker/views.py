@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import ProcessUnlinking, UserUnlinkerProfile, ProcessUnlinkingData
-from .serializers import ProcessUnlinkingSerializer, UserUnlinkerProfileSerializer, NoneSerializer
+from .serializers import ProcessUnlinkingSerializer, UserUnlinkerProfileSerializer, NoneSerializer, UnlinkingRequestSerializer
+from .permissions import HasUnlinkingPermissions
 
+import requests
 
 class CreateUserLinkingProfile(CreateAPIView):
     serializer_class = UserUnlinkerProfileSerializer
@@ -44,3 +46,30 @@ class ProcessUnlinkingListView(ListAPIView):
         user = get_object_or_404(UserUnlinkerProfile, user_card=user_card_val)
 
         return ProcessUnlinking.objects.filter(user=user).order_by('-time_date')
+    
+
+class StartUnlinkingProcess(GenericAPIView):
+    serializer_class = UnlinkingRequestSerializer
+    permission_classes = [HasUnlinkingPermissions]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        payload = serializer.validated_data
+        payload['user_id'] = request.user.id 
+
+        try:
+            response = requests.post(
+                "http://127.0.0.1:8002/unlinker-micro/unlink/execute/", 
+                json=payload,
+                timeout=5
+            )
+            response.raise_for_status()
+            return Response(response.json(), status=response.status_code)
+            
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "Błąd komunikacji z mikroserwisem", "details": str(e)}, 
+                status=status.HTTP_502_BAD_GATEWAY
+            )

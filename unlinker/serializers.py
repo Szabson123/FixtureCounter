@@ -23,3 +23,11 @@ class ProcessUnlinkingSerializer(serializers.ModelSerializer):
     
 class NoneSerializer(serializers.Serializer):
     pass
+
+
+class UnlinkingRequestSerializer(serializers.Serializer):
+    product = serializers.CharField(max_length=255)
+    top_level_process = serializers.CharField(max_length=255)
+    full_sn_list = serializers.DictField(child=serializers.BooleanField())
+    processes = serializers.ListField(child=serializers.CharField())
+    sn_list_to_rework = serializers.ListField(child=serializers.CharField())

@@ -146,7 +146,7 @@ def check_fifo_violation(current_object):
 
     return None
 
-
+# Im sorry for that, Pisałem na szybko wygląda to okropnie ale działa do zrobienia na później
 def detect_parser_type(full_sn: str) -> str:
     if not full_sn or not isinstance(full_sn, str):
         return 'undefined'

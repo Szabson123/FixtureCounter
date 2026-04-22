@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth import get_user_model
 
 class UserUnlinkerProfile(models.Model):
     user_card = models.CharField(max_length=10)
@@ -7,6 +7,7 @@ class UserUnlinkerProfile(models.Model):
     def __str__(self):
         return self.user_card
 
+User = get_user_model()
 
 class ProcessUnlinking(models.Model):
     class Statuses(models.TextChoices):
@@ -15,9 +16,14 @@ class ProcessUnlinking(models.Model):
         ERROR = 'ER', 'Error'
         UNKNOWN = 'UN', 'Unknown'
 
-    user = models.ForeignKey(UserUnlinkerProfile, on_delete=models.CASCADE, related_name='processunlinkings')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=2, choices=Statuses, default=Statuses.UNKNOWN)
     time_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        permissions = [
+                ("can_unlinking", "Can unlink products"),
+            ]
 
 
 class ProcessUnlinkingData(models.Model):
