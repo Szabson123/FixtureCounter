@@ -1,14 +1,16 @@
 from django.shortcuts import render, get_object_or_404
-
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.generics import ListAPIView, CreateAPIView, GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 from .models import ProcessUnlinking, UserUnlinkerProfile, ProcessUnlinkingData
 from .serializers import ProcessUnlinkingSerializer, UserUnlinkerProfileSerializer, NoneSerializer, UnlinkingRequestSerializer
 from .permissions import HasUnlinkingPermissions
 
+User = get_user_model()
 import requests
 
 class CreateUserLinkingProfile(CreateAPIView):
@@ -40,12 +42,10 @@ class LoginProfileUnlkiner(GenericAPIView):
 
 class ProcessUnlinkingListView(ListAPIView):
     serializer_class = ProcessUnlinkingSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self, *args, **kwargs):
-        user_card_val = self.kwargs.get('user_card_id')
-        user = get_object_or_404(UserUnlinkerProfile, user_card=user_card_val)
-
-        return ProcessUnlinking.objects.filter(user=user).order_by('-time_date')
+    def get_queryset(self):
+        return ProcessUnlinking.objects.filter(created_by=self.request.user).order_by('-time_date')
     
 
 class StartUnlinkingProcess(GenericAPIView):

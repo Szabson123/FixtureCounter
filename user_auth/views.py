@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.middleware.csrf import get_token
+from django.utils import timezone
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -43,18 +44,21 @@ class LogoutAPIView(APIView):
         return Response({"detail": "Wylogowano"})
     
 
-
 class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+
+        local_last_login = timezone.localtime(user.last_login) if user.last_login else None
+        
         return Response({
             "id": user.id,
             "username": user.username,
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "last_login": local_last_login,
             "permissions": list(user.get_all_permissions()),
         })
     
