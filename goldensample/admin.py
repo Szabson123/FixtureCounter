@@ -14,6 +14,7 @@ admin.site.register(EndCodeTimeFWK)
 admin.site.register(LastResultFWK)
 admin.site.register(TempCheckMasterFWK)
 admin.site.register(TempMasterShow)
+admin.site.register(MasterSampleSubObject)
 
 @admin.register(MasterSample)
 class MasterSampleAdmin(admin.ModelAdmin):

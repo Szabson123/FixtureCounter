@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .utils import gen_code
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from .models import TimerGroup, CodeSmd, ClientName, ProcessName, TypeName, Department, MasterSample, EndCode
+from .models import TimerGroup, CodeSmd, ClientName, ProcessName, TypeName, Department, MasterSample, EndCode, MasterSampleSubObject
+from django.db import transaction
 
 User = get_user_model()
 
@@ -49,6 +50,12 @@ class EndCodeSerializer(serializers.ModelSerializer):
         fields = ['id', 'code']
 
 
+class MasterSampleSubObjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MasterSampleSubObject
+        fields = ['id', 'msn', 'desc']
+
+
 class MasterSampleSerializerList(serializers.ModelSerializer):
     client = ClientNameSerializer(read_only=True)
     process_name = ProcessNameSerializer(read_only=True)
@@ -57,12 +64,13 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
     endcodes = EndCodeSerializer(many=True, read_only=True)
     code_smd = CodeSmdSerializer(read_only=True, many=True)
     departament = DepartmentSerializer(read_only=True)
+    subobjects = MasterSampleSubObjectSerializer(many=True, read_only=True)
 
     class Meta:
         model = MasterSample
         fields = [
             'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
-            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location'
+            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location', 'subobjects'
         ]
 
 
@@ -105,44 +113,55 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         created_objects = []
         request = self.context.get("request")
         user = request.user if request else None
+        
+        with transaction.atomic():
+            for sample in samples_data:
+                sn = sample.get("sn")
+                master_type_id = sample.get("master_type")
+                details_text = sample.get("details", "")
+                location = sample.get("location", "")
 
-        for sample in samples_data:
-            sn = sample.get("sn")
-            master_type_id = sample.get("master_type")
-            details_text = sample.get("details", "")
-            location = sample.get("location", "")
+                sub_objects_data = sample.get("subobjects", [])
 
-            master_type = get_object_or_404(TypeName, pk=master_type_id)
+                master_type = get_object_or_404(TypeName, pk=master_type_id)
 
-            master = MasterSample.objects.create(
-                **validated_data,
-                sn=sn,
-                master_type=master_type,
-                details=details_text,
-                created_by=user,
-                location=location
-            )
+                master = MasterSample.objects.create(
+                    **validated_data,
+                    sn=sn,
+                    master_type=master_type,
+                    details=details_text,
+                    created_by=user,
+                    location=location
+                )
 
-            if code_smd_data:
-                mode = code_smd_data["mode"]
-                items = code_smd_data["data"]
-                smd_instances = []
-                if mode == "id":
-                    smd_instances = list(CodeSmd.objects.filter(pk__in=items))
-                elif mode == "code":
-                    for code in items:
-                        obj, _ = CodeSmd.objects.get_or_create(code=code)
-                        smd_instances.append(obj)
-                master.code_smd.set(smd_instances)
+                if isinstance(sub_objects_data, list):
+                    for sub_item in sub_objects_data:
+                        MasterSampleSubObject.objects.create(
+                            mastersameple=master,
+                            msn=sub_item.get("msn"),
+                            desc=sub_item.get("desc")
+                        )
 
-            if endcodes_data:
-                endcode_instances = []
-                for code in endcodes_data:
-                    obj, _ = EndCode.objects.get_or_create(code=code)
-                    endcode_instances.append(obj)
-                master.endcodes.set(endcode_instances)
+                if code_smd_data:
+                    mode = code_smd_data["mode"]
+                    items = code_smd_data["data"]
+                    smd_instances = []
+                    if mode == "id":
+                        smd_instances = list(CodeSmd.objects.filter(pk__in=items))
+                    elif mode == "code":
+                        for code in items:
+                            obj, _ = CodeSmd.objects.get_or_create(code=code)
+                            smd_instances.append(obj)
+                    master.code_smd.set(smd_instances)
 
-            created_objects.append(master)
+                if endcodes_data:
+                    endcode_instances = []
+                    for code in endcodes_data:
+                        obj, _ = EndCode.objects.get_or_create(code=code)
+                        endcode_instances.append(obj)
+                    master.endcodes.set(endcode_instances)
+
+                created_objects.append(master)
 
         return created_objects
 
@@ -160,6 +179,9 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
     endcodes = serializers.SerializerMethodField()
     created_by = UserSerializer(read_only=True)
 
+    subobjects = MasterSampleSubObjectSerializer(many=True, read_only=True)
+
+
     class Meta:
         model = MasterSample
         fields = [
@@ -168,7 +190,7 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
             "details", "comennt", "location", 'date_created',
             "project_name", "sn",
             "expire_date", "pcb_rev_code",
-            "code_smd", "endcodes",
+            "code_smd", "endcodes", "subobjects",
         ]
         extra_kwargs = {f: {"required": False, "allow_null": True} for f in fields}
 
@@ -181,13 +203,11 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         code_smd_list = self.initial_data.get("code_smd", None)
         endcode_list = self.initial_data.get("endcodes", None)
+        subobjects_data = self.initial_data.get("subobjects", None)
 
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
-
-        # Obsługa M2M
-        from .models import CodeSmd, EndCode
 
         if isinstance(code_smd_list, list):
             smd_objs = [CodeSmd.objects.get_or_create(code=c)[0] for c in code_smd_list]
@@ -196,6 +216,15 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
         if isinstance(endcode_list, list):
             end_objs = [EndCode.objects.get_or_create(code=c)[0] for c in endcode_list]
             instance.endcodes.set(end_objs)
+
+        if isinstance(subobjects_data, list):
+            instance.subobjects.all().delete()
+            for item in subobjects_data:
+                MasterSampleSubObject.objects.create(
+                    mastersameple=instance, 
+                    msn=item.get('msn'), 
+                    desc=item.get('desc')
+                )
 
         return instance
 

@@ -96,7 +96,7 @@ class MasterSamplePagination(PageNumberPagination):
 class MasterSampleListView(ListAPIView):
     queryset = (MasterSample.objects
                 .select_related("client", "process_name", "master_type", "created_by", "departament",)
-                .prefetch_related("endcodes","code_smd",)
+                .prefetch_related("endcodes","code_smd", "subobjects")
                 .order_by('-id'))
     serializer_class = MasterSampleSerializerList
     pagination_class = MasterSamplePagination
@@ -105,6 +105,11 @@ class MasterSampleListView(ListAPIView):
     search_fields = ['project_name', 'location', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name', 'endcodes__code', 'code_smd__code']
     ordering_fields = ['id', 'client__name', 'location', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name']
     filterset_class = MasterSampleFilter
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get('no_pagination') == 'true':
+            return None
+        return super().paginate_queryset(queryset)
 
 
 class MasterSampleProjectNames(GenericAPIView):
@@ -213,9 +218,8 @@ class MachineTimeStampView(GenericAPIView):
             machine_name=machine_name,
             defaults={'date_time': timezone.now()},
         )
-
+        
         if created:
-
             return Response(
                 {"returnCodeDescription": "Machine Valid",
                  "returnCode": 200},

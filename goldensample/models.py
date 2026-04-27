@@ -98,6 +98,12 @@ class MasterSample(models.Model):
 
     def __str__(self):
         return self.sn
+    
+
+class MasterSampleSubObject(models.Model):
+    mastersameple = models.ForeignKey(MasterSample, on_delete=models.CASCADE, related_name='subobjects')
+    msn = models.CharField(max_length=255)
+    desc = models.CharField(max_length=1024)
    
 
 class MachineGoldensTime(models.Model):
