@@ -70,7 +70,7 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
         model = MasterSample
         fields = [
             'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
-            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location', 'subobjects'
+            'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location', 'subobjects', 'details',
         ]
 
 
@@ -113,7 +113,7 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
         created_objects = []
         request = self.context.get("request")
         user = request.user if request else None
-        
+
         with transaction.atomic():
             for sample in samples_data:
                 sn = sample.get("sn")
