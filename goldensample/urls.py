@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'mastersamples/client-name', ClientNameViewSet, basename='client-name')
+router.register(r'mastersamples/additional-name', AdditionalNameProjectViewSet, basename='additional-name')
 router.register(r'mastersamples/type-name', TypeNameViewSet, basename='type-name')
 router.register(r'mastersamples/process-name', ProcessNameViewSet, basename='process-name')
 router.register(r'mastersamples/departament-name', DepartmentViewSet, basename='departament-name')

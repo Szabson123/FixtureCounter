@@ -6,7 +6,7 @@ class MasterSampleFilter(django_filters.FilterSet):
     process_name = django_filters.BaseInFilter(field_name="process_name", lookup_expr="in")
     master_type = django_filters.BaseInFilter(field_name="master_type", lookup_expr="in")
     departament = django_filters.BaseInFilter(field_name="departament", lookup_expr="in")
-
+    additional_project_name = django_filters.BaseInFilter(field_name="additional_project_name", lookup_expr="in")
     class Meta:
         model = MasterSample
-        fields = ['client', 'process_name', 'master_type', 'departament']
+        fields = ['client', 'process_name', 'master_type', 'departament', 'additional_project_name']

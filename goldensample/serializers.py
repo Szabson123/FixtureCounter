@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .utils import gen_code
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from .models import TimerGroup, CodeSmd, ClientName, ProcessName, TypeName, Department, MasterSample, EndCode, MasterSampleSubObject
+from .models import TimerGroup, CodeSmd, ClientName, ProcessName, TypeName, Department, MasterSample, EndCode, MasterSampleSubObject, AdditionalNameProject
 from django.db import transaction
 
 User = get_user_model()
@@ -17,6 +17,12 @@ class UserSerializer(serializers.ModelSerializer):
 class ClientNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientName
+        fields = ['id', 'name']
+
+
+class AdditionalNameProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdditionalNameProject
         fields = ['id', 'name']
 
 
@@ -64,12 +70,13 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
     endcodes = EndCodeSerializer(many=True, read_only=True)
     code_smd = CodeSmdSerializer(read_only=True, many=True)
     departament = DepartmentSerializer(read_only=True)
+    additional_project_name = AdditionalNameProjectSerializer(read_only=True)
     subobjects = MasterSampleSubObjectSerializer(many=True, read_only=True)
 
     class Meta:
         model = MasterSample
         fields = [
-            'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code',
+            'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code', 'additional_project_name',
             'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location', 'subobjects', 'details',
         ]
 
@@ -96,13 +103,14 @@ class MasterSampleManyCreateSerializer(serializers.ModelSerializer):
     samples = serializers.ListField(child=serializers.DictField(), write_only=True)
     code_smd = CodeSmdListField(required=False)
     endcodes = serializers.ListField(child=serializers.CharField(), required=False)
+    additional_project_name = serializers.PrimaryKeyRelatedField(queryset=AdditionalNameProject.objects.all())
 
     class Meta:
         model = MasterSample
         fields = [
             "client", "process_name", "created_by", "departament",
             "project_name", "expire_date", "pcb_rev_code",
-            "code_smd", "endcodes", "samples", "location"
+            "code_smd", "endcodes", "samples", "location", "additional_project_name"
         ]
 
     def create(self, validated_data):
@@ -178,8 +186,8 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
     code_smd = serializers.SerializerMethodField()
     endcodes = serializers.SerializerMethodField()
     created_by = UserSerializer(read_only=True)
-
     subobjects = MasterSampleSubObjectSerializer(many=True, read_only=True)
+    additional_project_name = serializers.PrimaryKeyRelatedField(queryset=AdditionalNameProject.objects.all(), required=False, allow_null=True)
 
 
     class Meta:
@@ -190,7 +198,7 @@ class MasterSampleUpdateSerializer(serializers.ModelSerializer):
             "details", "comennt", "location", 'date_created',
             "project_name", "sn",
             "expire_date", "pcb_rev_code",
-            "code_smd", "endcodes", "subobjects",
+            "code_smd", "endcodes", "subobjects", "additional_project_name",
         ]
         extra_kwargs = {f: {"required": False, "allow_null": True} for f in fields}
 

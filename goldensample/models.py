@@ -60,6 +60,11 @@ class Department(models.Model):
     
     def __str__(self):
         return self.name
+    
+
+class AdditionalNameProject(models.Model):
+    name = models.CharField(max_length=255) 
+
 
 class EndCode(models.Model):
     code = models.CharField(max_length=255, unique=True)
@@ -76,6 +81,7 @@ class MasterSample(models.Model):
     master_type = models.ForeignKey(TypeName, on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     departament = models.ForeignKey(Department, on_delete=models.CASCADE, null=True, blank=True)
+    additional_project_name = models.ForeignKey(AdditionalNameProject, on_delete=models.CASCADE, null=True, blank=True)
 
     details = models.TextField(null=True, blank=True)
     comennt = models.TextField(null=True, blank=True)
