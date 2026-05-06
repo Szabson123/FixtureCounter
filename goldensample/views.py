@@ -103,7 +103,7 @@ class MasterSampleListView(ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sn', 'pcb_rev_code', 'client', 'process_name', 'departament', 'additional_project_name']
     search_fields = ['project_name', 'location', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name', 'endcodes__code', 'code_smd__code', 'additional_project_name__name']
-    ordering_fields = ['id', 'client__name', 'location', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name', 'additional_project_name']
+    ordering_fields = ['id', 'code_smd__code', 'endcodes__code', 'client__name', 'location', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name', 'additional_project_name']
     filterset_class = MasterSampleFilter
 
     def paginate_queryset(self, queryset):
