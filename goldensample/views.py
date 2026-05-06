@@ -97,7 +97,7 @@ class MasterSampleListView(ListAPIView):
     queryset = (MasterSample.objects
                 .select_related("client", "process_name", "master_type", "created_by", "departament", "additional_project_name",)
                 .prefetch_related("endcodes","code_smd", "subobjects")
-                .order_by('-id'))
+                .order_by('-id')).distinct()
     serializer_class = MasterSampleSerializerList
     pagination_class = MasterSamplePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
