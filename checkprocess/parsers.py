@@ -34,10 +34,42 @@ class AlphaSNParser(BaseSNParser):
         return sub_product, serial_number, production_date, expire_date, serial_type, q_code
     
 
-
 class AimSnParser(BaseSNParser):
     def parse(self, full_sn: str):
-        sub_product = 'AIM'
+        sub_product = 'AIM-H10'
+
+        sn_match = re.search(r'\(S\)([^\(]+)', full_sn)
+        if not sn_match:
+            raise ValueError("Brak numeru seryjnego (S).")
+        serial_number = sn_match.group(1).strip()
+
+        prod_date_match = re.search(r'\(D\)(\d{8})', full_sn)
+        exp_date_match = re.search(r'\(E\)(\d{8})', full_sn)
+        q_match = re.search(r'\(Q\)([^\(]+)', full_sn)
+
+        production_date = (
+            datetime.strptime(prod_date_match.group(1), "%Y%m%d").date()
+            if prod_date_match else None
+        )
+        expire_date = (
+            datetime.strptime(exp_date_match.group(1), "%Y%m%d").date()
+            if exp_date_match else None
+        )
+
+        q_code = q_match.group(1).strip() if q_match else None
+
+        serial_type = None
+        if q_code:
+            q_lower = q_code.lower()
+            if "6 kg" in q_lower:
+                serial_type = "karton"
+
+        return sub_product, serial_number, production_date, expire_date, serial_type, q_code
+    
+
+class AimV9SnParser(BaseSNParser):
+    def parse(self, full_sn: str):
+        sub_product = 'AIM-V9'
 
         sn_match = re.search(r'\(S\)([^\(]+)', full_sn)
         if not sn_match:
@@ -176,6 +208,8 @@ def get_parser(parser_type: str):
         return AlphaSNParser()
     elif parser_type == 'aim_parser':
         return AimSnParser()
+    elif parser_type == 'aim-v9-parser':
+        return AimV9SnParser()
     elif parser_type == 'sito_default':
         return TecnoLabSNParser()
     elif parser_type == 'heraus_parser':

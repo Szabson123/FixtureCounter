@@ -155,7 +155,10 @@ def detect_parser_type(full_sn: str) -> str:
 
     if full_sn.startswith('(V)'):
         if 'AIM' in full_sn:
-            return 'aim_parser'
+            if '40900900' in full_sn:
+                return 'aim_parser'
+            if '62420118330' in full_sn:
+                return 'aim-v9-parser'
         elif 'MACDERMID' in full_sn:
             return 'italgas'
         elif 'heraeus' in full_sn.lower():
