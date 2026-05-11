@@ -125,7 +125,7 @@ def check_fifo_violation(current_object):
 
     current_sort_date = (
         current_object.exp_date_in_process or
-        current_object.expire_date or
+        current_object.last_move or
         now().date() + timedelta(days=365 * 100)
     )
     current_created_at = current_object.created_at
