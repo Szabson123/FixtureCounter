@@ -125,15 +125,18 @@ def check_fifo_violation(current_object):
 
     current_sort_date = (
         current_object.exp_date_in_process or
-        current_object.last_move or
+        current_object.expire_date or
         now().date() + timedelta(days=365 * 100)
     )
-    current_created_at = current_object.created_at
+
+    current_time_check = current_object.last_move or current_object.created_at
 
     for obj in combined:
         obj_sort_date = obj.sort_date
+        obj_time_check = obj.last_move or obj.created_at
+
         if obj_sort_date < current_sort_date or (
-            obj_sort_date == current_sort_date and obj.created_at < current_created_at - timedelta(hours=2)
+            obj_sort_date == current_sort_date and obj_time_check < current_time_check - timedelta(hours=2)
         ):
             return {
                 "error": (
@@ -145,6 +148,7 @@ def check_fifo_violation(current_object):
             }
 
     return None
+
 
 # Im sorry for that, Pisałem na szybko wygląda to okropnie ale działa do zrobienia na później
 def detect_parser_type(full_sn: str) -> str:
