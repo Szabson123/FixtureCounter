@@ -299,8 +299,8 @@ class LogFromSpi(models.Model):
 
 class LogFromSpiNew(models.Model):
     fixed_id = models.IntegerField()
-    actual_database = models.CharField(max_length=255, default=None) # Pcb202603
-    database = models.CharField(max_length=255, default=None) #SPI_SS_SL_05650
+    actual_database = models.CharField(max_length=255, default=None) # np. Pcb202604
+    database = models.CharField(max_length=255, default=None) # np. SPI_SS_SL_05650
     line = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
     pcb_name = models.CharField(max_length=255)
     time_date = models.DateTimeField(auto_now_add=True)
@@ -308,9 +308,10 @@ class LogFromSpiNew(models.Model):
 
     class Meta:
         constraints = [
+            # Zmienione pola i nowa nazwa!
             models.UniqueConstraint(
-                fields=['database', 'fixed_id'],
-                name = 'unique_fixed_id_to_database'
+                fields=['database', 'actual_database', 'fixed_id'],
+                name='unique_fixed_id_per_db_and_month' 
             )
         ]
         indexes = [
