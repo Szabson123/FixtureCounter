@@ -8,6 +8,7 @@ admin.site.register(ProcessName)
 admin.site.register(TypeName)
 admin.site.register(Department)
 admin.site.register(EndCode)
+admin.site.register(AdditionalNameProject)
 
 admin.site.register(MachineGoldensTime)
 admin.site.register(EndCodeTimeFWK)
