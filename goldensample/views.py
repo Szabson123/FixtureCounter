@@ -94,25 +94,29 @@ class MasterSamplePagination(PageNumberPagination):
 
 
 class MasterSampleListView(ListAPIView):
+    smd_subquery = MasterSample.code_smd.through.objects.filter(
+        mastersample_id=OuterRef('pk')
+    ).values('mastersample_id').annotate(min_code=Min('codesmd__code')).values('min_code')
+
+    endcode_subquery = MasterSample.endcodes.through.objects.filter(
+        mastersample_id=OuterRef('pk')
+    ).values('mastersample_id').annotate(min_code=Min('endcode__code')).values('min_code')
+
     queryset = (MasterSample.objects
                 .annotate(
-                    min_endcode=Min("endcodes__code"),
-                    min_smd_code=Min("code_smd__code")
+                    min_endcode=Subquery(endcode_subquery),
+                    min_smd_code=Subquery(smd_subquery)
                 )
-                .select_related("client", "process_name", "master_type", "created_by", "departament", "additional_project_name",)
-                .prefetch_related("endcodes","code_smd", "subobjects")
-                .order_by('-id')).distinct()
+                .select_related("client", "process_name", "master_type", "created_by", "departament", "additional_project_name")
+                .prefetch_related("endcodes", "code_smd", "subobjects")
+                .order_by('-id'))
+    
     serializer_class = MasterSampleSerializerList
     pagination_class = MasterSamplePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['project_name', 'location', 'sn', 'pcb_rev_code', 'client__name', 'master_type__name', 'created_by__first_name', 'created_by__last_name', 'departament__name', 'endcodes__code', 'code_smd__code', 'additional_project_name__name']
     ordering_fields = ['id', 'min_smd_code', 'min_endcode', 'client__name', 'location', 'project_name', 'process_name__name', 'sn', 'master_type__name', 'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 'created_by__last_name', 'additional_project_name']
     filterset_class = MasterSampleFilter
-
-    def paginate_queryset(self, queryset):
-        if self.request.query_params.get('no_pagination') == 'true':
-            return None
-        return super().paginate_queryset(queryset)
 
 
 class MasterSampleProjectNames(GenericAPIView):
