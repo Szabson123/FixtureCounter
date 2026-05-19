@@ -114,7 +114,7 @@ class MasterSampleListView(ListAPIView):
     search_fields = [
         'project_name', 'location', 'sn', 'pcb_rev_code', 
         'client__name', 'master_type__name', 'created_by__first_name', 
-        'created_by__last_name', 'departament__name', 'additional_project_name__name'
+        'created_by__last_name', 'departament__name', 'additional_project_name__name', 'min_endcode', 'min_smd_code'
     ]
     
     ordering_fields = [
@@ -123,6 +123,7 @@ class MasterSampleListView(ListAPIView):
         'date_created', 'expire_date', 'pcb_rev_code', 'departament__name', 
         'created_by__last_name'
     ]
+    
     filterset_class = MasterSampleFilter
 
     def paginate_queryset(self, queryset):
