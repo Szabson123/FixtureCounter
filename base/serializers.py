@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Counter, CounterSumFromLastMaint, Fixture, Machine
+from .models import Counter, CounterSumFromLastMaint, Fixture
 
 
 class FixtureSerializer(serializers.ModelSerializer):
@@ -24,12 +24,6 @@ class CounterFromLastMaintSerializer(serializers.ModelSerializer):
         fields = ['id', 'fixture']
 
 
-class MachineSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Machine
-        fields = ['id', 'machine_id', 'machine_name']
-        
-        
 class FullInfoFixtureSerializer(serializers.ModelSerializer):
     counter_all = serializers.FloatField(source='counter_all_value', read_only=True)
     counter_last_maint = serializers.FloatField(source='counter_last_maint_value', read_only=True)

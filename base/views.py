@@ -19,8 +19,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view, authentication_classes
 from rest_framework.authentication import SessionAuthentication
 
-from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter, Machine, MachineCondition
-from .serializers import UpdateCreateCounter, FixtureSerializer, MachineSerializer, FullInfoFixtureSerializer
+from .models import Fixture, CounterSumFromLastMaint, CounterHistory, FullCounter
+from .serializers import UpdateCreateCounter, FixtureSerializer, FullInfoFixtureSerializer
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -118,13 +118,7 @@ class GetInfoViewSet(viewsets.ReadOnlyModelViewSet):
                 output_field=FloatField()
             ),
         )
-
     
-class MachineViewSet(viewsets.ModelViewSet):
-    serializer_class = MachineSerializer
-    queryset = Machine.objects.all()
-
-
 class CheckExceedCyclesLimit(GenericAPIView):
     serializer_class = UpdateCreateCounter
 

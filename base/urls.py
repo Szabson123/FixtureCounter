@@ -4,7 +4,6 @@ from rest_framework.routers import DefaultRouter
 from django_eventstream import urls as eventstream_urls
 
 router = DefaultRouter()
-router.register(r'machine', MachineViewSet, basename='machine')
 router.register(r'get_info', GetInfoViewSet, basename='get_info')
 
 urlpatterns = [

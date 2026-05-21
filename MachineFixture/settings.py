@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'spea_control',
     'global_app',
     'unlinker',
+    'spea_service'
 ]
 
 CORS_ALLOWED_ORIGINS = [

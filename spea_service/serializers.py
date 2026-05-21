@@ -10,11 +10,11 @@ from goldensample.models import MasterSample
 class GoldensMainValidationSerializer(serializers.Serializer):
     goldens = serializers.ListField(
         child=serializers.CharField(),
-        allow_empty=False,
+        allow_null=False,
         validators=[validate_unique_values]
     )
-    machine_name = serializers.CharField(allow_empty=False, required=True)
-    phase_id = serializers.CharField(allow_empty=False, required=True)
+    machine_name = serializers.CharField(allow_null=False, required=True)
+    phase_id = serializers.CharField(allow_null=False, required=True)
 
     def validate_goldens(self, values):
         # N+1 Problem but we don't need optim here couse max goldens is 10
