@@ -38,5 +38,27 @@ class GoldensPrepareCheck(GenericAPIView):
         return Response({"success": "Goldens are correct"})
 
 
+class ProductionObserverSerwice(GenericAPIView):
+    serializer_class = ...
+
+    def post(self, request, *args, **kwargs):
+        # Utworzenie UniqueTestValue
+
+        # Z listy sn utworzyć batchem instancje TestedSn
+
+        # wywołanie serwisu sprawdzenia poprzedniej fazy (fire and forget)
+        # przesyłamy listę sn
+
+        # wywołanie serwisu ustawienia binów (fire and forget)
+        # przesyłamy listę sn
+
+        # Zwotka tylko że przyjęte, 202 Accepted
+        ...
 
 
+class ProductionCheckValidation(GenericAPIView):
+    serializer_class = ...
+
+    def post(self, request, *args, **kwargs):
+        # Sprawdzenie czy ta maszyna może produkować -> FullValidationMachineModel
+        ...
