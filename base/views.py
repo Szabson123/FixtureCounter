@@ -125,11 +125,6 @@ class MachineViewSet(viewsets.ModelViewSet):
     queryset = Machine.objects.all()
 
 
-class ReturnServerStatus(APIView):
-    def get(self, request):
-        return Response("Server is working", status=status.HTTP_200_OK)
-    
-
 class CheckExceedCyclesLimit(GenericAPIView):
     serializer_class = UpdateCreateCounter
 
