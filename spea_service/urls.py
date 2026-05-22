@@ -4,4 +4,5 @@ from .views import *
 
 urlpatterns = [
     path('golden-prepare-check/', GoldensPrepareCheck.as_view(), name='unlig-statues'),
+    path('golden-types-check/', GoldenTypeCheck.as_view(), name='types-check'),
 ]

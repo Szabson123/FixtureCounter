@@ -9,9 +9,11 @@ class Machine(models.Model):
 
 
 class FullValidationMachineModel(models.Model):
+    unique_id = models.UUIDField(default=uuid.uuid4)
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     is_valid = models.BooleanField(default=False)
     time_date = models.DateTimeField(null=True, blank=True)
+    ended = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.machine.name} - {self.time_date} - {self.is_valid}"
@@ -21,7 +23,7 @@ class FullValidationMachineModel(models.Model):
 
 
 class GoldenTypeValidate(models.Model):
-    validation_model = models.ForeignKey(FullValidationMachineModel, on_delete=models.CASCADE)
+    validation_model = models.ForeignKey(FullValidationMachineModel, on_delete=models.CASCADE, related_name='typesvalidate')
     side = models.IntegerField()
     good_golden = models.BooleanField(default=False)
     bad_golden = models.BooleanField(default=False)
