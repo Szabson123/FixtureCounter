@@ -201,19 +201,38 @@ class TecnoLabSNParser(BaseSNParser):
     def parse(self, full_sn: str):
         sub_product = 'default'
         return sub_product, None, None, None, None, None
-    
+
+codes_dict = {
+    "E": "EKRA",
+    "D": "DEK"
+}
 
 class DekSnParser(BaseSNParser):
     def parse(self, full_sn: str):
         sub_product = 'Dek'
 
-        return sub_product, None, None, None, None, None
+        letter = full_sn[6]
+        full_name = codes_dict.get(letter, "UNKNOWN")
+
+        length = full_sn.split(".")[1].split("-")[0]
+
+        serial_number = f"{length}mm {full_name} {full_sn}"
+
+        return sub_product, serial_number, None, None, None, None
     
 
 class EkraSnParser(BaseSNParser):
     def parse(self, full_sn: str):
-        sub_product = 'EKRA'
-        return sub_product, None, None, None, None, None
+        sub_product = 'Dek'
+
+        letter = full_sn[6]
+        full_name = codes_dict.get(letter, "UNKNOWN")
+
+        length = full_sn.split(".")[1].split("-")[0]
+
+        serial_number = f"{length}mm {full_name} {full_sn}"
+
+        return sub_product, serial_number, None, None, None, None
 
 
 def get_parser(parser_type: str):

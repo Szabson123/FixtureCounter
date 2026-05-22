@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework.exceptions import ValidationError
 from .models import OneToOneMap
 import pyodbc
+from datetime import datetime
 
 import requests
 from requests.exceptions import RequestException
@@ -146,6 +147,13 @@ def check_fifo_violation(current_object):
 
     return None
 
+def is_valid_date(date_str):
+    try:
+        datetime.strptime(date_str, "%d%m%y")
+        return True
+    except ValueError:
+        return False
+
 # Im sorry for that, Pisałem na szybko wygląda to okropnie ale działa do zrobienia na później
 def detect_parser_type(full_sn: str) -> str:
     if not full_sn or not isinstance(full_sn, str):
@@ -169,9 +177,9 @@ def detect_parser_type(full_sn: str) -> str:
     if '[)>' in full_sn:
         return 'alpha_parser'
     
-    if 'DEK' in full_sn:
+    if len(full_sn) > 6 and full_sn[6] == 'D' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
         return 'dek_parser'
-    if 'EKRA' in full_sn:
+    if len(full_sn) > 6 and full_sn[6] == 'E' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
         return 'ekra_parser'
 
     if full_sn.startswith('S') or full_sn.startswith('T') or full_sn.startswith('#') or full_sn.startswith('W'):
