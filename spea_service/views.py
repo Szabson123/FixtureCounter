@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
 from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer
-from .models import FullValidationMachineModel, Machine, UniqueTestValue, TestedSn, EndedCodesWithQueue, GoldenTypeValidate
+from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate
 from goldensample.models import MasterSample
 
 class GoldensPrepareCheck(GenericAPIView):
@@ -22,7 +22,7 @@ class GoldensPrepareCheck(GenericAPIView):
         phase_id = serializer.validated_data['phase_id']
         goldens = serializer.validated_data['goldens']
         machine_name = serializer.validated_data['machine_name']
-        unique_id = serializer.validated_data['unique_id']
+        unique_id = serializer.validated_data.get('unique_id')
 
         try:
             machine = Machine.objects.get(name=machine_name)
@@ -31,21 +31,20 @@ class GoldensPrepareCheck(GenericAPIView):
 
         if unique_id:
             try:
-                full_model = FullValidationMachineModel.objects.get(unique_id=unique_id, end=False)
+                full_model = FullValidationMachineModel.objects.get(unique_id=unique_id, ended=False)
             except:
-                return Response({"error": f"there is no full validation modal like: {unique_id}"})
+                return Response({"error": f"there is no full validation model like: {unique_id}"})
         else:
             full_model = FullValidationMachineModel.objects.create(
                 machine=machine,
                 is_valid=False,
                 time_date=timezone.now()
             )
+            set_good_order = SetGoodOrderService(full_model, **serializer.validated_data)
+            set_good_order.prepare_end_codes_in_queue()
 
-        set_good_order = SetGoodOrderService(full_model, **serializer.validated_data)
-        set_good_order.prepare_end_codes_in_queue()
-
-        create_goldens = CreateGoldensToTypeCheck(full_model, goldens)
-        create_goldens.create_goldens_to_type_check()
+            create_goldens = CreateGoldensToTypeCheck(full_model, goldens)
+            create_goldens.create_goldens_to_type_check()
 
         return Response({"success": "Goldens are correct", "unique_id": full_model.unique_id})
     
@@ -60,6 +59,8 @@ class GoldenTypeCheck(GenericAPIView):
         goldens = serializer.validated_data['goldens']
         machine_name = serializer.validated_data['machine_name']
 
+        # Zdobycie modelu do pozniejszej analizy
+
         full_model = FullValidationMachineModel.objects.prefetch_related('typesvalidate').filter(machine__name=machine_name, ended=False).first()
 
         print(full_model)
@@ -68,6 +69,8 @@ class GoldenTypeCheck(GenericAPIView):
             'pass': 'Dobry',
             'fail': 'Zły'
         }
+
+        # Ustawiania odpowiednich wzorców jako pasy i faile 
 
         if full_model:
             prefetch_types = list(full_model.typesvalidate.all())
@@ -88,6 +91,8 @@ class GoldenTypeCheck(GenericAPIView):
         else:
             return Response({"error": "You try ask for types of goldens before put them into spea"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Sprawdzenie czy maszyna jest już zwalidowana
+        
         fully_validated_types = [
             t for t in prefetch_types
             if t.good_golden is True and t.bad_golden is True
@@ -95,9 +100,11 @@ class GoldenTypeCheck(GenericAPIView):
         
         if len(prefetch_types) == len(fully_validated_types):
             full_model.ended = True
+            full_model.is_valid = True
             full_model.save()
             return Response({"status": "completed", "message": "All sides have been validated"}, status=status.HTTP_200_OK)
         
+        # Maszyna nie zwalidowana wyświetlamy mapę czego brakuje
         else:
             validation_map = {}
             for t in prefetch_types:
@@ -115,7 +122,6 @@ class ProductionObserverService(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         # Utworzenie UniqueTestValue
-        unique_test = UniqueTestValue.objects.create()
 
         goldens = serializer.validated_data['goldens']
         machine_name = serializer.validated_data['machine_name']
@@ -127,7 +133,7 @@ class ProductionObserverService(GenericAPIView):
 
         # Z listy sn utworzyć batchem instancje TestedSn
         tested_sn_objects = [
-            TestedSn(test_num=unique_test, sn=golden, bin={}, prev_phase=False, machine=machine)
+            TestedSn(sn=golden, bin={}, prev_phase=False, machine=machine)
             for golden in goldens
         ]
 

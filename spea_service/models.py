@@ -40,15 +40,9 @@ class EndedCodesWithQueue(models.Model):
     def __str__(self):
         return f"{self.full_validation.machine.name} - {self.code} - {self.queue}"
 
-# I think I will delete this
-class UniqueTestValue(models.Model):
-    unique_batch_id = models.UUIDField(default=uuid.uuid4)
-    date = models.DateTimeField(auto_now_add=True)
-
 
 class TestedSn(models.Model):
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
-    test_num = models.ForeignKey(UniqueTestValue, on_delete=models.CASCADE)
     sn = models.CharField(max_length=255)
     bin = models.JSONField()
     prev_phase = models.BooleanField()
@@ -59,4 +53,6 @@ class TestedSn(models.Model):
         indexes = [
             models.Index(fields=['machine', 'sn', '-date_time'])
         ]
-        
+    
+    def __str__(self):
+        return f"{self.machine.name} - {self.sn}"

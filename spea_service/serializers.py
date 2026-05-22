@@ -15,7 +15,7 @@ class GoldensMainValidationSerializer(serializers.Serializer):
     )
     machine_name = serializers.CharField(allow_null=False, required=True)
     phase_id = serializers.CharField(allow_null=False, required=True)
-    unique_is = serializers.UUIDField()
+    unique_id = serializers.UUIDField(allow_null=True, required=False)
 
     def validate_goldens(self, values):
         # N+1 Problem but we don't need optim here couse max goldens is 10
