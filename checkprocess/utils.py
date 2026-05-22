@@ -177,9 +177,9 @@ def detect_parser_type(full_sn: str) -> str:
     if '[)>' in full_sn:
         return 'alpha_parser'
     
-    if len(full_sn) > 6 and full_sn[6] == 'D' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
+    if len(full_sn) > 8 and full_sn[6] == 'D' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
         return 'dek_parser'
-    if len(full_sn) > 6 and full_sn[6] == 'E' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
+    if len(full_sn) > 8 and full_sn[6] == 'E' and is_valid_date(full_sn[:6]) and full_sn[7] == '.':
         return 'ekra_parser'
 
     if full_sn.startswith('S') or full_sn.startswith('T') or full_sn.startswith('#') or full_sn.startswith('W'):
