@@ -2,7 +2,7 @@ from django.db import models
 import uuid
 
 class Machine(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.name
@@ -40,14 +40,23 @@ class EndedCodesWithQueue(models.Model):
     def __str__(self):
         return f"{self.full_validation.machine.name} - {self.code} - {self.queue}"
 
-
+# I think I will delete this
 class UniqueTestValue(models.Model):
     unique_batch_id = models.UUIDField(default=uuid.uuid4)
     date = models.DateTimeField(auto_now_add=True)
 
 
 class TestedSn(models.Model):
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     test_num = models.ForeignKey(UniqueTestValue, on_delete=models.CASCADE)
     sn = models.CharField(max_length=255)
     bin = models.JSONField()
     prev_phase = models.BooleanField()
+    date_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_time']
+        indexes = [
+            models.Index(fields=['machine', 'sn', '-date_time'])
+        ]
+        

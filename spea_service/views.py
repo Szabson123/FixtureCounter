@@ -1,3 +1,5 @@
+import httpx
+
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -116,11 +118,16 @@ class ProductionObserverService(GenericAPIView):
         unique_test = UniqueTestValue.objects.create()
 
         goldens = serializer.validated_data['goldens']
-        machine_name = serializer.validated_data['machine']
+        machine_name = serializer.validated_data['machine_name']
+
+        try:
+            machine = Machine.objects.get(name=machine_name)
+        except:
+            return Response({"error": f"{machine_name} -> doesn't exists"})
 
         # Z listy sn utworzyć batchem instancje TestedSn
         tested_sn_objects = [
-            TestedSn(test_num=unique_test, sn=golden, bin={}, prev_phase=False)
+            TestedSn(test_num=unique_test, sn=golden, bin={}, prev_phase=False, machine=machine)
             for golden in goldens
         ]
 
@@ -129,27 +136,28 @@ class ProductionObserverService(GenericAPIView):
         # Pzypisanie sn w odpwienidej kolejnosci do phase_id
 
         full_validation = FullValidationMachineModel.objects.filter(machine__name=machine_name).first()
-
-        prepared_golden = {}
+        prepared_goldens = {}
 
         for index, golden in enumerate(goldens, start=1):
             endcode = EndedCodesWithQueue.objects.filter(full_validation=full_validation, queue=index).values_list('code', flat=True).first()
 
-            prepared_golden[golden] = endcode
-        
+            prepared_goldens[golden] = endcode
+
         # wywołanie serwisu sprawdzenia poprzedniej fazy (fire and forget)
         # przesyłamy listę sn
 
         # wywołanie serwisu ustawienia binów (fire and forget)
         # przesyłamy listę sn
+        print(prepared_goldens)
+        print(goldens)
+        with httpx.Client() as client:
+            try:
+                client.post("", json=prepared_goldens)
+                print(prepared_goldens)
+                client.post("", json=golden)
+                print(goldens)
+            except Exception as e:
+                print(e)
 
         # Zwotka tylko że przyjęte, 202 Accepted
-        ...
-
-
-class ProductionCheckValidation(GenericAPIView):
-    serializer_class = ...
-
-    def post(self, request, *args, **kwargs):
-        # Sprawdzenie czy ta maszyna może produkować -> FullValidationMachineModel
-        ...
+        return Response({"status": "accepted", "message": "Batch initialized"}, status=status.HTTP_202_ACCEPTED)
