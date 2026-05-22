@@ -11,10 +11,23 @@ class Machine(models.Model):
 class FullValidationMachineModel(models.Model):
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     is_valid = models.BooleanField(default=False)
-    date = models.DateTimeField(null=True, blank=True)
+    time_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.machine.name} - {self.date} - {self.is_valid}"
+        return f"{self.machine.name} - {self.time_date} - {self.is_valid}"
+    
+    class Meta:
+        ordering = ['-time_date']
+
+
+class GoldenTypeValidate(models.Model):
+    validation_model = models.ForeignKey(FullValidationMachineModel, on_delete=models.CASCADE)
+    side = models.IntegerField()
+    good_golden = models.BooleanField(default=False)
+    bad_golden = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.validation_model.machine.name} - {self.side} - Good Golden-{self.good_golden}, Bad Golden-{self.bad_golden}"
 
 
 class EndedCodesWithQueue(models.Model):

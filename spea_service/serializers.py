@@ -25,4 +25,12 @@ class GoldensMainValidationSerializer(serializers.Serializer):
                 raise serializers.ValidationError({"error": f"{golden} - does not exist or is expired"})
             
         return values
-    
+
+
+class ProductionObserverSerializer(serializers.Serializer):
+    goldens = serializers.ListField(
+        child=serializers.CharField(),
+        allow_null=False,
+        validators=[validate_unique_values]
+    )
+    machine_name = serializers.CharField(allow_null=False, required=True)

@@ -1,7 +1,7 @@
 from .utils import polmesprod_database_string as conn_str
 import pyodbc
 from pyodbc import connect
-from .models import EndedCodesWithQueue
+from .models import EndedCodesWithQueue, GoldenTypeValidate
 from goldensample.models import MasterSample
 from rest_framework.serializers import ValidationError
 from django.db import transaction
@@ -34,3 +34,18 @@ class SetGoodOrderService:
                 )
             else:
                 raise ValueError({"error": f"{sn} -> golden dont have endcode"})
+
+
+class CreateGoldensToTypeCheck:
+    def __init__(self, full_model, goldens):
+        self.full_model = full_model
+        self.goldens = goldens
+
+    @transaction.atomic
+    def create_goldens_to_type_check(self):
+        goldens_type = [
+            GoldenTypeValidate(validation_model=self.full_model, side=index)
+            for index, golden in enumerate(self.goldens, start=1)
+        ]
+
+        GoldenTypeValidate.objects.bulk_create(goldens_type)
