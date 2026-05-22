@@ -5,7 +5,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
-from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer
+from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer
 from .models import FullValidationMachineModel, Machine, UniqueTestValue, TestedSn, EndedCodesWithQueue
 
 
@@ -38,6 +38,13 @@ class GoldensPrepareCheck(GenericAPIView):
         create_goldens.create_goldens_to_type_check()
 
         return Response({"success": "Goldens are correct"})
+    
+
+class GoldenTypeCheck(GenericAPIView):
+    serializer_class = GoldensTypeValidationSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
 
 class ProductionObserverService(GenericAPIView):
