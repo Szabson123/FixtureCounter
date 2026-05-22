@@ -231,9 +231,9 @@ def get_parser(parser_type: str):
         return KlejSnParser()
     elif parser_type == 'italgas':
         return ItalgasSnParser()
-    elif parser_type == 'DEK':
+    elif parser_type == 'dek_parser':
         return DekSnParser()
-    elif parser_type == 'EKRA':
+    elif parser_type == 'ekra_parser':
         return EkraSnParser()
     raise ValidationError(f"Nieobsługiwany typ parsera: '{parser_type}'")
 
