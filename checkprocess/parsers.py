@@ -203,6 +203,19 @@ class TecnoLabSNParser(BaseSNParser):
         return sub_product, None, None, None, None, None
     
 
+class DekSnParser(BaseSNParser):
+    def parse(self, full_sn: str):
+        sub_product = 'Dek'
+
+        return sub_product, None, None, None, None, None
+    
+
+class EkraSnParser(BaseSNParser):
+    def parse(self, full_sn: str):
+        sub_product = 'EKRA'
+        return sub_product, None, None, None, None, None
+
+
 def get_parser(parser_type: str):
     if parser_type == 'alpha_parser':
         return AlphaSNParser()
@@ -218,6 +231,10 @@ def get_parser(parser_type: str):
         return KlejSnParser()
     elif parser_type == 'italgas':
         return ItalgasSnParser()
+    elif parser_type == 'DEK':
+        return DekSnParser()
+    elif parser_type == 'EKRA':
+        return EkraSnParser()
     raise ValidationError(f"Nieobsługiwany typ parsera: '{parser_type}'")
 
 

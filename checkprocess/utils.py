@@ -168,6 +168,11 @@ def detect_parser_type(full_sn: str) -> str:
 
     if '[)>' in full_sn:
         return 'alpha_parser'
+    
+    if 'DEK' in full_sn:
+        return 'dek_parser'
+    if 'EKRA' in full_sn:
+        return 'ekra_parser'
 
     if full_sn.startswith('S') or full_sn.startswith('T') or full_sn.startswith('#') or full_sn.startswith('W'):
         return 'sito_default'
