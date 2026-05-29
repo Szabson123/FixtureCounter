@@ -1,5 +1,7 @@
 import httpx
+import threading
 
+from django.conf import settings
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -9,8 +11,21 @@ from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
 from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer
-from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate
+from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum
 from goldensample.models import MasterSample
+
+
+port = settings.SPEA_MICRO_SERVICE_PORT
+service_name = settings.SPEA_MICRO_SERVICE_NAME
+
+def send_requests_worker(port, service_name, bins_payload, phase_payload):
+    with httpx.Client() as client:
+        try:
+            client.post(f"http://127.0.0.1:{port}/{service_name}/check-bins/", json=bins_payload)
+            client.post(f"http://127.0.0.1:{port}/{service_name}/check-phase/", json=phase_payload)
+        except Exception as e:
+            print(e)
+
 
 class GoldensPrepareCheck(GenericAPIView):
     serializer_class = GoldensMainValidationSerializer
@@ -123,47 +138,62 @@ class ProductionObserverService(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         # Utworzenie UniqueTestValue
 
-        goldens = serializer.validated_data['goldens']
+        sns = serializer.validated_data['sns']
         machine_name = serializer.validated_data['machine_name']
+        phase_id = serializer.validated_data['phase_id']
 
         try:
             machine = Machine.objects.get(name=machine_name)
-        except:
-            return Response({"error": f"{machine_name} -> doesn't exists"})
+        except Machine.DoesNotExist:
+            return Response({"error": f"{machine_name} -> doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
         # Z listy sn utworzyć batchem instancje TestedSn
         tested_sn_objects = [
-            TestedSn(sn=golden, bin={}, prev_phase=False, machine=machine)
-            for golden in goldens
+            TestedSn(sn=sn, bin={}, prev_phase=False, machine=machine)
+            for sn in sns
         ]
 
         TestedSn.objects.bulk_create(tested_sn_objects)
 
-        # Pzypisanie sn w odpwienidej kolejnosci do phase_id
+        # Przypisanie sn w odpowiedniej kolejności do phase_id
 
         full_validation = FullValidationMachineModel.objects.filter(machine__name=machine_name).first()
-        prepared_goldens = {}
+        prepared_sns = {}
+        sn_with_codes = {}
+        for index, sn in enumerate(sns, start=1):
+            endcode = EndedCodesWithQueue.objects.filter(
+                full_validation=full_validation, 
+                queue=index
+            ).values_list('code', flat=True).first()
 
-        for index, golden in enumerate(goldens, start=1):
-            endcode = EndedCodesWithQueue.objects.filter(full_validation=full_validation, queue=index).values_list('code', flat=True).first()
-
-            prepared_goldens[golden] = endcode
+            sn_with_codes[sn] = str(endcode) if endcode else ""
 
         # wywołanie serwisu sprawdzenia poprzedniej fazy (fire and forget)
-        # przesyłamy listę sn
+        # przesyłamy listę sn, machine_name
 
         # wywołanie serwisu ustawienia binów (fire and forget)
-        # przesyłamy listę sn
-        print(prepared_goldens)
-        print(goldens)
-        with httpx.Client() as client:
-            try:
-                client.post("", json=prepared_goldens)
-                print(prepared_goldens)
-                client.post("", json=golden)
-                print(goldens)
-            except Exception as e:
-                print(e)
+        # przesyłamy listę sn, machine_name
 
-        # Zwotka tylko że przyjęte, 202 Accepted
-        return Response({"status": "accepted", "message": "Batch initialized"}, status=status.HTTP_202_ACCEPTED)
+        task_num = TaskNum.objects.create()
+
+        phase_payload = {
+            "sns": sn_with_codes,
+            "machine_name": str(machine_name),
+            "phase_id": str(phase_id),
+            "task_num": str(task_num.unique_id)
+        }
+
+        bins_payload = {
+            "machine_name": machine_name,
+            "sns": sns,
+            "task_num": str(task_num.unique_id)
+        }
+
+        t = threading.Thread(
+                target=send_requests_worker, 
+                args=(port, service_name, bins_payload, phase_payload)
+            )
+        t.start()
+
+        # Zwrotka tylko że przyjęte, 202 Accepted
+        return Response({"status": "accepted", "message": "Batch initialized", "task_num": f"{task_num.unique_id}"}, status=status.HTTP_202_ACCEPTED)

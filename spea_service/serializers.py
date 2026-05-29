@@ -38,9 +38,10 @@ class GoldensTypeValidationSerializer(serializers.Serializer):
 
 
 class ProductionObserverSerializer(serializers.Serializer):
-    goldens = serializers.ListField(
+    sns = serializers.ListField(
         child=serializers.CharField(),
         allow_null=False,
         validators=[validate_unique_values]
     )
     machine_name = serializers.CharField(allow_null=False, required=True)
+    phase_id = serializers.CharField(allow_null=False, required=True)

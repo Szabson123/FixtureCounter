@@ -12,7 +12,7 @@ class FullValidationMachineModel(models.Model):
     unique_id = models.UUIDField(default=uuid.uuid4)
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     is_valid = models.BooleanField(default=False)
-    time_date = models.DateTimeField(null=True, blank=True)
+    time_date = models.DateTimeField(null=True, blank=True, auto_now=True)
     ended = models.BooleanField(default=False)
 
     def __str__(self):
@@ -41,12 +41,18 @@ class EndedCodesWithQueue(models.Model):
         return f"{self.full_validation.machine.name} - {self.code} - {self.queue}"
 
 
+class TaskNum(models.Model):
+    unique_id = models.UUIDField(default=uuid.uuid4)
+    prev_done = models.BooleanField(default=False)
+    bins_done = models.BooleanField(default=False)
+
 class TestedSn(models.Model):
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     sn = models.CharField(max_length=255)
     bin = models.JSONField()
     prev_phase = models.BooleanField()
     date_time = models.DateTimeField(auto_now_add=True)
+    phase_error_code = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ['-date_time']
