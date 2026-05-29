@@ -114,7 +114,10 @@ class MasterSampleListView(ListAPIView):
     search_fields = [
         'project_name', 'location', 'sn', 'pcb_rev_code', 
         'client__name', 'master_type__name', 'created_by__first_name', 
-        'created_by__last_name', 'departament__name', 'additional_project_name__name', 'min_endcode', 'min_smd_code'
+        'created_by__last_name', 'departament__name', 'additional_project_name__name', 
+        
+        'endcodes__code',
+        'code_smd__code'
     ]
     
     ordering_fields = [
