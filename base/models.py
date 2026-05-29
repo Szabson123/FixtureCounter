@@ -36,12 +36,3 @@ class CounterHistory(models.Model):
     def __str__(self):
         return f'{self.fixture.name}' if self.fixture else 'No Fixture'
     
-
-class Machine(models.Model):
-    machine_id = models.CharField(max_length=255, null=True, blank=True)
-    machine_name = models.CharField(max_length=255)
-
-
-class MachineCondition(models.Model):
-    machine = models.OneToOneField(Machine, on_delete=models.CASCADE)
-    last_variant = models.CharField(max_length=255, null=True, blank=True)
