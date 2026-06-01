@@ -7,4 +7,5 @@ admin.site.register(FullValidationMachineModel)
 admin.site.register(EndedCodesWithQueue)
 admin.site.register(GoldenTypeValidate)
 admin.site.register(TestedSn)
+admin.site.register(ForceValidMachine)
 # Register your models here.

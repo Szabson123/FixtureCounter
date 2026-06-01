@@ -20,6 +20,9 @@ class FullValidationMachineModel(models.Model):
     
     class Meta:
         ordering = ['-time_date']
+        indexes = [
+            models.Index(fields=['machine', 'is_valid'], name='full_valid_mach_idx'),
+        ]
 
 
 class GoldenTypeValidate(models.Model):
@@ -62,3 +65,16 @@ class TestedSn(models.Model):
     
     def __str__(self):
         return f"{self.machine.name} - {self.sn}"
+    
+
+class ForceValidMachine(models.Model):
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
+    date_time_start = models.DateTimeField(auto_now_add=True)
+    date_time_end = models.DateTimeField()
+    is_valid = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-date_time_start']
+        indexes = [
+            models.Index(fields=['machine', 'is_valid'], name='force_valid_mach_idx'),
+        ]

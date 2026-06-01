@@ -1,8 +1,9 @@
 import httpx
 import threading
+from datetime import timedelta
 
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
 from rest_framework import status
@@ -10,8 +11,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
-from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer
-from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum
+from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate
+from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum, ForceValidMachine
 from goldensample.models import MasterSample
 
 
@@ -39,10 +40,7 @@ class GoldensPrepareCheck(GenericAPIView):
         machine_name = serializer.validated_data['machine_name']
         unique_id = serializer.validated_data.get('unique_id')
 
-        try:
-            machine = Machine.objects.get(name=machine_name)
-        except Machine.DoesNotExist:
-            raise serializers.ValidationError({"error": f"{value} - does not exist in database please contact IT dept"})
+        machine = get_object_or_404(Machine, name=machine_name)
 
         if unique_id:
             try:
@@ -142,10 +140,7 @@ class ProductionObserverService(GenericAPIView):
         machine_name = serializer.validated_data['machine_name']
         phase_id = serializer.validated_data['phase_id']
 
-        try:
-            machine = Machine.objects.get(name=machine_name)
-        except Machine.DoesNotExist:
-            return Response({"error": f"{machine_name} -> doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+        machine = get_object_or_404(Machine, name=machine_name)
 
         # Z listy sn utworzyć batchem instancje TestedSn
         tested_sn_objects = [
@@ -197,3 +192,39 @@ class ProductionObserverService(GenericAPIView):
 
         # Zwrotka tylko że przyjęte, 202 Accepted
         return Response({"status": "accepted", "message": "Batch initialized", "task_num": f"{task_num.unique_id}"}, status=status.HTTP_202_ACCEPTED)
+
+
+class ForceValidateMachine(GenericAPIView):
+    serializer_class = ForceValidMachineSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        machine_name = serializer.validated_data['machine_name']
+        hours = serializer.validated_data['hours']
+        
+        machine = get_object_or_404(Machine, name=machine_name)
+        
+        ForceValidMachine.objects.create(
+            machine=machine,
+            date_time_end = timezone.now() + timedelta(hours=hours)
+        )
+
+        return Response({"success": f"Machine: {machine.name} has been valdiated for {hours}h"}, status=status.HTTP_200_OK)
+    
+
+class InValidateMachine(GenericAPIView):
+    serializer_class = MachineInvalidate
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        machine_name = serializer.validated_data['machine_name']
+        machine = get_object_or_404(Machine, name=machine_name)
+
+        ForceValidMachine.objects.filter(machine=machine).update(is_valid=False)
+        FullValidationMachineModel.objects.filter(machine=machine).update(is_valid=False)
+
+        return Response({"success": f"Machine: {machine.name} has been invalidated"}, status=status.HTTP_200_OK)

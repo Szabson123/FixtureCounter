@@ -45,3 +45,12 @@ class ProductionObserverSerializer(serializers.Serializer):
     )
     machine_name = serializers.CharField(allow_null=False, required=True)
     phase_id = serializers.CharField(allow_null=False, required=True)
+
+
+class ForceValidMachineSerializer(serializers.Serializer):
+    machine_name = serializers.CharField(allow_null=False, required=True)
+    hours = serializers.IntegerField(allow_null=False, required=True)
+
+
+class MachineInvalidate(serializers.Serializer):
+    machine_name = serializers.CharField(allow_null=False, required=True)
