@@ -11,6 +11,7 @@ class CollectorsServers(models.Model):
 
 
 class CollectorComputer(models.Model):
+    server = models.ForeignKey(CollectorsServers, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255)
     version_of_collectors = models.IntegerField(default=0)
 
