@@ -5,6 +5,7 @@ class CollectorsServers(models.Model):
     ip = models.CharField(max_length=255)
     user = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
+    basic_path = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.ip
