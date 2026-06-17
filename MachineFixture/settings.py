@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'unlinker',
     'spea_service',
     'datacollector',
+    'mes',
 ]
 
 CORS_ALLOWED_ORIGINS = [
