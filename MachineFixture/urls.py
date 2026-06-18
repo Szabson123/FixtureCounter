@@ -17,7 +17,8 @@ urlpatterns = [
     path('api/spea-card/', include('spea_control.urls')),
     path('api/user/', include('user_auth.urls')),
     path('api/unlinker/', include('unlinker.urls')),
-    path('api/golden-service/', include('spea_service.urls'))
+    path('api/golden-service/', include('spea_service.urls')),
+    path('api/mes/', include('mes.urls'))
 ]
 
 if settings.DEBUG:
