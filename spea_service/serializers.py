@@ -19,11 +19,16 @@ class GoldensMainValidationSerializer(serializers.Serializer):
 
     def validate_goldens(self, values):
         # N+1 Problem but we don't need optim here couse max goldens is 10
+        response_data = {}
         for golden in values:
             try:
                 MasterSample.objects.get(sn=golden, expire_date__gte=timezone.now())
+                response_data[golden] = ""
             except MasterSample.DoesNotExist:
-                raise serializers.ValidationError({"error": f"{golden} - does not exist or is expired"})
+                response_data[golden] = "does not exist or is expired"
+
+        if response_data:
+            raise serializers.ValidationError({"error": response_data})
             
         return values
     
