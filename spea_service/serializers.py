@@ -18,17 +18,25 @@ class GoldensMainValidationSerializer(serializers.Serializer):
     unique_id = serializers.UUIDField(allow_null=True, required=False)
 
     def validate_goldens(self, values):
-        # N+1 Problem but we don't need optim here couse max goldens is 10
+        valid_sns = set(
+            MasterSample.objects.filter(
+                sn__in=values, 
+                expire_date__gte=timezone.now()
+            ).values_list('sn', flat=True)
+        )
+        
         response_data = {}
-        for golden in values:
-            try:
-                MasterSample.objects.get(sn=golden, expire_date__gte=timezone.now())
-                response_data[golden] = ""
-            except MasterSample.DoesNotExist:
-                response_data[golden] = "does not exist or is expired"
+        has_errors = False
 
-        if response_data:
-            raise serializers.ValidationError({"error": response_data})
+        for golden in values:
+            if golden in valid_sns:
+                response_data[golden] = ""
+            else:
+                response_data[golden] = "does not exist or is expired" 
+                has_errors = True
+
+        if has_errors:
+            raise serializers.ValidationError(response_data)
             
         return values
     
