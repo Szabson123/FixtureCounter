@@ -76,36 +76,39 @@ class GoldenTypeCheck(GenericAPIView):
 
         full_model = FullValidationMachineModel.objects.prefetch_related('typesvalidate').filter(machine__name=machine_name, ended=False).first()
 
-        print(full_model)
-
-        type_dict = {
-            'pass': 'Dobry',
-            'calib': 'Kalibracyjny',
-            'fail': 'Zły'
-        }
-
         # Ustawiania odpowiednich wzorców jako pasy i faile 
 
         if full_model:
             prefetch_types = list(full_model.typesvalidate.all())
-            for index, (golden_key, golden_value) in enumerate(goldens.items(), start=1):
-                expected_type = type_dict.get(golden_value)
-                sample_exists = MasterSample.objects.filter(sn=golden_key, master_type__name=expected_type).exists()
 
-                if sample_exists:
-                    types = next((t for t in prefetch_types if t.side==index), None)
+            golden_keys = list(goldens.keys())
+            samples_in_db = dict(
+                MasterSample.objects.filter(
+                    sn__in=golden_keys
+                ).values_list('sn', 'master_type__name')
+            )
+
+            for index, (golden_key, golden_value) in enumerate(goldens.items(), start=1):
+            # Sprawdzamy jaki typ ma ten SN w bazie danych (jeśli w ogóle istnieje)
+                db_type = samples_in_db.get(golden_key)
+
+                if db_type:
+                    types = next((t for t in prefetch_types if t.side == index), None)
                     if types:
-                        if expected_type in ['Dobry', 'Kalibracyjny']:
+                        if golden_value == 'pass' and db_type in ['Dobry', 'Kalibracyjny']:
                             types.good_golden = True
-                        elif expected_type == 'Zły':
+                            types.save()
+                        
+                        elif golden_value == 'fail' and db_type == 'Zły':
                             types.bad_golden = True
-                        types.save()
+                            types.save()
                 else:
                     continue
         else:
-            return Response({"error": "You try ask for types of goldens before put them into spea"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Sprawdzenie czy maszyna jest już zwalidowana
+            return Response(
+                {"error": "You try ask for types of goldens before put them into spea"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         fully_validated_types = [
             t for t in prefetch_types
