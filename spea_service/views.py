@@ -80,6 +80,7 @@ class GoldenTypeCheck(GenericAPIView):
 
         type_dict = {
             'pass': 'Dobry',
+            'calib': 'Kalibracyjny',
             'fail': 'Zły'
         }
 
@@ -94,7 +95,7 @@ class GoldenTypeCheck(GenericAPIView):
                 if sample_exists:
                     types = next((t for t in prefetch_types if t.side==index), None)
                     if types:
-                        if expected_type == 'Dobry':
+                        if expected_type in ['Dobry', 'Kalibracyjny']:
                             types.good_golden = True
                         elif expected_type == 'Zły':
                             types.bad_golden = True
