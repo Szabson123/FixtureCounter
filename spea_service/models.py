@@ -68,7 +68,7 @@ class TestedSn(models.Model):
     
 
 class ForceValidMachine(models.Model):
-    machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='forcevalidation')
     date_time_start = models.DateTimeField(auto_now_add=True)
     date_time_end = models.DateTimeField()
     is_valid = models.BooleanField(default=True)

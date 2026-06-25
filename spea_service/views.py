@@ -5,13 +5,14 @@ from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
+from django.db.models import Prefetch, Q
 
 from rest_framework import status
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
-from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate
+from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate, MachineMainSerializer
 from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum, ForceValidMachine
 from goldensample.models import MasterSample
 
@@ -232,3 +233,16 @@ class InValidateMachine(GenericAPIView):
         FullValidationMachineModel.objects.filter(machine=machine).update(is_valid=False)
 
         return Response({"success": f"Machine: {machine.name} has been invalidated"}, status=status.HTTP_200_OK)
+    
+
+class ValidationListView(ListAPIView):
+    serializer_class = MachineMainSerializer
+    queryset = Machine.objects.prefetch_related(
+        Prefetch(
+            'forcevalidation', 
+            queryset=ForceValidMachine.objects.filter(
+                is_valid=True,
+                date_time_end__gt=timezone.now()
+            )
+        )
+    )

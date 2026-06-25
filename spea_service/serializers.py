@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from .models import Machine
+from .models import Machine, ForceValidMachine
 from .validators import validate_unique_values
 from goldensample.models import MasterSample
 
@@ -67,3 +67,16 @@ class ForceValidMachineSerializer(serializers.Serializer):
 
 class MachineInvalidate(serializers.Serializer):
     machine_name = serializers.CharField(allow_null=False, required=True)
+
+
+class MachineInvalidation(serializers.ModelSerializer):
+    class Meta:
+        model = ForceValidMachine
+        fields = ['id', 'date_time_start', 'date_time_end', 'is_valid']
+
+
+class MachineMainSerializer(serializers.ModelSerializer):
+    forcevalidation = MachineInvalidation(many=True, read_only=True)
+    class Meta:
+        model = Machine
+        fields = ['id', 'name', 'forcevalidation']

@@ -1,24 +1,24 @@
 from django.db import models
 
 
-class CollectorProduct(models.Model):
+class BaseSettings(models.Model):
+    time_zone = models.CharField(max_length=255)
+    manufacturer = models.CharField(max_length=255)
+    plant = models.CharField(max_length=255)
+    version = models.JSONField()
+
+
+class Product(models.Model):
+    base_settings = models.ForeignKey(BaseSettings, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
 
-class DataBaseSettings(models.Model):
-    ip = models.CharField(max_length=255)
-    user = models.CharField(max_length=255)
-    password = models.CharField(max_length=255)
-    db_name = models.CharField(max_length=255)
+class Station(models.Model):
+    class StationType(models.TextChoices):
+        'ICT' = 'ICT', 'ict'
+        'FVT' = 'FVT', 'fvt'
 
-
-class ProductStep(models.Model):
-    c_product = models.ForeignKey(CollectorProduct, on_delete=models.CASCADE)
+    path = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
-    path = models.CharField(max_length=255, null=True, blank=True)
-    data_base = models.ForeignKey(DataBaseSettings, on_delete=models.CASCADE)
 
 
-class SettingsToProductProcess(models.Model):
-    p_step = models.ForeignKey(ProductStep, on_delete=models.CASCADE)
-    define_rule = models.CharField(max_length=255) # We will see for now placeholder
