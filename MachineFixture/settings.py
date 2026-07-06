@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'spea_service',
     'datacollector',
     'mes',
+    'special_collector',
 ]
 
 CORS_ALLOWED_ORIGINS = [
