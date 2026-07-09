@@ -55,6 +55,7 @@ class HeaderDataStation(models.Model):
     devicetype = models.CharField(max_length=255, null=True, blank=True)
     hw_version = models.CharField(max_length=255, null=True, blank=True)
     bootloader_version = models.CharField(max_length=255, null=True, blank=True)
+    mac = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f'{self.sn}'
