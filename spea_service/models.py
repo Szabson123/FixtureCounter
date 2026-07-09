@@ -56,6 +56,7 @@ class TestedSn(models.Model):
     prev_phase = models.BooleanField()
     date_time = models.DateTimeField(auto_now_add=True)
     phase_error_code = models.CharField(max_length=255, null=True, blank=True)
+    phase_error_num_code = models.IntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['-date_time']
