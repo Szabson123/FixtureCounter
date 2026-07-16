@@ -10,7 +10,7 @@ class Machine(models.Model):
 
 class FullValidationMachineModel(models.Model):
     unique_id = models.UUIDField(default=uuid.uuid4)
-    machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='fullvalidation')
     is_valid = models.BooleanField(default=False)
     time_date = models.DateTimeField(null=True, blank=True, auto_now=True)
     ended = models.BooleanField(default=False)

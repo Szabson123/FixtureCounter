@@ -18,6 +18,7 @@ class Task(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     done = models.BooleanField(null=True, default=False)
     date = models.DateTimeField(auto_now_add=True)
+    error_code = models.CharField(null=True, blank=True)
 
 
 class Station(models.Model):

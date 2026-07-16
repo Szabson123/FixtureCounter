@@ -237,12 +237,25 @@ class InValidateMachine(GenericAPIView):
 
 class ValidationListView(ListAPIView):
     serializer_class = MachineMainSerializer
-    queryset = Machine.objects.prefetch_related(
-        Prefetch(
-            'forcevalidation', 
-            queryset=ForceValidMachine.objects.filter(
-                is_valid=True,
-                date_time_end__gt=timezone.now()
+
+    def get_queryset(self):
+        now = timezone.now()
+        eight_hours_later = now + timedelta(hours=8)
+        
+        return Machine.objects.prefetch_related(
+            Prefetch(
+                'forcevalidation',
+                queryset=ForceValidMachine.objects.filter(
+                    is_valid=True,
+                    date_time_end__gt=now
+                )
+            ),
+            Prefetch(
+                'fullvalidation',
+                queryset=FullValidationMachineModel.objects.filter(
+                    is_valid=True,
+                    ended=True,
+                    time_date__range=(now, eight_hours_later)
+                )
             )
         )
-    )
