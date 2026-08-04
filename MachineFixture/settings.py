@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'datacollector',
     'mes',
     'special_collector',
+    'parrot',
 ]
 
 CORS_ALLOWED_ORIGINS = [
