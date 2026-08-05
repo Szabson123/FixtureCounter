@@ -2,7 +2,7 @@ from django.db import models
 
 
 class TestedParrotSn(models.Model):
-    sn = models.CharField(max_length=255, db_index=True)
+    sn = models.CharField(max_length=255, db_index=True, unique=True)
     date = models.DateTimeField()
     done = models.BooleanField()
     error = models.TextField(null=True, blank=True)
