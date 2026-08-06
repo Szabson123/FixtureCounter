@@ -25,11 +25,12 @@ admin.site.register(LastProductOnPlace)
 admin.site.register(ConditionLog)
 admin.site.register(PlaceGroupToAppKill)
 admin.site.register(EdgeOptionsSets)
-admin.site.register(DataBasesSpiMap)
 admin.site.register(LogFromSpi)
 admin.site.register(MessageToApp)
 admin.site.register(ProductProcessFields)
-admin.site.register(DataBasesASMMap)
+
+admin.site.register(DataBasesSpiMapNew)
+admin.site.register(DataBasesSpiAsmMapNew)
 
 @admin.register(LogFromMistake)
 class LogFromMistakeAdmin(admin.ModelAdmin):
