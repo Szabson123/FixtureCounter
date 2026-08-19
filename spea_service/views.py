@@ -195,28 +195,27 @@ class ProductionObserverService(GenericAPIView):
             )
         t.start()
 
-        # Zwrotka tylko że przyjęte, 202 Accepted
         return Response({"status": "accepted", "message": "Batch initialized", "task_num": f"{task_num.unique_id}"}, status=status.HTTP_202_ACCEPTED)
 
 
-# class ForceValidateMachine(GenericAPIView):
-#     serializer_class = ForceValidMachineSerializer
+class ForceValidateMachine(GenericAPIView):
+    serializer_class = ForceValidMachineSerializer
 
-#     def post(self, request, *args, **kwargs):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-#         machine_name = serializer.validated_data['machine_name']
-#         hours = serializer.validated_data['hours']
+        machine_name = serializer.validated_data['machine_name']
+        hours = serializer.validated_data['hours']
         
-#         machine = get_object_or_404(Machine, name=machine_name)
+        machine = get_object_or_404(Machine, name=machine_name)
         
-#         ForceValidMachine.objects.create(
-#             machine=machine,
-#             date_time_end = timezone.now() + timedelta(hours=hours)
-#         )
+        ForceValidMachine.objects.create(
+            machine=machine,
+            date_time_end = timezone.now() + timedelta(hours=hours)
+        )
 
-#         return Response({"success": f"Machine: {machine.name} has been valdiated for {hours}h"}, status=status.HTTP_200_OK)
+        return Response({"success": f"Machine: {machine.name} has been valdiated for {hours}h"}, status=status.HTTP_200_OK)
     
 
 class InValidateMachine(GenericAPIView):
