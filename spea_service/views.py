@@ -12,8 +12,8 @@ from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
-from .serializers import GoldensMainValidationSerializer, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate, MachineMainSerializer
-from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum, ForceValidMachine
+from .serializers import GoldensMainValidationSerializer, ForceValidMachineSerializerApp, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate, MachineMainSerializer
+from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum, ForceValidMachine, ValidPassword, ValidPasswordLog
 from goldensample.models import MasterSample
 
 
@@ -199,24 +199,24 @@ class ProductionObserverService(GenericAPIView):
         return Response({"status": "accepted", "message": "Batch initialized", "task_num": f"{task_num.unique_id}"}, status=status.HTTP_202_ACCEPTED)
 
 
-class ForceValidateMachine(GenericAPIView):
-    serializer_class = ForceValidMachineSerializer
+# class ForceValidateMachine(GenericAPIView):
+#     serializer_class = ForceValidMachineSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
 
-        machine_name = serializer.validated_data['machine_name']
-        hours = serializer.validated_data['hours']
+#         machine_name = serializer.validated_data['machine_name']
+#         hours = serializer.validated_data['hours']
         
-        machine = get_object_or_404(Machine, name=machine_name)
+#         machine = get_object_or_404(Machine, name=machine_name)
         
-        ForceValidMachine.objects.create(
-            machine=machine,
-            date_time_end = timezone.now() + timedelta(hours=hours)
-        )
+#         ForceValidMachine.objects.create(
+#             machine=machine,
+#             date_time_end = timezone.now() + timedelta(hours=hours)
+#         )
 
-        return Response({"success": f"Machine: {machine.name} has been valdiated for {hours}h"}, status=status.HTTP_200_OK)
+#         return Response({"success": f"Machine: {machine.name} has been valdiated for {hours}h"}, status=status.HTTP_200_OK)
     
 
 class InValidateMachine(GenericAPIView):
@@ -233,6 +233,34 @@ class InValidateMachine(GenericAPIView):
         FullValidationMachineModel.objects.filter(machine=machine).update(is_valid=False)
 
         return Response({"success": f"Machine: {machine.name} has been invalidated"}, status=status.HTTP_200_OK)
+
+
+class ForceValidMachineViewApp(GenericAPIView):
+    serializer_class = ForceValidMachineSerializerApp
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+    
+        machine_name = serializer.validated_data['machine_name']
+        valid_password = serializer.validated_data['valid_password_instance']
+
+        try:
+            machine = Machine.objects.get(name=machine_name)
+        except:
+            return Response({"error":"Maszyna nie istnieje"})
+
+        ForceValidMachine.objects.create(
+            machine=machine,
+            date_time_end=timezone.now() + timedelta(hours=8)
+        )
+        
+        ValidPasswordLog.objects.create(valid_password=valid_password)
+
+        return Response(
+            {"detail": f"Autoryzacja udana dla działu/osoby: {valid_password.name}"}, 
+            status=status.HTTP_200_OK
+        )
     
 
 class ValidationListView(ListAPIView):

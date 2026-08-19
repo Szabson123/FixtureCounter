@@ -80,3 +80,13 @@ class ForceValidMachine(models.Model):
         indexes = [
             models.Index(fields=['machine', 'is_valid'], name='force_valid_mach_idx'),
         ]
+
+
+class ValidPassword(models.Model):
+    name = models.CharField(max_length=255, help_text="Podajemy dział osobę do której należy to hasło")
+    password = models.CharField(max_length=255, help_text="Hasło, nie musi byc hashowane bo to wewnetrzny system")
+
+
+class ValidPasswordLog(models.Model):
+    valid_password = models.ForeignKey(ValidPassword, on_delete=models.CASCADE)
+    time_date = models.DateTimeField(auto_now_add=True)

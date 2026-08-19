@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from .models import Machine, ForceValidMachine, FullValidationMachineModel
+from .models import Machine, ForceValidMachine, FullValidationMachineModel, ValidPassword
 from .validators import validate_unique_values
 from goldensample.models import MasterSample
 
@@ -63,6 +63,24 @@ class ProductionObserverSerializer(serializers.Serializer):
 class ForceValidMachineSerializer(serializers.Serializer):
     machine_name = serializers.CharField(allow_null=False, required=True)
     hours = serializers.IntegerField(allow_null=False, required=True)
+
+
+class ForceValidMachineSerializerApp(serializers.Serializer):
+    machine_name = serializers.CharField(allow_null=False, required=True)
+    password = serializers.CharField(allow_null=False, required=True, write_only=True)
+
+    def validate(self, attrs):
+        password = attrs.get('password')
+
+        try:
+            valid_password_instance = ValidPassword.objects.get(password=password)
+        except ValidPassword.DoesNotExist:
+            raise serializers.ValidationError({"password": "Podano niepoprawne hasło."})
+        except ValidPassword.MultipleObjectsReturned:
+            valid_password_instance = ValidPassword.objects.filter(password=password).first()
+
+        attrs['valid_password_instance'] = valid_password_instance
+        return attrs
 
 
 class MachineInvalidate(serializers.Serializer):

@@ -7,7 +7,8 @@ urlpatterns = [
     path('golden-types-check/', GoldenTypeCheck.as_view(), name='types-check'),
     path('production-observer/', ProductionObserverService.as_view(), name='observer'),
 
-    path('force-validate-machine/', ForceValidateMachine.as_view(), name='force-validate'),
+    # path('force-validate-machine/', ForceValidateMachine.as_view(), name='force-validate'),
+    path('force-validate-machine-app/', ForceValidMachineViewApp.as_view(), name='force-validate-app'),
     path('invalidate-machine/', InValidateMachine.as_view(), name='invalidate'),
 
     path('machine-validation-list/', ValidationListView.as_view(), name='validation-list')
