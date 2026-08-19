@@ -22,6 +22,7 @@ class FullValidationMachineModel(models.Model):
         ordering = ['-time_date']
         indexes = [
             models.Index(fields=['machine', 'is_valid'], name='full_valid_mach_idx'),
+            models.Index(fields=['machine', 'is_valid', '-time_date'], name='full_valid_mach_time_idx'),
         ]
 
 
