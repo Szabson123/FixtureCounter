@@ -32,6 +32,7 @@ class SnToBoard(models.Model):
     aoi_result = models.BooleanField(null=True, blank=True)
     ict_result = models.BooleanField(null=True, blank=True)
     fvt_result = models.BooleanField(null=True, blank=True)
+    full_result = models.BooleanField(null=True, blank=True)
 
     class Meta:
         indexes = [
