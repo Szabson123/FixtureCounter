@@ -8,12 +8,13 @@ class PalletFullInfo(models.Model):
     pallet_number = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     full_used = models.BooleanField(default=False)
+    product = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['db_board_id', 'pallet_number'],
-                name='unique_board_pallet'
+                fields=['product', 'db_board_id', 'pallet_number'],
+                name='unique_product_board_pallet'
             )
         ]
         indexes = [
@@ -21,6 +22,10 @@ class PalletFullInfo(models.Model):
                 fields=['pallet_number'],
                 name='idx_active_pallet_num',
                 condition=Q(full_used=False)
+            ),
+            models.Index(
+                fields=['product', 'db_board_id'],
+                name='idx_product_db_board_id'
             ),
         ]
 
