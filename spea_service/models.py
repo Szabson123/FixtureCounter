@@ -46,9 +46,10 @@ class EndedCodesWithQueue(models.Model):
 
 
 class TaskNum(models.Model):
-    unique_id = models.UUIDField(default=uuid.uuid4)
+    unique_id = models.UUIDField(default=uuid.uuid4, db_index=True)
     prev_done = models.BooleanField(default=False)
     bins_done = models.BooleanField(default=False)
+    
 
 class TestedSn(models.Model):
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
