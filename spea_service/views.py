@@ -1,3 +1,4 @@
+import time
 import httpx
 import threading
 from datetime import timedelta
@@ -24,28 +25,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 def send_requests_worker(port, service_name, bins_payload, phase_payload):
-    # Timeout domyślny 5s w httpx to za mało dla procesowania batchy - ustawiamy 60s
     timeout_config = httpx.Timeout(60.0, connect=10.0)
     base_url = f"http://127.0.0.1:{port}/{service_name}"
 
+    def post_with_retry(client, url, payload, endpoint_name, retries=3):
+        for attempt in range(retries):
+            try:
+                res = client.post(url, json=payload)
+                logger.info("[Worker] %s status: %s", endpoint_name, res.status_code)
+                if res.status_code != 200:
+                    logger.error("[Worker] %s błąd: %s", endpoint_name, res.text)
+                return res
+            except (httpx.ConnectError, httpx.RemoteProtocolError) as e:
+                if attempt == retries - 1:
+                    raise
+                logger.warning("[Worker] Połączenie odrzucone dla %s, ponawiam (próba %d/%d)...", endpoint_name, attempt + 1, retries)
+                time.sleep(2.0)
+
     with httpx.Client(timeout=timeout_config) as client:
-        # 1. Wywołanie check-bins
         try:
             logger.info("[Worker] Wysyłam check-bins dla task: %s", bins_payload.get("task_num"))
-            res_bins = client.post(f"{base_url}/check-bins/", json=bins_payload)
-            logger.info("[Worker] check-bins status: %s", res_bins.status_code)
-            if res_bins.status_code != 200:
-                logger.error("[Worker] check-bins błąd: %s", res_bins.text)
+            post_with_retry(client, f"{base_url}/check-bins/", bins_payload, "check-bins")
         except Exception as e:
             logger.error("[Worker] Wyjątek podczas check-bins: %s", e, exc_info=True)
 
-        # 2. Wywołanie check-phase (wykona się ZAWSZE, nawet jeśli biny rzuciły błąd/timeout)
         try:
             logger.info("[Worker] Wysyłam check-phase dla task: %s", phase_payload.get("task_num"))
-            res_phase = client.post(f"{base_url}/check-phase/", json=phase_payload)
-            logger.info("[Worker] check-phase status: %s", res_phase.status_code)
-            if res_phase.status_code != 200:
-                logger.error("[Worker] check-phase błąd: %s", res_phase.text)
+            post_with_retry(client, f"{base_url}/check-phase/", phase_payload, "check-phase")
         except Exception as e:
             logger.error("[Worker] Wyjątek podczas check-phase: %s", e, exc_info=True)
 
