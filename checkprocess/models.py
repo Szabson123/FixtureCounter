@@ -331,18 +331,24 @@ class DataBasesSpiMapNew(models.Model):
     data_base_name = models.CharField(max_length=255)
     ip = models.CharField(max_length=255)
     line_name = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
-    place_to_kill = models.ForeignKey(Place, on_delete=models.CASCADE) #Ustawiamy kiedy chcemy żeby oprócz zliczania kiedy odpalimy produkcje bez elementu zabiło aplikacje (na potrzby 26.03.2026) potrzebne było zabijanie tylko sita w przyszłości można dodać między klase many to many aby obłsużyć np. brak pasty/rackla
+    places_to_kill = models.ManyToManyField(Place, blank=True, related_name='spi_maps')
     identyficator = models.CharField(max_length=255, null=True, blank=True)
     active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name}"
 
 
 class DataBasesSpiAsmMapNew(models.Model):
     data_base_name = models.CharField(max_length=255)
     ip = models.CharField(max_length=255)
     line_name = models.ForeignKey(PlaceGroupToAppKill, on_delete=models.SET_NULL, null=True, blank=True)
-    place_to_kill = models.ForeignKey(Place, on_delete=models.CASCADE) #Ustawiamy kiedy chcemy żeby oprócz zliczania kiedy odpalimy produkcje bez elementu zabiło aplikacje (na potrzby 26.03.2026) potrzebne było zabijanie tylko sita w przyszłości można dodać między klase many to many aby obłsużyć np. brak pasty/rackla
+    places_to_kill = models.ManyToManyField(Place, blank=True, related_name='spi_asm_maps')
     identyficator = models.CharField(max_length=255, null=True, blank=True)
     active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.data_base_name} -- {self.line_name}"
 
 
 class MessageToApp(models.Model):

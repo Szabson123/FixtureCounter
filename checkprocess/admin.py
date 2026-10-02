@@ -29,9 +29,17 @@ admin.site.register(LogFromSpi)
 admin.site.register(MessageToApp)
 admin.site.register(ProductProcessFields)
 
-admin.site.register(DataBasesSpiMapNew)
-admin.site.register(DataBasesSpiAsmMapNew)
-
 @admin.register(LogFromMistake)
 class LogFromMistakeAdmin(admin.ModelAdmin):
     readonly_fields = ("date_time",)
+
+
+@admin.register(DataBasesSpiMapNew)
+class DataBasesSpiMapNewAdmin(admin.ModelAdmin):
+    list_display = ('data_base_name', 'ip', 'line_name', 'active')
+    filter_horizontal = ('places_to_kill',)
+
+@admin.register(DataBasesSpiAsmMapNew)
+class DataBasesSpiAsmMapNewAdmin(admin.ModelAdmin):
+    list_display = ('data_base_name', 'ip', 'line_name', 'active')
+    filter_horizontal = ('places_to_kill',)
