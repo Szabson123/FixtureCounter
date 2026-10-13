@@ -316,3 +316,12 @@ class ProductObjectAdminSerializerPlaceHelper(serializers.ModelSerializer):
     class Meta:
         model = Place
         fields = ['id', 'name']
+
+
+class BoschSilliconAdd(serializers.Serializer):
+    sn = serializers.CharField(required=True)
+    place = serializers.CharField(required=True)
+
+
+class BoschSilliconCheck(serializers.Serializer):
+    place = serializers.CharField(required=True)

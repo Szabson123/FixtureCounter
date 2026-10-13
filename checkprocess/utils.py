@@ -1,7 +1,9 @@
 from .models import ProductObject
 from django.db.models import Count, Case, When, Value, DateField, F
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import date, datetime, timedelta
+
+import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
@@ -199,4 +201,55 @@ def poke_process(process_id):
     except requests.exceptions.RequestException as e:
         print("POKE ERROR:", e)
         raise ValidationError({"error": "Nie udało się skontaktować z endpointem poke."})
-    
+
+
+def check_expire_date_from_sigip(sn: str) -> tuple[bool, date | None]:
+    url = "http://10.10.11.21:8130/web/services/PBOB8XDA/"
+
+    xml_payload = (
+        f'<?xml version="1.0" encoding="UTF-8"?>\n'
+        f"<message>\n"
+        f"    <user>ECALDO</user>\n"
+        f"    <plantCode>62</plantCode>\n"
+        f"    <barcodeFiche>{sn}</barcodeFiche>\n"
+        f"</message>"
+    )
+
+    headers = {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Accept": "application/xml",
+    }
+
+    try:
+        response = requests.post(
+            url,
+            data=xml_payload.encode("utf-8"),
+            headers=headers,
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return False, None
+
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError:
+        return False, None
+
+    raw_date = root.findtext("ficheExpirDate")
+    if not raw_date:
+        return False, None
+
+    raw_date = raw_date.strip()
+    if raw_date in ("0", "1", ""):
+        return False, None
+
+    try:
+        parsed_date = datetime.strptime(raw_date, "%Y%m%d").date()
+        return True, parsed_date
+    except ValueError:
+        return False, None
+
+
+def delete_last_object_from_process():
+    ...

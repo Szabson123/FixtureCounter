@@ -33,7 +33,6 @@ admin.site.register(ProductProcessFields)
 class LogFromMistakeAdmin(admin.ModelAdmin):
     readonly_fields = ("date_time",)
 
-
 @admin.register(DataBasesSpiMapNew)
 class DataBasesSpiMapNewAdmin(admin.ModelAdmin):
     list_display = ('data_base_name', 'ip', 'line_name', 'active')

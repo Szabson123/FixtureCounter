@@ -4,7 +4,7 @@ from .views import (ProductViewSet, ProductProcessViewSet, ProductObjectViewSet,
                     PlaceViewSet, ProductMoveView, AppKillStatusView, GraphImportView, ProductStartNewProduction,
                     ContinueProduction, ScrapProduct, BulkProductObjectCreateView, ListGroupsStatuses, SubProductsCounter, ProductMoveListView,
                     RetoolingView, StencilStartNewProd, LogFromMistakeData, ProductProcessList, PlaceInGroupAdmin, UnifiedLogsViewSet, ProductObjectAdminViewSet,
-                    ProductObjectAdminViewSetProcessHelper, ProductObjectAdminViewSetPlaceHelper, GroupUpdateStatus)
+                    ProductObjectAdminViewSetProcessHelper, ProductObjectAdminViewSetPlaceHelper, GroupUpdateStatus, SilliconAddingBosch, SilliconCheckBosch)
 
 from rest_framework.routers import DefaultRouter
 
@@ -20,7 +20,6 @@ router.register(r'(?P<product_id>\d+)/admin-objects', ProductObjectAdminViewSet)
 router.register(r'admin-objects',ProductObjectAdminViewSet,basename='admin-objects')
 
 router.register(r'bad-logs', LogFromMistakeData, basename='bad_logs')
-
 
 urlpatterns = [
     path('product-object/move/<uuid:process_uuid>/', ProductMoveView.as_view(), name='product-move'),
@@ -51,7 +50,9 @@ urlpatterns = [
 
     path('process/helper/<int:product_id>/', ProductObjectAdminViewSetProcessHelper.as_view(), name='helper-process'),
     path('place/helper/<int:product_id>/', ProductObjectAdminViewSetPlaceHelper.as_view(), name='helper-process'),
-    path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking')
+    path('admin/change-checking/<int:pk>/', GroupUpdateStatus.as_view(), name='change-checking'),
+    path('bosch/check-expire/', SilliconCheckBosch.as_view(), name='bosch-check-expire'),
+    path('bosch/add-new-sillicon/', SilliconAddingBosch.as_view(), name='bosch-add-new-sillicon'),
 ]
 
 urlpatterns += router.urls

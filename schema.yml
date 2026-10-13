@@ -1,0 +1,7043 @@
+openapi: 3.0.3
+info:
+  title: Your Project API
+  version: 1.0.0
+  description: Your project description
+paths:
+  /api/clear-counter/{fixture_id}/:
+    post:
+      operationId: api_clear_counter_create
+      parameters:
+      - in: path
+        name: fixture_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/golden-samples/all/:
+    get:
+      operationId: api_golden_samples_all_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMasterSampleSimpleListList'
+          description: ''
+  /api/golden-samples/goldens/{project_name}/:
+    get:
+      operationId: api_golden_samples_goldens_retrieve
+      parameters:
+      - in: path
+        name: project_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleSimpleList'
+          description: ''
+  /api/golden-samples/machine_validation/:
+    post:
+      operationId: api_golden_samples_machine_validation_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MachineTimeStamp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MachineTimeStamp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MachineTimeStamp'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineTimeStamp'
+          description: ''
+  /api/golden-samples/mastersample-check/:
+    post:
+      operationId: api_golden_samples_mastersample_check_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterSampleCheck'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MasterSampleCheck'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MasterSampleCheck'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleCheck'
+          description: ''
+  /api/golden-samples/mastersample-type/:
+    post:
+      operationId: api_golden_samples_mastersample_type_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterSampleType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MasterSampleType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MasterSampleType'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleType'
+          description: ''
+  /api/golden-samples/mastersample/fwk/check/:
+    post:
+      operationId: api_golden_samples_mastersample_fwk_check_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckMasterSampleFWK'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckMasterSampleFWK'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckMasterSampleFWK'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckMasterSampleFWK'
+          description: ''
+  /api/golden-samples/mastersample/fwk/set-invalid/:
+    post:
+      operationId: api_golden_samples_mastersample_fwk_set_invalid_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClearSamplesResultSer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClearSamplesResultSer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClearSamplesResultSer'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClearSamplesResultSer'
+          description: ''
+  /api/golden-samples/mastersample/fwk/set-valid/:
+    get:
+      operationId: api_golden_samples_mastersample_fwk_set_valid_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/golden-samples/mastersamples/:
+    get:
+      operationId: api_golden_samples_mastersamples_list
+      parameters:
+      - in: query
+        name: additional_project_name
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: client
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: code_smd
+        schema:
+          type: array
+          items:
+            type: string
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: departament
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: endcodes
+        schema:
+          type: array
+          items:
+            type: string
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: master_type
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: process_name
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMasterSampleSerializerListList'
+          description: ''
+  /api/golden-samples/mastersamples/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleUpdate'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterSampleUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MasterSampleUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MasterSampleUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleUpdate'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMasterSampleUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMasterSampleUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMasterSampleUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleUpdate'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/additional-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_additional_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdditionalNameProject'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_additional_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalNameProject'
+          description: ''
+  /api/golden-samples/mastersamples/additional-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_additional_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional name project.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalNameProject'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_additional_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional name project.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdditionalNameProject'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalNameProject'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_additional_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional name project.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdditionalNameProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdditionalNameProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdditionalNameProject'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalNameProject'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_additional_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional name project.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/client-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_client_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientName'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_client_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientName'
+          description: ''
+  /api/golden-samples/mastersamples/client-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_client_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this client name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientName'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_client_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this client name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientName'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_client_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this client name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClientName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClientName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClientName'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientName'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_client_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this client name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/code-smd-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_code_smd_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_code_smd_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+  /api/golden-samples/mastersamples/code-smd-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_code_smd_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this code smd.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_code_smd_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this code smd.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_code_smd_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this code smd.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_code_smd_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this code smd.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/create/:
+    post:
+      operationId: api_golden_samples_mastersamples_create_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterSampleManyCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MasterSampleManyCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MasterSampleManyCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterSampleManyCreate'
+          description: ''
+  /api/golden-samples/mastersamples/departament-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_departament_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Department'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_departament_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Department'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Department'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+  /api/golden-samples/mastersamples/departament-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_departament_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_departament_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Department'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Department'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_departament_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartment'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_departament_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this department.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/end-code/:
+    get:
+      operationId: api_golden_samples_mastersamples_end_code_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_end_code_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+  /api/golden-samples/mastersamples/end-code/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_end_code_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this end code.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_end_code_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this end code.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeSmd'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_end_code_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this end code.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCodeSmd'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeSmd'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_end_code_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this end code.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/process-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_process_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessName'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_process_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessName'
+          description: ''
+  /api/golden-samples/mastersamples/process-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_process_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this process name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessName'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_process_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this process name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessName'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_process_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this process name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessName'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessName'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_process_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this process name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/mastersamples/type-name/:
+    get:
+      operationId: api_golden_samples_mastersamples_type_name_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TypeName'
+          description: ''
+    post:
+      operationId: api_golden_samples_mastersamples_type_name_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeName'
+          description: ''
+  /api/golden-samples/mastersamples/type-name/{id}/:
+    get:
+      operationId: api_golden_samples_mastersamples_type_name_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this type name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeName'
+          description: ''
+    put:
+      operationId: api_golden_samples_mastersamples_type_name_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this type name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TypeName'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeName'
+          description: ''
+    patch:
+      operationId: api_golden_samples_mastersamples_type_name_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this type name.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTypeName'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTypeName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTypeName'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeName'
+          description: ''
+    delete:
+      operationId: api_golden_samples_mastersamples_type_name_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this type name.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/golden-samples/statistics/:
+    get:
+      operationId: api_golden_samples_statistics_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullStatistics'
+          description: ''
+  /api/golden-samples/variant/:
+    get:
+      operationId: api_golden_samples_variant_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/golden-service/force-validate-machine/:
+    post:
+      operationId: api_golden_service_force_validate_machine_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachine'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachine'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachine'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForceValidMachine'
+          description: ''
+  /api/golden-service/force-validate-machine-app/:
+    post:
+      operationId: api_golden_service_force_validate_machine_app_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachineSerializerApp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachineSerializerApp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForceValidMachineSerializerApp'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForceValidMachineSerializerApp'
+          description: ''
+  /api/golden-service/golden-prepare-check/:
+    post:
+      operationId: api_golden_service_golden_prepare_check_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoldensMainValidation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoldensMainValidation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoldensMainValidation'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoldensMainValidation'
+          description: ''
+  /api/golden-service/golden-types-check/:
+    post:
+      operationId: api_golden_service_golden_types_check_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoldensTypeValidation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoldensTypeValidation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoldensTypeValidation'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoldensTypeValidation'
+          description: ''
+  /api/golden-service/invalidate-machine/:
+    post:
+      operationId: api_golden_service_invalidate_machine_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MachineInvalidate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MachineInvalidate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MachineInvalidate'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineInvalidate'
+          description: ''
+  /api/golden-service/machine-validation-list/:
+    get:
+      operationId: api_golden_service_machine_validation_list_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MachineMain'
+          description: ''
+  /api/golden-service/production-observer/:
+    post:
+      operationId: api_golden_service_production_observer_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductionObserver'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductionObserver'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductionObserver'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionObserver'
+          description: ''
+  /api/machine-cycles-limit-exceeded/:
+    post:
+      operationId: api_machine_cycles_limit_exceeded_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCreateCounter'
+          description: ''
+  /api/machine/get_info/:
+    get:
+      operationId: api_machine_get_info_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FullInfoFixture'
+          description: ''
+  /api/machine/get_info/{id}/:
+    get:
+      operationId: api_machine_get_info_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixture.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullInfoFixture'
+          description: ''
+  /api/mes/unluck-history/:
+    get:
+      operationId: api_mes_unluck_history_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnlockHistory'
+          description: ''
+  /api/new-upd-counter/:
+    post:
+      operationId: api_new_upd_counter_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCreateCounter'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCreateCounter'
+          description: ''
+  /api/process/{group_id}/admin-process/places-in-groups/:
+    get:
+      operationId: api_process_admin_process_places_in_groups_list
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlaceSerializerAdmin'
+          description: ''
+  /api/process/{group_id}/admin-process/places-in-groups/{id}/:
+    get:
+      operationId: api_process_admin_process_places_in_groups_retrieve
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceSerializerAdmin'
+          description: ''
+    patch:
+      operationId: api_process_admin_process_places_in_groups_partial_update
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceSerializerAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceSerializerAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceSerializerAdmin'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceSerializerAdmin'
+          description: ''
+  /api/process/{process_id}/place/:
+    get:
+      operationId: api_process_place_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Place'
+          description: ''
+    post:
+      operationId: api_process_place_create
+      parameters:
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Place'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Place'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Place'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Place'
+          description: ''
+  /api/process/{process_id}/place/{id}/:
+    get:
+      operationId: api_process_place_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Place'
+          description: ''
+    put:
+      operationId: api_process_place_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Place'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Place'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Place'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Place'
+          description: ''
+    patch:
+      operationId: api_process_place_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlace'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlace'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlace'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Place'
+          description: ''
+    delete:
+      operationId: api_process_place_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this place.
+        required: true
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/{product_id}/{process_uuid}/bulk-create/:
+    post:
+      operationId: api_process_bulk_create_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/{product_id}/{process_uuid}/bulk-create-to-mother/:
+    post:
+      operationId: api_process_bulk_create_to_mother_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/{product_id}/{process_uuid}/product-objects/:
+    get:
+      operationId: api_process_product_objects_list
+      parameters:
+      - in: query
+        name: current_place
+        schema:
+          type: string
+      - in: query
+        name: current_process
+        schema:
+          type: string
+          format: uuid
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: place_isnull
+        schema:
+          type: boolean
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductObjectList'
+          description: ''
+    post:
+      operationId: api_process_product_objects_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+  /api/process/{product_id}/{process_uuid}/product-objects/{id}/:
+    get:
+      operationId: api_process_product_objects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+    put:
+      operationId: api_process_product_objects_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObject'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+    patch:
+      operationId: api_process_product_objects_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+    delete:
+      operationId: api_process_product_objects_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/{product_id}/{process_uuid}/product-objects/{id}/change-place/:
+    patch:
+      operationId: api_process_product_objects_change_place_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+  /api/process/{product_id}/{process_uuid}/product-objects/{id}/children/:
+    get:
+      operationId: api_process_product_objects_children_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+  /api/process/{product_id}/{process_uuid}/product-objects/change-place-by-sn/:
+    patch:
+      operationId: api_process_product_objects_change_place_by_sn_partial_update
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          pattern: ^[0-9a-f-]+$
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObject'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObject'
+          description: ''
+  /api/process/{product_id}/admin-objects/:
+    get:
+      operationId: api_process_admin_objects_list_2
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductObjectAdminList'
+          description: ''
+    post:
+      operationId: api_process_admin_objects_create_2
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+  /api/process/{product_id}/admin-objects/{id}/:
+    get:
+      operationId: api_process_admin_objects_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    put:
+      operationId: api_process_admin_objects_update_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    patch:
+      operationId: api_process_admin_objects_partial_update_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    delete:
+      operationId: api_process_admin_objects_destroy_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/process/{product_id}/graph-import/:
+    get:
+      operationId: api_process_graph_import_retrieve
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: api_process_graph_import_create
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/{product_id}/product-processes/:
+    get:
+      operationId: api_process_product_processes_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductProcess'
+          description: ''
+    post:
+      operationId: api_process_product_processes_create
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductProcess'
+          description: ''
+  /api/process/{product_id}/product-processes/{id}/:
+    get:
+      operationId: api_process_product_processes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this product process.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductProcess'
+          description: ''
+    put:
+      operationId: api_process_product_processes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this product process.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductProcess'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductProcess'
+          description: ''
+    patch:
+      operationId: api_process_product_processes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this product process.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductProcess'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductProcess'
+          description: ''
+    delete:
+      operationId: api_process_product_processes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this product process.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/{product_object_id}/product-object-processes/:
+    get:
+      operationId: api_process_product_object_processes_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductObjectProcess'
+          description: ''
+    post:
+      operationId: api_process_product_object_processes_create
+      parameters:
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcess'
+          description: ''
+  /api/process/{product_object_id}/product-object-processes/{id}/:
+    get:
+      operationId: api_process_product_object_processes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process.
+        required: true
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcess'
+          description: ''
+    put:
+      operationId: api_process_product_object_processes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process.
+        required: true
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcess'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcess'
+          description: ''
+    patch:
+      operationId: api_process_product_object_processes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process.
+        required: true
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcess'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcess'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcess'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcess'
+          description: ''
+    delete:
+      operationId: api_process_product_object_processes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process.
+        required: true
+      - in: path
+        name: product_object_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/admin-objects/:
+    get:
+      operationId: api_process_admin_objects_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductObjectAdminList'
+          description: ''
+    post:
+      operationId: api_process_admin_objects_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+  /api/process/admin-objects/{id}/:
+    get:
+      operationId: api_process_admin_objects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    put:
+      operationId: api_process_admin_objects_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectAdmin'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    patch:
+      operationId: api_process_admin_objects_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectAdmin'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectAdmin'
+          description: ''
+    delete:
+      operationId: api_process_admin_objects_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/process/admin-process/process-list/:
+    get:
+      operationId: api_process_admin_process_process_list_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductProcessSimple'
+          description: ''
+  /api/process/admin/change-checking/{id}/:
+    put:
+      operationId: api_process_admin_change_checking_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceGroupToAppKillUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlaceGroupToAppKillUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlaceGroupToAppKillUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceGroupToAppKillUpdate'
+          description: ''
+    patch:
+      operationId: api_process_admin_change_checking_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceGroupToAppKillUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceGroupToAppKillUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaceGroupToAppKillUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceGroupToAppKillUpdate'
+          description: ''
+  /api/process/bad-logs/:
+    get:
+      operationId: api_process_bad_logs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: place__name
+        schema:
+          type: string
+      - in: query
+        name: process__label
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LogFromMistake'
+          description: ''
+  /api/process/bosch/add-new-sillicon/:
+    post:
+      operationId: api_process_bosch_add_new_sillicon_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoschSilliconCheck'
+          description: ''
+  /api/process/bosch/check-expire/:
+    post:
+      operationId: api_process_bosch_check_expire_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BoschSilliconCheck'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoschSilliconCheck'
+          description: ''
+  /api/process/continue-prod/{process_uuid}/:
+    post:
+      operationId: api_process_continue_prod_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/counter-products/:
+    get:
+      operationId: api_process_counter_products_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/get-statuses-groups/:
+    get:
+      operationId: api_process_get_statuses_groups_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlaceGroupToAppKill'
+          description: ''
+  /api/process/kill-app/:
+    get:
+      operationId: api_process_kill_app_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/place/{place_id}/admin-logs/:
+    get:
+      operationId: api_process_place_admin_logs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: place_id
+        schema:
+          type: integer
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUnifyLogsList'
+          description: ''
+  /api/process/place/helper/{product_id}/:
+    get:
+      operationId: api_process_place_helper_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductObjectAdminSerializerPlaceHelperList'
+          description: ''
+  /api/process/process/{process_id}/admin-logs/:
+    get:
+      operationId: api_process_process_admin_logs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: process_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUnifyLogsList'
+          description: ''
+  /api/process/process/helper/{product_id}/:
+    get:
+      operationId: api_process_process_helper_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductObjectAdminSerializerProcessHelperList'
+          description: ''
+  /api/process/product-object-process-logs/:
+    get:
+      operationId: api_process_product_object_process_logs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+    post:
+      operationId: api_process_product_object_process_logs_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+  /api/process/product-object-process-logs/{id}/:
+    get:
+      operationId: api_process_product_object_process_logs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process
+          log.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+    put:
+      operationId: api_process_product_object_process_logs_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process
+          log.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductObjectProcessLog'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+    patch:
+      operationId: api_process_product_object_process_logs_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process
+          log.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcessLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcessLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductObjectProcessLog'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+    delete:
+      operationId: api_process_product_object_process_logs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product object process
+          log.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/product-object-process-logs/all-logs/:
+    get:
+      operationId: api_process_product_object_process_logs_all_logs_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductObjectProcessLog'
+          description: ''
+  /api/process/product-object/move-list/{process_uuid}/:
+    post:
+      operationId: api_process_product_object_move_list_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/product-object/move/{process_uuid}/:
+    post:
+      operationId: api_process_product_object_move_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/product/{product_id}/admin-logs/:
+    get:
+      operationId: api_process_product_admin_logs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUnifyLogsList'
+          description: ''
+  /api/process/products/:
+    get:
+      operationId: api_process_products_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: api_process_products_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/process/products/{id}/:
+    get:
+      operationId: api_process_products_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: api_process_products_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: api_process_products_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: api_process_products_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/process/retooling/{process_uuid}/:
+    post:
+      operationId: api_process_retooling_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Retooling'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Retooling'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Retooling'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Retooling'
+          description: ''
+  /api/process/start-new-prod-stencil/{process_uuid}/:
+    post:
+      operationId: api_process_start_new_prod_stencil_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StencilStartProd'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StencilStartProd'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StencilStartProd'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StencilStartProd'
+          description: ''
+  /api/process/start-new-prod/{process_uuid}/:
+    post:
+      operationId: api_process_start_new_prod_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/process/trash-obj/{process_uuid}/:
+    post:
+      operationId: api_process_trash_obj_create
+      parameters:
+      - in: path
+        name: process_uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/spea-card/create-diag-file/{spea_card_id}/:
+    post:
+      operationId: api_spea_card_create_diag_file_create
+      parameters:
+      - in: path
+        name: spea_card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnosisFile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DiagnosisFile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DiagnosisFile'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnosisFile'
+          description: ''
+  /api/spea-card/objects/:
+    get:
+      operationId: api_spea_card_objects_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: is_broken
+        schema:
+          type: boolean
+      - in: query
+        name: is_main_wardrobe
+        schema:
+          type: boolean
+      - in: query
+        name: location_in_company
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: sn
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpeaCard'
+          description: ''
+    post:
+      operationId: api_spea_card_objects_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+  /api/spea-card/objects/{id}/:
+    get:
+      operationId: api_spea_card_objects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+    put:
+      operationId: api_spea_card_objects_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+    patch:
+      operationId: api_spea_card_objects_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaCard'
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+    delete:
+      operationId: api_spea_card_objects_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/spea-card/objects/{id}/back_to_wardrobe/:
+    post:
+      operationId: api_spea_card_objects_back_to_wardrobe_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+  /api/spea-card/objects/{id}/change_place/:
+    post:
+      operationId: api_spea_card_objects_change_place_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCardLocation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCardLocation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCardLocation'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCardLocation'
+          description: ''
+  /api/spea-card/objects/{id}/send_out_of_company/:
+    post:
+      operationId: api_spea_card_objects_send_out_of_company_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+  /api/spea-card/objects/{id}/set_object_bad/:
+    post:
+      operationId: api_spea_card_objects_set_object_bad_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+  /api/spea-card/objects/{id}/set_object_good/:
+    post:
+      operationId: api_spea_card_objects_set_object_good_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this spea card.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpeaCard'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeaCard'
+          description: ''
+  /api/unlinker/unlinking/create-profile/:
+    post:
+      operationId: api_unlinker_unlinking_create_profile_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUnlinkerProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUnlinkerProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUnlinkerProfile'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUnlinkerProfile'
+          description: ''
+  /api/unlinker/unlinking/history/:
+    get:
+      operationId: api_unlinker_unlinking_history_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessUnlinking'
+          description: ''
+  /api/unlinker/unlinking/login/{user_card_id}/:
+    post:
+      operationId: api_unlinker_unlinking_login_create
+      parameters:
+      - in: path
+        name: user_card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/unlinker/unlinking/start-process/:
+    post:
+      operationId: api_unlinker_unlinking_start_process_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlinkingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UnlinkingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UnlinkingRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlinkingRequest'
+          description: ''
+  /api/user/auth/csrf/:
+    get:
+      operationId: api_user_auth_csrf_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/user/auth/login/:
+    post:
+      operationId: api_user_auth_login_create
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/user/auth/logout/:
+    post:
+      operationId: api_user_auth_logout_create
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/user/auth/me/:
+    get:
+      operationId: api_user_auth_me_retrieve
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AdditionalNameProject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    AppToKill:
+      type: object
+      properties:
+        killing_flag:
+          type: boolean
+    BasicStatistics:
+      type: object
+      properties:
+        total_samples:
+          type: integer
+        out_of_date_samples:
+          type: integer
+        in_date:
+          type: integer
+        pass_type:
+          type: integer
+        fail_type:
+          type: integer
+        calib_type:
+          type: integer
+        testers:
+          type: integer
+        no_testers:
+          type: integer
+        highest_counter:
+          type: integer
+      required:
+      - calib_type
+      - fail_type
+      - highest_counter
+      - in_date
+      - no_testers
+      - out_of_date_samples
+      - pass_type
+      - testers
+      - total_samples
+    BoschSilliconCheck:
+      type: object
+      properties:
+        sn:
+          type: string
+        place:
+          type: string
+      required:
+      - place
+      - sn
+    CheckMasterSampleFWK:
+      type: object
+      properties:
+        sn:
+          type: string
+        site:
+          type: integer
+        machine_id:
+          type: string
+        result:
+          type: string
+          nullable: true
+        internal_code:
+          type: string
+      required:
+      - internal_code
+      - machine_id
+      - site
+      - sn
+    ClearSamplesResultSer:
+      type: object
+      properties:
+        site:
+          type: integer
+        machine_id:
+          type: string
+      required:
+      - machine_id
+    ClientName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    CodeSmd:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 255
+      required:
+      - code
+      - id
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        color:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - id
+      - name
+    DiagnosisFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        file:
+          type: string
+          format: uri
+          pattern: (?:txt)$
+      required:
+      - active
+      - file
+      - id
+    EndCode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 255
+      required:
+      - code
+      - id
+    ForceValidMachine:
+      type: object
+      properties:
+        machine_name:
+          type: string
+        hours:
+          type: integer
+      required:
+      - hours
+      - machine_name
+    ForceValidMachineSerializerApp:
+      type: object
+      properties:
+        machine_name:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - machine_name
+      - password
+    FullInfoFixture:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        counter_all:
+          type: number
+          format: double
+          readOnly: true
+        counter_last_maint:
+          type: number
+          format: double
+          readOnly: true
+        last_maint_date:
+          type: string
+          format: date-time
+          readOnly: true
+        limit_procent:
+          type: string
+          readOnly: true
+        cycles_limit:
+          type: integer
+          readOnly: true
+      required:
+      - counter_all
+      - counter_last_maint
+      - cycles_limit
+      - id
+      - last_maint_date
+      - limit_procent
+      - name
+    FullStatistics:
+      type: object
+      properties:
+        stats:
+          $ref: '#/components/schemas/BasicStatistics'
+        top_client:
+          $ref: '#/components/schemas/ClientName'
+        top_adding_user:
+          $ref: '#/components/schemas/User'
+      required:
+      - stats
+      - top_adding_user
+      - top_client
+    GoldensMainValidation:
+      type: object
+      properties:
+        goldens:
+          type: array
+          items:
+            type: string
+        machine_name:
+          type: string
+        phase_id:
+          type: string
+        unique_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - goldens
+      - machine_name
+      - phase_id
+    GoldensTypeValidation:
+      type: object
+      properties:
+        goldens:
+          type: object
+          additionalProperties:
+            type: string
+        machine_name:
+          type: string
+      required:
+      - goldens
+      - machine_name
+    LocationSpea:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    LogFromMistake:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        process_uuid_raw:
+          type: string
+          nullable: true
+          maxLength: 255
+        place_name_raw:
+          type: string
+          nullable: true
+          maxLength: 255
+        product_sn:
+          type: string
+          maxLength: 255
+        who:
+          type: string
+          nullable: true
+          maxLength: 255
+        error_message:
+          type: string
+        error_code:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        movement_type:
+          type: string
+          nullable: true
+          maxLength: 255
+        date_time:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        process:
+          type: string
+          format: uuid
+          nullable: true
+        place:
+          type: integer
+          nullable: true
+        product_object:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - date_time
+      - error_code
+      - error_message
+      - id
+      - product_sn
+    MachineFullValidation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        is_valid:
+          type: boolean
+        time_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ended:
+          type: boolean
+      required:
+      - id
+      - time_date
+    MachineInvalidate:
+      type: object
+      properties:
+        machine_name:
+          type: string
+      required:
+      - machine_name
+    MachineInvalidation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date_time_start:
+          type: string
+          format: date-time
+          readOnly: true
+        date_time_end:
+          type: string
+          format: date-time
+        is_valid:
+          type: boolean
+      required:
+      - date_time_end
+      - date_time_start
+      - id
+    MachineMain:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        forcevalidation:
+          type: array
+          items:
+            $ref: '#/components/schemas/MachineInvalidation'
+          readOnly: true
+        fullvalidation:
+          type: array
+          items:
+            $ref: '#/components/schemas/MachineFullValidation'
+          readOnly: true
+      required:
+      - forcevalidation
+      - fullvalidation
+      - id
+      - name
+    MachineTimeStamp:
+      type: object
+      properties:
+        machine_name:
+          type: string
+      required:
+      - machine_name
+    MasterSampleCheck:
+      type: object
+      properties:
+        machine_name:
+          type: string
+        goldens:
+          type: array
+          items:
+            type: string
+      required:
+      - goldens
+      - machine_name
+    MasterSampleManyCreate:
+      type: object
+      properties:
+        client:
+          type: integer
+          nullable: true
+        process_name:
+          type: integer
+        created_by:
+          type: integer
+          nullable: true
+        departament:
+          type: integer
+          nullable: true
+        project_name:
+          type: string
+          maxLength: 255
+        expire_date:
+          type: string
+          format: date
+        pcb_rev_code:
+          type: string
+          maxLength: 255
+        code_smd:
+          type: array
+          items:
+            type: string
+        endcodes:
+          type: array
+          items:
+            type: string
+        samples:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          writeOnly: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+        additional_project_name:
+          type: integer
+      required:
+      - additional_project_name
+      - expire_date
+      - pcb_rev_code
+      - process_name
+      - project_name
+      - samples
+    MasterSampleSerializerList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        project_name:
+          type: string
+          maxLength: 255
+        sn:
+          type: string
+          maxLength: 255
+        date_created:
+          type: string
+          format: date
+          readOnly: true
+        expire_date:
+          type: string
+          format: date
+        pcb_rev_code:
+          type: string
+          maxLength: 255
+        additional_project_name:
+          allOf:
+          - $ref: '#/components/schemas/AdditionalNameProject'
+          readOnly: true
+        client:
+          allOf:
+          - $ref: '#/components/schemas/ClientName'
+          readOnly: true
+        process_name:
+          allOf:
+          - $ref: '#/components/schemas/ProcessName'
+          readOnly: true
+        master_type:
+          allOf:
+          - $ref: '#/components/schemas/TypeName'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        endcodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndCode'
+          readOnly: true
+        code_smd:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodeSmd'
+          readOnly: true
+        departament:
+          allOf:
+          - $ref: '#/components/schemas/Department'
+          readOnly: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+        subobjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterSampleSubObject'
+          readOnly: true
+        details:
+          type: string
+          nullable: true
+      required:
+      - additional_project_name
+      - client
+      - code_smd
+      - created_by
+      - date_created
+      - departament
+      - endcodes
+      - expire_date
+      - id
+      - master_type
+      - pcb_rev_code
+      - process_name
+      - project_name
+      - sn
+      - subobjects
+    MasterSampleSimpleList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sn:
+          type: string
+          maxLength: 255
+        master_type:
+          allOf:
+          - $ref: '#/components/schemas/TypeName'
+          readOnly: true
+        counter:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - master_type
+      - sn
+    MasterSampleSubObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        msn:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+          maxLength: 1024
+      required:
+      - desc
+      - id
+      - msn
+    MasterSampleType:
+      type: object
+      properties:
+        goldens:
+          type: array
+          items:
+            type: string
+      required:
+      - goldens
+    MasterSampleUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          nullable: true
+        client:
+          type: integer
+          nullable: true
+        process_name:
+          type: integer
+          nullable: true
+        master_type:
+          type: integer
+          nullable: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        departament:
+          type: integer
+          nullable: true
+        details:
+          type: string
+          nullable: true
+        comennt:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+        date_created:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        project_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        sn:
+          type: string
+          nullable: true
+          maxLength: 255
+        expire_date:
+          type: string
+          format: date
+          nullable: true
+        pcb_rev_code:
+          type: string
+          nullable: true
+          maxLength: 255
+        code_smd:
+          type: string
+          readOnly: true
+        endcodes:
+          type: string
+          readOnly: true
+        subobjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterSampleSubObject'
+          readOnly: true
+        additional_project_name:
+          type: integer
+          nullable: true
+      required:
+      - code_smd
+      - created_by
+      - date_created
+      - endcodes
+      - id
+      - subobjects
+    PaginatedMasterSampleSerializerListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterSampleSerializerList'
+    PaginatedMasterSampleSimpleListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterSampleSimpleList'
+    PaginatedProductObjectAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductObjectAdmin'
+    PaginatedProductObjectAdminSerializerPlaceHelperList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductObjectAdminSerializerPlaceHelper'
+    PaginatedProductObjectAdminSerializerProcessHelperList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductObjectAdminSerializerProcessHelper'
+    PaginatedProductObjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductObject'
+    PaginatedUnifyLogsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifyLogs'
+    PatchedAdditionalNameProject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+    PatchedClientName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+    PatchedCodeSmd:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 255
+    PatchedDepartment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        color:
+          type: string
+          nullable: true
+          maxLength: 255
+    PatchedMasterSampleUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          nullable: true
+        client:
+          type: integer
+          nullable: true
+        process_name:
+          type: integer
+          nullable: true
+        master_type:
+          type: integer
+          nullable: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        departament:
+          type: integer
+          nullable: true
+        details:
+          type: string
+          nullable: true
+        comennt:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+        date_created:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        project_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        sn:
+          type: string
+          nullable: true
+          maxLength: 255
+        expire_date:
+          type: string
+          format: date
+          nullable: true
+        pcb_rev_code:
+          type: string
+          nullable: true
+          maxLength: 255
+        code_smd:
+          type: string
+          readOnly: true
+        endcodes:
+          type: string
+          readOnly: true
+        subobjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterSampleSubObject'
+          readOnly: true
+        additional_project_name:
+          type: integer
+          nullable: true
+    PatchedPlace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        process_name:
+          type: string
+          readOnly: true
+    PatchedPlaceGroupToAppKillUpdate:
+      type: object
+      properties:
+        checking:
+          type: boolean
+    PatchedPlaceSerializerAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        label:
+          type: string
+          readOnly: true
+        apptokill:
+          $ref: '#/components/schemas/AppToKill'
+    PatchedProcessName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+    PatchedProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+    PatchedProductObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_sn:
+          type: string
+        serial_number:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        production_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expire_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        place_name:
+          type: string
+          writeOnly: true
+        who_entry:
+          type: string
+          writeOnly: true
+        current_place_name:
+          type: string
+          readOnly: true
+        mother_object:
+          type: integer
+          nullable: true
+        exp_date_in_process:
+          type: string
+          format: date
+          nullable: true
+        quranteen_time:
+          type: string
+          format: date-time
+          nullable: true
+        mother_sn:
+          type: string
+          writeOnly: true
+        is_mother:
+          type: boolean
+        sub_product:
+          type: integer
+          nullable: true
+        sub_product_name:
+          type: string
+          readOnly: true
+        sito_cycles_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sito_cycle_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_in_process:
+          type: string
+          format: date-time
+          nullable: true
+        last_move:
+          type: string
+          format: date-time
+          nullable: true
+        sito_basic_unnamed_place:
+          type: string
+          nullable: true
+        free_plain_text:
+          type: string
+          nullable: true
+    PatchedProductObjectAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        is_mother:
+          type: boolean
+        product_id:
+          type: integer
+          nullable: true
+        last_move:
+          type: string
+          format: date-time
+          nullable: true
+        current_process_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_place_id:
+          type: integer
+          nullable: true
+        sito_basic_unnamed_place:
+          type: string
+          nullable: true
+          maxLength: 255
+        free_plain_text:
+          type: string
+          nullable: true
+          maxLength: 255
+        serial_number:
+          type: string
+          nullable: true
+          maxLength: 255
+        full_sn:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expire_date:
+          type: string
+          format: date
+          nullable: true
+        production_date:
+          type: string
+          format: date
+          nullable: true
+        exp_date_in_process:
+          type: string
+          format: date
+          nullable: true
+        quranteen_time:
+          type: string
+          format: date-time
+          nullable: true
+        max_in_process:
+          type: string
+          format: date-time
+          nullable: true
+        ex_mother:
+          type: string
+          nullable: true
+          maxLength: 255
+        sito_cycle_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sito_cycles_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        end:
+          type: boolean
+        is_full:
+          type: boolean
+        current_process_name:
+          type: string
+          readOnly: true
+        current_place_name:
+          type: string
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        sub_product_name:
+          type: string
+          readOnly: true
+    PatchedProductObjectProcess:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        process_name:
+          type: string
+          readOnly: true
+    PatchedProductObjectProcessLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        entry_time:
+          type: string
+          format: date-time
+          readOnly: true
+        who_entry:
+          type: string
+          nullable: true
+          maxLength: 255
+        full_sn:
+          type: string
+          readOnly: true
+        process_name:
+          type: string
+          readOnly: true
+        place_name:
+          type: string
+          readOnly: true
+        movement_type:
+          type: string
+          nullable: true
+          maxLength: 255
+    PatchedProductProcess:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: integer
+        type:
+          type: string
+          maxLength: 255
+        label:
+          type: string
+          maxLength: 255
+        pos_x:
+          type: number
+          format: double
+          nullable: true
+        pos_y:
+          type: number
+          format: double
+          nullable: true
+        is_required:
+          type: boolean
+        search:
+          type: boolean
+        defaults:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessDefaults'
+          readOnly: true
+        conditions:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessConditions'
+          readOnly: true
+        starts:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessStarts'
+          readOnly: true
+        endings:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessEndings'
+          readOnly: true
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessFields'
+          readOnly: true
+    PatchedSpeaCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sn:
+          type: string
+          maxLength: 255
+        category:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          $ref: '#/components/schemas/LocationSpea'
+        is_broken:
+          type: boolean
+          readOnly: true
+        first_file:
+          type: string
+          readOnly: true
+        out_of_company:
+          type: boolean
+    PatchedTypeName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        color:
+          type: string
+          nullable: true
+          maxLength: 255
+    Place:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        process_name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - process_name
+    PlaceGroupToAppKill:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        last_check:
+          type: string
+          format: date-time
+        status:
+          type: string
+          readOnly: true
+        checking:
+          type: boolean
+      required:
+      - id
+      - last_check
+      - name
+      - status
+    PlaceGroupToAppKillUpdate:
+      type: object
+      properties:
+        checking:
+          type: boolean
+    PlaceSerializerAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        label:
+          type: string
+          readOnly: true
+        apptokill:
+          $ref: '#/components/schemas/AppToKill'
+      required:
+      - apptokill
+      - id
+      - label
+      - name
+    ProcessName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    ProcessUnlinking:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        processdata:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessUnlinkingData'
+          readOnly: true
+        time_date:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - processdata
+      - time_date
+    ProcessUnlinkingData:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 25
+        phases:
+          nullable: true
+        error_code:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - code
+      - id
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    ProductObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_sn:
+          type: string
+        serial_number:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        production_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expire_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        place_name:
+          type: string
+          writeOnly: true
+        who_entry:
+          type: string
+          writeOnly: true
+        current_place_name:
+          type: string
+          readOnly: true
+        mother_object:
+          type: integer
+          nullable: true
+        exp_date_in_process:
+          type: string
+          format: date
+          nullable: true
+        quranteen_time:
+          type: string
+          format: date-time
+          nullable: true
+        mother_sn:
+          type: string
+          writeOnly: true
+        is_mother:
+          type: boolean
+        sub_product:
+          type: integer
+          nullable: true
+        sub_product_name:
+          type: string
+          readOnly: true
+        sito_cycles_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sito_cycle_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_in_process:
+          type: string
+          format: date-time
+          nullable: true
+        last_move:
+          type: string
+          format: date-time
+          nullable: true
+        sito_basic_unnamed_place:
+          type: string
+          nullable: true
+        free_plain_text:
+          type: string
+          nullable: true
+      required:
+      - created_at
+      - current_place_name
+      - expire_date
+      - full_sn
+      - id
+      - place_name
+      - production_date
+      - serial_number
+      - sub_product_name
+      - who_entry
+    ProductObjectAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        is_mother:
+          type: boolean
+        product_id:
+          type: integer
+          nullable: true
+        last_move:
+          type: string
+          format: date-time
+          nullable: true
+        current_process_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_place_id:
+          type: integer
+          nullable: true
+        sito_basic_unnamed_place:
+          type: string
+          nullable: true
+          maxLength: 255
+        free_plain_text:
+          type: string
+          nullable: true
+          maxLength: 255
+        serial_number:
+          type: string
+          nullable: true
+          maxLength: 255
+        full_sn:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expire_date:
+          type: string
+          format: date
+          nullable: true
+        production_date:
+          type: string
+          format: date
+          nullable: true
+        exp_date_in_process:
+          type: string
+          format: date
+          nullable: true
+        quranteen_time:
+          type: string
+          format: date-time
+          nullable: true
+        max_in_process:
+          type: string
+          format: date-time
+          nullable: true
+        ex_mother:
+          type: string
+          nullable: true
+          maxLength: 255
+        sito_cycle_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sito_cycles_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        end:
+          type: boolean
+        is_full:
+          type: boolean
+        current_process_name:
+          type: string
+          readOnly: true
+        current_place_name:
+          type: string
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        sub_product_name:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - current_place_name
+      - current_process_name
+      - full_sn
+      - id
+      - product_name
+      - sub_product_name
+    ProductObjectAdminSerializerPlaceHelper:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    ProductObjectAdminSerializerProcessHelper:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+      required:
+      - id
+      - name
+    ProductObjectProcess:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        process_name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - process_name
+    ProductObjectProcessLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        entry_time:
+          type: string
+          format: date-time
+          readOnly: true
+        who_entry:
+          type: string
+          nullable: true
+          maxLength: 255
+        full_sn:
+          type: string
+          readOnly: true
+        process_name:
+          type: string
+          readOnly: true
+        place_name:
+          type: string
+          readOnly: true
+        movement_type:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - entry_time
+      - full_sn
+      - id
+      - place_name
+      - process_name
+    ProductProcess:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: integer
+        type:
+          type: string
+          maxLength: 255
+        label:
+          type: string
+          maxLength: 255
+        pos_x:
+          type: number
+          format: double
+          nullable: true
+        pos_y:
+          type: number
+          format: double
+          nullable: true
+        is_required:
+          type: boolean
+        search:
+          type: boolean
+        defaults:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessDefaults'
+          readOnly: true
+        conditions:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessConditions'
+          readOnly: true
+        starts:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessStarts'
+          readOnly: true
+        endings:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessEndings'
+          readOnly: true
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/ProductProcessFields'
+          readOnly: true
+      required:
+      - conditions
+      - defaults
+      - endings
+      - fields
+      - id
+      - label
+      - product
+      - starts
+      - type
+    ProductProcessConditions:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pass_fail:
+          type: boolean
+      required:
+      - id
+    ProductProcessDefaults:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        how_much_days_exp_date:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        how_much_hours_max_working:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        quranteen_time:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        respect_quranteen_time:
+          type: boolean
+        expecting_child:
+          type: boolean
+        validate_fish:
+          type: boolean
+        show_the_couter:
+          type: boolean
+        use_list_endpoint:
+          type: boolean
+        production_process_type:
+          type: boolean
+        stencil_production_process_type:
+          type: boolean
+        check_outside_database:
+          type: string
+          nullable: true
+          maxLength: 255
+        use_poke:
+          type: boolean
+        working_only_if_obj_on_machine:
+          type: boolean
+        quranteen_time_receive:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - id
+    ProductProcessEndings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+      required:
+      - id
+    ProductProcessFields:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: boolean
+        mother_object:
+          type: boolean
+        sub_product:
+          type: boolean
+        is_mother:
+          type: boolean
+        current_process:
+          type: boolean
+        current_place:
+          type: boolean
+        serial_number:
+          type: boolean
+        full_sn:
+          type: boolean
+        created_at:
+          type: boolean
+        expire_date:
+          type: boolean
+        production_date:
+          type: boolean
+        exp_date_in_process:
+          type: boolean
+        quranteen_time:
+          type: boolean
+        max_in_process:
+          type: boolean
+        ex_mother:
+          type: boolean
+        sito_cycle_limit:
+          type: boolean
+        sito_cycles_count:
+          type: boolean
+        end:
+          type: boolean
+        is_full:
+          type: boolean
+        last_move:
+          type: boolean
+        free_plain_text:
+          type: boolean
+        sito_basic_unnamed_place:
+          type: boolean
+        product_process:
+          type: string
+          format: uuid
+      required:
+      - id
+      - product_process
+    ProductProcessSimple:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        label:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - label
+      - product_name
+    ProductProcessStarts:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        how_much_days_exp_date:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        quranteen_time:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        respect_quranteen_time:
+          type: boolean
+        expecting_child:
+          type: boolean
+        add_multi:
+          type: boolean
+        quranteen_time_receive:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        use_wider_create:
+          type: boolean
+        move_multi:
+          type: boolean
+      required:
+      - id
+    ProductionObserver:
+      type: object
+      properties:
+        sns:
+          type: array
+          items:
+            type: string
+        machine_name:
+          type: string
+        phase_id:
+          type: string
+      required:
+      - machine_name
+      - phase_id
+      - sns
+    Retooling:
+      type: object
+      properties:
+        place_name:
+          type: string
+        who:
+          type: string
+        movement_type:
+          type: string
+        production_card:
+          type: string
+      required:
+      - movement_type
+      - place_name
+      - production_card
+      - who
+    SpeaCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sn:
+          type: string
+          maxLength: 255
+        category:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          $ref: '#/components/schemas/LocationSpea'
+        is_broken:
+          type: boolean
+          readOnly: true
+        first_file:
+          type: string
+          readOnly: true
+        out_of_company:
+          type: boolean
+      required:
+      - first_file
+      - id
+      - is_broken
+      - location
+      - sn
+    SpeaCardLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    StatusEnum:
+      enum:
+      - IP
+      - SC
+      - ER
+      - UN
+      type: string
+      description: |-
+        * `IP` - In Progress
+        * `SC` - Success
+        * `ER` - Error
+        * `UN` - Unknown
+    StencilStartProd:
+      type: object
+      properties:
+        place_name:
+          type: string
+        movement_type:
+          type: string
+        who:
+          type: string
+        full_sn:
+          type: string
+      required:
+      - full_sn
+      - movement_type
+      - place_name
+      - who
+    TypeName:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        color:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - id
+      - name
+    UnifyLogs:
+      type: object
+      properties:
+        id:
+          type: integer
+        log_type:
+          type: string
+        date:
+          type: string
+          format: date-time
+        object_id:
+          type: integer
+          nullable: true
+        who_value:
+          type: string
+          nullable: true
+        movement:
+          type: string
+          nullable: true
+        info:
+          type: string
+          nullable: true
+        proc_id:
+          type: string
+          format: uuid
+          nullable: true
+        proc_label:
+          type: string
+          nullable: true
+        pl_id:
+          type: integer
+          nullable: true
+        pl_name:
+          type: string
+          nullable: true
+        product_object_name:
+          type: string
+          nullable: true
+        info_code:
+          type: string
+          nullable: true
+      required:
+      - date
+      - id
+      - info
+      - info_code
+      - log_type
+      - movement
+      - object_id
+      - pl_id
+      - pl_name
+      - proc_id
+      - proc_label
+      - product_object_name
+      - who_value
+    UnlinkingRequest:
+      type: object
+      properties:
+        product:
+          type: string
+          maxLength: 255
+        top_level_process:
+          type: string
+          maxLength: 255
+        full_sn_list:
+          type: object
+          additionalProperties:
+            type: boolean
+        processes:
+          type: array
+          items:
+            type: string
+        sn_list_to_rework:
+          type: array
+          items:
+            type: string
+      required:
+      - full_sn_list
+      - processes
+      - product
+      - sn_list_to_rework
+      - top_level_process
+    UnlockHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phase_id:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        internal_code:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        who:
+          type: string
+          maxLength: 255
+        date_time:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_time
+      - id
+      - internal_code
+      - phase_id
+      - who
+    UpdateCreateCounter:
+      type: object
+      properties:
+        fixture_name:
+          type: string
+      required:
+      - fixture_name
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+      required:
+      - id
+    UserUnlinkerProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_card:
+          type: string
+          maxLength: 10
+      required:
+      - id
+      - user_card
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

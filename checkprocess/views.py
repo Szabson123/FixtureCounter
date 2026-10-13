@@ -12,11 +12,12 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, GenericAPIView, UpdateAPIView
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import AllowAny
 
 from .permissions import HasPermCanSeeAdminPage, HasPermCanUpdateAdminPage
 from .filters import ProductObjectFilter, ProductObjectProcessLogFilter
 from .parsers import get_parser
-from .utils import detect_parser_type, get_printer_info_from_card, poke_process
+from .utils import detect_parser_type, get_printer_info_from_card, poke_process, check_expire_date_from_sigip, delete_last_object_from_process
 from .validation import ProcessMovementValidator, ValidationErrorWithCode
 from .models import (Product, ProductProcess, ProductObject, ProductObjectProcess, ProductObjectProcessLog, Place, AppToKill, Edge, SubProduct,
                     LastProductOnPlace, PlaceGroupToAppKill, MessageToApp, LogFromMistake)
@@ -25,7 +26,7 @@ from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObj
                         ProductObjectProcessLogSerializer, PlaceSerializer, EdgeSerializer, BulkProductObjectCreateSerializer, BulkProductObjectCreateToMotherSerializer,
                         PlaceGroupToAppKillSerializer, RetoolingSerializer, StencilStartProdSerializer, LogFromMistakeSerializer, ProductProcessSimpleSerializer,
                         AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer, ProductObjectAdminSerializer, ProductObjectAdminSerializerProcessHelper,
-                        PlaceGroupToAppKillUpdateSerializer, ProductObjectAdminSerializerPlaceHelper)
+                        PlaceGroupToAppKillUpdateSerializer, ProductObjectAdminSerializerPlaceHelper, BoschSilliconCheck, BoschSilliconAdd)
 
 from checkprocess.services.movement_service import MovementHandler
 from checkprocess.services.edge_service import EdgeSameInSameOut
@@ -1278,3 +1279,80 @@ class ProductObjectAdminViewSetPlaceHelper(ListAPIView):
     def get_queryset(self):
         product_id = self.kwargs.get('product_id')
         return Place.objects.filter(process__product_id=product_id)
+
+
+class SilliconAddingBosch(GenericAPIView):
+    serializer_class = BoschSilliconAdd
+    permission_classes = [AllowAny] 
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        place_name = serializer.validated_data['place']
+        sillicon = serializer.validated_data['sn']
+
+        place = get_object_or_404(Place, name=place_name)
+        product = get_object_or_404(Product, name="Silicone") #I know its bad desing but in this situation enough
+        sub_product = get_object_or_404(SubProduct, name="Bosch") # Same here :)
+
+        is_valid, expire_date = check_expire_date_from_sigip(sillicon)
+
+        try:
+            product_object_exists = ProductObject.objects.get(current_place=place)
+            
+            product_object_exists.current_place = None
+            product_object_exists.end = True
+            product_object_exists.save(update_fields=['current_place', 'end'])
+
+        except ProductObject.DoesNotExist:
+            pass
+
+        if is_valid:
+            obj = ProductObject.objects.create(
+                product=product,
+                sub_product=sub_product,
+                is_mother=False,
+                current_place=place,
+                serial_number=sillicon,
+                full_sn=sillicon,
+                expire_date=expire_date,
+                exp_date_in_process=expire_date,
+            )
+
+        return Response({"success": "Objekt przezbrojony"}, status=status.HTTP_200_OK)
+
+
+class SilliconCheckBosch(GenericAPIView):
+    serializer_class = BoschSilliconCheck
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        place_name = serializer.validated_data['place']
+        place = get_object_or_404(Place, name=place_name)
+        try:
+            sillicon = ProductObject.objects.get(current_place=place, end=False)
+        except ProductObject.DoesNotExist:
+            return Response({"message": False}, status=status.HTTP_200_OK)
+
+        is_valid, expire_date = check_expire_date_from_sigip(sillicon.serial_number)
+
+        if expire_date != sillicon.expire_date:
+            sillicon.expire_date = expire_date
+            sillicon.exp_date_in_process = expire_date
+            sillicon.save(update_fields=['expire_date', 'exp_date_in_process'])
+
+        return Response(
+            {
+                "message": is_valid,
+                "object": {
+                    "id": sillicon.id,
+                    "serial_number": sillicon.serial_number,
+                    "expire_date": sillicon.expire_date,
+                }
+            },
+            status=status.HTTP_200_OK
+        )
+    
