@@ -1281,9 +1281,12 @@ class ProductObjectAdminViewSetPlaceHelper(ListAPIView):
         return Place.objects.filter(process__product_id=product_id)
 
 
+from django.db import IntegrityError, transaction
+
+
 class SilliconAddingBosch(GenericAPIView):
     serializer_class = BoschSilliconAdd
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1293,35 +1296,47 @@ class SilliconAddingBosch(GenericAPIView):
         sillicon = serializer.validated_data['sn']
 
         place = get_object_or_404(Place, name=place_name)
-        product = get_object_or_404(Product, name="Silicone") #I know its bad desing but in this situation enough
-        sub_product = get_object_or_404(SubProduct, name="Bosch") # Same here :)
+        product = get_object_or_404(Product, name="Silicone")  # I know its bad desing but in this situation enough
+        sub_product = get_object_or_404(SubProduct, name="Bosch")  # Same here :)
+
+        existing = ProductObject.objects.filter(full_sn=sillicon).first()
+        if existing is not None:
+            if existing.current_place_id == place.id and not existing.end:
+                return Response(
+                    {"code": "ALREADY_ATTACHED", "message": "Ten klej jest już podpięty na tym stanowisku."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            return Response(
+                {"code": "ALREADY_USED", "message": "Ten klej był już używany."},
+                status=status.HTTP_409_CONFLICT,
+            )
 
         is_valid, expire_date = check_expire_date_from_sigip(sillicon)
 
         try:
-            product_object_exists = ProductObject.objects.get(current_place=place)
-            
-            product_object_exists.current_place = None
-            product_object_exists.end = True
-            product_object_exists.save(update_fields=['current_place', 'end'])
+            with transaction.atomic():
+                ProductObject.objects.filter(current_place=place).update(current_place=None, end=True)
 
-        except ProductObject.DoesNotExist:
-            pass
-
-        if is_valid:
-            obj = ProductObject.objects.create(
-                product=product,
-                sub_product=sub_product,
-                is_mother=False,
-                current_place=place,
-                serial_number=sillicon,
-                full_sn=sillicon,
-                expire_date=expire_date,
-                exp_date_in_process=expire_date,
-            )
+                if is_valid:
+                    ProductObject.objects.create(
+                        product=product,
+                        sub_product=sub_product,
+                        is_mother=False,
+                        current_place=place,
+                        serial_number=sillicon,
+                        full_sn=sillicon,
+                        expire_date=expire_date,
+                        exp_date_in_process=expire_date,
+                    )
+        except IntegrityError as exc:
+            if "full_sn" in str(exc):
+                return Response(
+                    {"code": "ALREADY_USED", "message": "Ten klej był już używany."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            raise
 
         return Response({"success": "Objekt przezbrojony"}, status=status.HTTP_200_OK)
-
 
 class SilliconCheckBosch(GenericAPIView):
     serializer_class = BoschSilliconCheck
