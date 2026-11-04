@@ -78,7 +78,16 @@ class MasterSampleSerializerList(serializers.ModelSerializer):
         fields = [
             'id', 'project_name', 'sn', 'date_created', 'expire_date', 'pcb_rev_code', 'additional_project_name',
             'client', 'process_name', 'master_type', 'created_by', 'endcodes', 'code_smd', 'departament', 'location', 'subobjects', 'details',
+            'comennt',
         ]
+
+
+class MasterSampleNotesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MasterSample
+        fields = ['id', 'comennt']
+        read_only_fields = ['id']
+        extra_kwargs = {'comennt': {'allow_null': True, 'allow_blank': True}}
 
 
 class CodeSmdListField(serializers.ListField):

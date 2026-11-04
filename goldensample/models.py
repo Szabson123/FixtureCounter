@@ -103,6 +103,7 @@ class MasterSample(models.Model):
     class Meta:
         permissions = [
             ("can_update_create_goldens", "Może dodawać i modyfikować wzorce"),
+            ("can_delete_golden_dictionaries", "Może usuwać klientów, projekty, procesy, typy i wydziały wraz z wzorcami"),
         ]
 
     def __str__(self):

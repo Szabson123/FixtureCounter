@@ -1,7 +1,9 @@
 from .models import *
 from .serializers import *
 from .filters import MasterSampleFilter
-from .permissions import GoldenAdminPerms
+from .permissions import GoldenAdminPerms, GoldenSuperAdminPerms
+from rest_framework.decorators import action
+from django.db import transaction
 from rest_framework.generics import ListAPIView, CreateAPIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
@@ -168,21 +170,51 @@ class MasterSampleSimpleListView(ListAPIView):
     search_fields = ['sn']
 
 
-class ClientNameViewSet(viewsets.ModelViewSet):
+class DeleteWithSamplesMixin:
+    """
+    Usuwanie wpisu słownika razem ze wszystkimi przypisanymi wzorcami.
+    Dostępne tylko dla roli z uprawnieniem can_delete_golden_dictionaries.
+    """
+    sample_field = None
+
+    def get_permissions(self):
+        if self.action in ("destroy", "samples_count"):
+            return [GoldenSuperAdminPerms()]
+        return super().get_permissions()
+
+    def _samples(self, instance):
+        return MasterSample.objects.filter(**{self.sample_field: instance})
+
+    @action(detail=True, methods=["get"], url_path="samples-count")
+    def samples_count(self, request, *args, **kwargs):
+        return Response({"count": self._samples(self.get_object()).count()})
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        # client ma on_delete=SET_NULL, wiec wzorce trzeba usunac jawnie
+        self._samples(instance).delete()
+        instance.delete()
+
+
+class ClientNameViewSet(DeleteWithSamplesMixin, viewsets.ModelViewSet):
     queryset = ClientName.objects.all()
     serializer_class = ClientNameSerializer
+    sample_field = "client"
 
-class ProcessNameViewSet(viewsets.ModelViewSet):
+class ProcessNameViewSet(DeleteWithSamplesMixin, viewsets.ModelViewSet):
     queryset = ProcessName.objects.all()
     serializer_class = ProcessNameSerializer
+    sample_field = "process_name"
 
-class TypeNameViewSet(viewsets.ModelViewSet):
+class TypeNameViewSet(DeleteWithSamplesMixin, viewsets.ModelViewSet):
     queryset = TypeName.objects.all()
     serializer_class = TypeNameSerializer
+    sample_field = "master_type"
 
-class DepartmentViewSet(viewsets.ModelViewSet):
+class DepartmentViewSet(DeleteWithSamplesMixin, viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
+    sample_field = "departament"
 
 class CodeSmdViewSet(viewsets.ModelViewSet):
     queryset = CodeSmd.objects.all()
@@ -193,9 +225,10 @@ class EndCodeViewSet(viewsets.ModelViewSet):
     serializer_class = CodeSmdSerializer
 
 
-class AdditionalNameProjectViewSet(viewsets.ModelViewSet):
+class AdditionalNameProjectViewSet(DeleteWithSamplesMixin, viewsets.ModelViewSet):
     queryset = AdditionalNameProject.objects.all()
     serializer_class = AdditionalNameProjectSerializer
+    sample_field = "additional_project_name"
 
 # -----------------------------------------------------------------------
 
@@ -233,6 +266,21 @@ class MasterSampleRetrieveUpdateView(RetrieveUpdateDestroyAPIView):
         instance = serializer.save(created_by=request.user)
         return Response(MasterSampleSerializerList(instance).data)
     
+
+class MasterSampleNotesView(GenericAPIView):
+    """Notatki wewnetrzne do wzorca (pole comennt). Osobny endpoint, zeby zapis
+    notatki nie nadpisywal created_by jak pelna edycja."""
+    queryset = MasterSample.objects.all()
+    serializer_class = MasterSampleNotesSerializer
+    permission_classes = [GoldenAdminPerms]
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
 
 class MachineTimeStampView(GenericAPIView):
     serializer_class = MachineTimeStampSerializer
