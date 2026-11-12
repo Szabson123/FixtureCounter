@@ -6,14 +6,14 @@ from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, OuterRef, Subquery
 
 from rest_framework import status
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.response import Response
 
 from .services import SetGoodOrderService, CreateGoldensToTypeCheck
-from .serializers import GoldensMainValidationSerializer, ForceValidMachineSerializerApp, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate, MachineMainSerializer
+from .serializers import GoldensMainValidationSerializer, ForceValidMachineSerializerApp, ProductionObserverSerializer, GoldensTypeValidationSerializer, ForceValidMachineSerializer, MachineInvalidate, MachineInvalidateApp, MachineMainSerializer
 from .models import FullValidationMachineModel, Machine, TestedSn, EndedCodesWithQueue, GoldenTypeValidate, TaskNum, ForceValidMachine, ValidPassword, ValidPasswordLog
 from goldensample.models import MasterSample
 
@@ -270,6 +270,7 @@ class ForceValidMachineViewApp(GenericAPIView):
     
         machine_name = serializer.validated_data['machine_name']
         valid_password = serializer.validated_data['valid_password_instance']
+        hours = serializer.validated_data['hours']
 
         try:
             machine = Machine.objects.get(name=machine_name)
@@ -278,7 +279,7 @@ class ForceValidMachineViewApp(GenericAPIView):
 
         ForceValidMachine.objects.create(
             machine=machine,
-            date_time_end=timezone.now() + timedelta(hours=8)
+            date_time_end=timezone.now() + timedelta(hours=hours)
         )
         
         ValidPasswordLog.objects.create(valid_password=valid_password)
@@ -287,10 +288,51 @@ class ForceValidMachineViewApp(GenericAPIView):
             {"detail": f"Autoryzacja udana dla działu/osoby: {valid_password.name}"}, 
             status=status.HTTP_200_OK
         )
+
+
+class InValidateMachineApp(GenericAPIView):
+    serializer_class = MachineInvalidateApp
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        machine_name = serializer.validated_data['machine_name']
+        valid_password = serializer.validated_data['valid_password_instance']
+        machine = get_object_or_404(Machine, name=machine_name)
+
+        ForceValidMachine.objects.filter(machine=machine).update(is_valid=False)
+        FullValidationMachineModel.objects.filter(machine=machine).update(is_valid=False)
+
+        ValidPasswordLog.objects.create(valid_password=valid_password)
+
+        return Response(
+            {"detail": f"Maszyna {machine.name} unieważniona. Autoryzacja: {valid_password.name}"},
+            status=status.HTTP_200_OK
+        )
     
 
 class ValidationListView(ListAPIView):
     serializer_class = MachineMainSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        latest_ids = Machine.objects.annotate(
+            latest_id=Subquery(
+                FullValidationMachineModel.objects
+                .filter(machine=OuterRef('pk'))
+                .order_by('-time_date', '-id')
+                .values('id')[:1]
+            )
+        ).values_list('latest_id', flat=True)
+
+        context['last_full_validations'] = {
+            fv.machine_id: fv
+            for fv in FullValidationMachineModel.objects
+            .filter(id__in=[i for i in latest_ids if i])
+            .prefetch_related('queues')
+        }
+        return context
 
     def get_queryset(self):
         now = timezone.now()

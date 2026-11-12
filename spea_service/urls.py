@@ -10,6 +10,7 @@ urlpatterns = [
     path('force-validate-machine/', ForceValidateMachine.as_view(), name='force-validate'),
     path('force-validate-machine-app/', ForceValidMachineViewApp.as_view(), name='force-validate-app'),
     path('invalidate-machine/', InValidateMachine.as_view(), name='invalidate'),
+    path('invalidate-machine-app/', InValidateMachineApp.as_view(), name='invalidate-app'),
 
     path('machine-validation-list/', ValidationListView.as_view(), name='validation-list')
 ]

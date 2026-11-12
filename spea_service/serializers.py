@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from .models import Machine, ForceValidMachine, FullValidationMachineModel, ValidPassword
+from datetime import timedelta
+
+from .models import Machine, ForceValidMachine, FullValidationMachineModel, ValidPassword, EndedCodesWithQueue
 from .validators import validate_unique_values
 from goldensample.models import MasterSample
 
@@ -65,8 +67,8 @@ class ForceValidMachineSerializer(serializers.Serializer):
     hours = serializers.IntegerField(allow_null=False, required=True)
 
 
-class ForceValidMachineSerializerApp(serializers.Serializer):
-    machine_name = serializers.CharField(allow_null=False, required=True)
+class PasswordProtectedSerializer(serializers.Serializer):
+    """Sprawdza haslo z tabeli ValidPassword i podaje instancje dalej do logowania."""
     password = serializers.CharField(allow_null=False, required=True, write_only=True)
 
     def validate(self, attrs):
@@ -81,6 +83,16 @@ class ForceValidMachineSerializerApp(serializers.Serializer):
 
         attrs['valid_password_instance'] = valid_password_instance
         return attrs
+
+
+class ForceValidMachineSerializerApp(PasswordProtectedSerializer):
+    machine_name = serializers.CharField(allow_null=False, required=True)
+    # Domyslnie 8h jak dotad (aplikacja na maszynie nie wysyla hours)
+    hours = serializers.IntegerField(required=False, default=8, min_value=1)
+
+
+class MachineInvalidateApp(PasswordProtectedSerializer):
+    machine_name = serializers.CharField(allow_null=False, required=True)
 
 
 class MachineInvalidate(serializers.Serializer):
@@ -99,9 +111,45 @@ class MachineFullValidation(serializers.ModelSerializer):
         fields = ['id', 'is_valid', 'time_date', 'ended']
 
 
+# Tyle samo godzin liczy SpeaService (check-sns) od time_date ostatniej walidacji
+FULL_VALIDATION_HOURS = 8
+
+
+class EndedCodesWithQueueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EndedCodesWithQueue
+        fields = ['queue', 'code']
+
+
+class LastFullValidationSerializer(serializers.ModelSerializer):
+    codes = serializers.SerializerMethodField()
+    expires_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FullValidationMachineModel
+        fields = ['id', 'is_valid', 'ended', 'time_date', 'expires_at', 'codes']
+
+    def get_codes(self, obj):
+        queues = sorted(obj.queues.all(), key=lambda q: q.queue)
+        return EndedCodesWithQueueSerializer(queues, many=True).data
+
+    def get_expires_at(self, obj):
+        if not obj.time_date:
+            return None
+        return serializers.DateTimeField().to_representation(
+            obj.time_date + timedelta(hours=FULL_VALIDATION_HOURS)
+        )
+
+
 class MachineMainSerializer(serializers.ModelSerializer):
     forcevalidation = MachineInvalidation(many=True, read_only=True)
     fullvalidation = MachineFullValidation(many=True, read_only=True)
+    last_full_validation = serializers.SerializerMethodField()
+
     class Meta:
         model = Machine
-        fields = ['id', 'name', 'forcevalidation', 'fullvalidation']
+        fields = ['id', 'name', 'forcevalidation', 'fullvalidation', 'last_full_validation']
+
+    def get_last_full_validation(self, obj):
+        last = self.context.get('last_full_validations', {}).get(obj.id)
+        return LastFullValidationSerializer(last).data if last else None
