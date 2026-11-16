@@ -7,6 +7,37 @@ from django.db import transaction
 from django.utils import timezone
 
 
+def close_mother_if_empty(mother):
+    """Zamyka karton, jeśli nie ma w nim już żadnego aktywnego (end=False) dziecka."""
+    if mother is None or not mother.is_mother or mother.end:
+        return
+
+    if ProductObject.objects.filter(mother_object=mother, end=False).exists():
+        return
+
+    mother.end = True
+    mother.current_place = None
+    mother.current_process = None
+    mother.save(update_fields=['end', 'current_place', 'current_process'])
+
+
+def detach_from_mother(product_obj, skip_mother=None):
+    """Odpina obiekt od kartonu (zapisuje ex_mother) i zamyka karton, jeśli został pusty."""
+    mother = product_obj.mother_object
+
+    if not mother or mother == skip_mother:
+        return
+
+    if not mother.full_sn:
+        raise ValueError(f"Mother object {mother.id} has no full_sn")
+
+    product_obj.ex_mother = mother.full_sn
+    product_obj.mother_object = None
+    product_obj.save(update_fields=['ex_mother', 'mother_object'])
+
+    close_mother_if_empty(mother)
+
+
 class MovementHandler:
     @staticmethod
     def get_handler(movement_type, product_object, place, process, who, result=None, printer_name=None):
@@ -39,25 +70,8 @@ class BaseMovementHandler:
         raise NotImplementedError
     
     def _handle_orphaning(self, product_obj):
-        mother = product_obj.mother_object
-
-        if not mother or mother == self.product_object:
-            return
-
-        if not mother.full_sn:
-            raise ValueError(f"Mother object {mother.id} has no full_sn")
-
-        product_obj.ex_mother = mother.full_sn
-        product_obj.mother_object = None
-        product_obj.save()
-
-        mother.refresh_from_db()
-
-        if not ProductObject.objects.filter(mother_object=mother).exists():
-            mother.end = True
-            mother.current_place = None
-            mother.current_process = None
-            mother.save()
+        # Dzieci ruszane razem ze swoim kartonem (mother == self.product_object) zostają w kartonie.
+        detach_from_mother(product_obj, skip_mother=self.product_object)
     
 
 class MoveHandler(BaseMovementHandler):
@@ -203,6 +217,8 @@ class TrashHandler(BaseMovementHandler):
         self.set_current_place_and_process(product_obj)
         self.create_log(product_obj)
         self.set_obj_as_ended(product_obj)
+        # Złomowane dziecko musi wyjść z kartonu, inaczej karton nigdy się nie zamknie.
+        self._handle_orphaning(product_obj)
 
 
     def create_log(self, product_obj):

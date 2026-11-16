@@ -28,7 +28,7 @@ from .serializers import(ProductSerializer, ProductProcessSerializer, ProductObj
                         AppToKillSerializer, PlaceSerializerAdmin, UnifyLogsSerializer, ProductObjectAdminSerializer, ProductObjectAdminSerializerProcessHelper,
                         PlaceGroupToAppKillUpdateSerializer, ProductObjectAdminSerializerPlaceHelper, BoschSilliconCheck, BoschSilliconAdd)
 
-from checkprocess.services.movement_service import MovementHandler
+from checkprocess.services.movement_service import MovementHandler, detach_from_mother
 from checkprocess.services.edge_service import EdgeSameInSameOut
 
 from datetime import timedelta, date, datetime
@@ -147,7 +147,7 @@ class ProductObjectViewSet(viewsets.ModelViewSet):
         if not product_object.is_mother:
             return Response([], status=200)
 
-        children = product_object.child_object.all()
+        children = product_object.child_object.filter(end=False)
         serializer = self.get_serializer(children, many=True)
         return Response(serializer.data, status=200)
     
@@ -458,7 +458,10 @@ class ScrapProduct(APIView):
             product_object.current_process = process
             product_object.current_place = place
             product_object.save()
-            
+
+            # Złomowane dziecko wychodzi z kartonu; pusty karton zostaje zamknięty.
+            detach_from_mother(product_object)
+
             return Response(
                 {"detail": "Ruch został wykonany pomyślnie."},
                 status=status.HTTP_200_OK

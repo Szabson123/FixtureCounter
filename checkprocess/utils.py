@@ -1,5 +1,5 @@
 from .models import ProductObject
-from django.db.models import Count, Case, When, Value, DateField, F
+from django.db.models import Count, Case, When, Value, DateField, F, Q
 from django.utils.timezone import now
 from datetime import date, datetime, timedelta
 
@@ -115,7 +115,7 @@ def check_fifo_violation(current_object):
         **qs_filters
         
     ).exclude(id__in=excluded_ids).annotate(
-        children_count=Count('child_object'),
+        children_count=Count('child_object', filter=Q(child_object__end=False)),
         sort_date=Case(
             When(exp_date_in_process__isnull=False, then=F('exp_date_in_process')),
             When(expire_date__isnull=False, then=F('expire_date')),
